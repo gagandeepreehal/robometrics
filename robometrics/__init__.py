@@ -1,6 +1,6 @@
-"""RobotMetrics: lightweight metrics for Physical AI systems."""
+"""RoboMetrics: lightweight metrics for Physical AI systems."""
 
-from robotmetrics.comfort import (
+from robometrics.comfort import (
     acceleration,
     jerk,
     jerk_cost,
@@ -8,25 +8,25 @@ from robotmetrics.comfort import (
     max_deceleration,
     smoothness_score,
 )
-from robotmetrics.evaluator import EvaluationInputError, Evaluator
-from robotmetrics.physics import (
+from robometrics.evaluator import EvaluationInputError, Evaluator
+from robometrics.physics import (
     acceleration_limits_violated,
     curvature_limits_violated,
     dynamic_feasibility_score,
     jerk_limits_violated,
     speed_profile,
 )
-from robotmetrics.prediction import min_ade, min_fde, miss_rate, topk_trajectory_error
-from robotmetrics.registry import MetricDefinition, MetricRegistry, UnknownMetricError, registry
-from robotmetrics.results import EvaluationResult, MetricResult
-from robotmetrics.safety import (
+from robometrics.prediction import min_ade, min_fde, miss_rate, topk_trajectory_error
+from robometrics.registry import MetricDefinition, MetricRegistry, UnknownMetricError, registry
+from robometrics.results import EvaluationResult, MetricResult
+from robometrics.safety import (
     collision_rate,
     lane_departure_rate,
     min_distance_to_actors,
     time_to_collision,
 )
-from robotmetrics.schemas import AgentState, Trajectory
-from robotmetrics.trajectory import (
+from robometrics.schemas import AgentState, Trajectory
+from robometrics.trajectory import (
     average_displacement_error,
     curvature,
     final_displacement_error,

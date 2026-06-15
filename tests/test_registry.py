@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from robotmetrics.registry import MetricRegistry, UnknownMetricError, registry
-from robotmetrics.trajectory import average_displacement_error
+from robometrics.registry import MetricRegistry, UnknownMetricError, registry
+from robometrics.trajectory import average_displacement_error
 
 
 def test_default_registry_lists_built_in_metrics() -> None:

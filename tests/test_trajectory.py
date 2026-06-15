@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from robotmetrics import (
+from robometrics import (
     average_displacement_error,
     curvature,
     final_displacement_error,

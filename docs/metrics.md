@@ -1,6 +1,6 @@
 # Metrics
 
-Built-in metrics are registered for evaluation through `robotmetrics.registry`. The evaluator uses short canonical names for common displacement metrics, including `ade` and `fde`, while aliases such as `average_displacement_error` and `final_displacement_error` remain available through registry lookup.
+Built-in metrics are registered for evaluation through `robometrics.registry`. The evaluator uses short canonical names for common displacement metrics, including `ade` and `fde`, while aliases such as `average_displacement_error` and `final_displacement_error` remain available through registry lookup.
 
 ## Trajectory
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import ArrayLike
 
-from robotmetrics.geometry import (
+from robometrics.geometry import (
     FloatArray,
     as_prediction_set,
     as_trajectory,

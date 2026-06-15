@@ -1,11 +1,11 @@
 # Evaluation API
 
-RobotMetrics evaluation objects provide a local Python API for running metrics together. They do not require dashboards, services, databases, ROS, simulators, or cloud infrastructure.
+RoboMetrics evaluation objects provide a local Python API for running metrics together. They do not require dashboards, services, databases, ROS, simulators, or cloud infrastructure.
 
 ## Evaluator
 
 ```python
-from robotmetrics import Evaluator
+from robometrics import Evaluator
 
 evaluator = Evaluator()
 result = evaluator.evaluate(
@@ -100,7 +100,7 @@ If a metric fails during execution, evaluation continues and the returned `Metri
 The default `registry` stores built-in metric metadata and callables:
 
 ```python
-from robotmetrics import registry
+from robometrics import registry
 
 registry.list_metrics()
 registry.get("ade")

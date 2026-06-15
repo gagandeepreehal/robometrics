@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from robotmetrics import (
+from robometrics import (
     acceleration_limits_violated,
     curvature_limits_violated,
     dynamic_feasibility_score,

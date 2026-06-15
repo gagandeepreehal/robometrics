@@ -1,13 +1,13 @@
-# RobotMetrics
+# RoboMetrics
 
-RobotMetrics is a lightweight, standalone Python metrics library for Physical AI systems. It is designed to be imported inside robotics, autonomy, drones, and manipulation codebases without requiring simulators, robots, large models, GPUs, ROS, cloud services, or a dashboard.
+RoboMetrics is a lightweight, standalone Python metrics library for Physical AI systems. It is designed to be imported inside robotics, autonomy, drones, and manipulation codebases without requiring simulators, robots, large models, GPUs, ROS, cloud services, or a dashboard.
 
 The first version focuses on reusable NumPy-based metrics for trajectory evaluation, prediction evaluation, planning/control smoothness, safety checks, and physical consistency checks.
 
 ## Installation
 
 ```bash
-pip install robotmetrics
+pip install robometrics
 ```
 
 For local development:
@@ -16,7 +16,7 @@ For local development:
 pip install -e ".[dev]"
 pytest
 ruff check .
-mypy robotmetrics
+mypy robometrics
 ```
 
 ## Quickstart
@@ -24,7 +24,7 @@ mypy robotmetrics
 ```python
 import numpy as np
 
-from robotmetrics import Evaluator, average_displacement_error, collision_rate, jerk_cost
+from robometrics import Evaluator, average_displacement_error, collision_rate, jerk_cost
 
 pred = np.array([[0, 0], [1, 0], [2, 0]])
 gt = np.array([[0, 0], [1.1, 0], [2.1, 0]])
@@ -61,7 +61,7 @@ Most metrics return a `float`. Thresholded physical consistency checks return `M
 
 ## Evaluation API
 
-RobotMetrics also includes local evaluation objects for running multiple metrics together:
+RoboMetrics also includes local evaluation objects for running multiple metrics together:
 
 - `registry`: central registry for built-in metric metadata and callables.
 - `Evaluator`: selects, validates, and runs metrics by name or category.
@@ -92,7 +92,7 @@ Simple IO helpers support:
 
 ## Contributing
 
-RobotMetrics should stay small, typed, simulator-independent, and dependency-light. New metrics should include:
+RoboMetrics should stay small, typed, simulator-independent, and dependency-light. New metrics should include:
 
 - a clear function-level API
 - validation for shape and NaN edge cases
@@ -104,7 +104,7 @@ Run the local quality checks before opening a pull request:
 ```bash
 pytest
 ruff check .
-mypy robotmetrics
+mypy robometrics
 ```
 
 ## License

@@ -5,13 +5,13 @@ from math import inf
 import numpy as np
 import pytest
 
-from robotmetrics import (
+from robometrics import (
     collision_rate,
     lane_departure_rate,
     min_distance_to_actors,
     time_to_collision,
 )
-from robotmetrics.schemas import AgentState
+from robometrics.schemas import AgentState
 
 
 def test_collision_rate_counts_time_aligned_collisions() -> None:

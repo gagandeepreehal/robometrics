@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 from scipy.spatial.distance import directed_hausdorff
 
-from robotmetrics.geometry import (
+from robometrics.geometry import (
     FloatArray,
     as_trajectory,
     pointwise_distances,

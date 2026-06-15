@@ -8,14 +8,14 @@ from typing import Any
 import numpy as np
 from numpy.typing import ArrayLike
 
-from robotmetrics.geometry import (
+from robometrics.geometry import (
     as_actor_trajectories,
     as_trajectory,
     points_in_polygon,
     validate_nonnegative,
     xy,
 )
-from robotmetrics.schemas import AgentState
+from robometrics.schemas import AgentState
 
 
 def collision_rate(

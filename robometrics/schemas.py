@@ -1,4 +1,4 @@
-"""Pydantic schemas for RobotMetrics inputs and outputs."""
+"""Pydantic schemas for RoboMetrics inputs and outputs."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import numpy as np
 from numpy.typing import NDArray
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from robotmetrics.results import EvaluationResult, MetricResult
+from robometrics.results import EvaluationResult, MetricResult
 
 __all__ = ["AgentState", "EvaluationResult", "MetricResult", "Trajectory"]
 

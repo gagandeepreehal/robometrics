@@ -7,7 +7,7 @@ from typing import Literal
 import numpy as np
 from numpy.typing import ArrayLike
 
-from robotmetrics.geometry import FloatArray, as_trajectory, validate_positive, vector_norms
+from robometrics.geometry import FloatArray, as_trajectory, validate_positive, vector_norms
 
 
 def acceleration(traj: ArrayLike, dt: float) -> FloatArray:

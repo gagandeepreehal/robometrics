@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from robotmetrics import min_ade, min_fde, miss_rate, topk_trajectory_error
+from robometrics import min_ade, min_fde, miss_rate, topk_trajectory_error
 
 
 def test_min_ade_and_min_fde_choose_best_mode() -> None:

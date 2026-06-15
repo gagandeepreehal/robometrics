@@ -3,7 +3,7 @@
 ```python
 import numpy as np
 
-from robotmetrics import Evaluator, average_displacement_error, jerk_cost, collision_rate
+from robometrics import Evaluator, average_displacement_error, jerk_cost, collision_rate
 
 pred = np.array([[0, 0], [1, 0], [2, 0]])
 gt = np.array([[0, 0], [1.1, 0], [2.1, 0]])

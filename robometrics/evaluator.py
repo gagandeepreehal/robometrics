@@ -7,8 +7,8 @@ from typing import Any
 
 import numpy as np
 
-from robotmetrics.registry import MetricDefinition, MetricRegistry, registry
-from robotmetrics.results import EvaluationResult, MetricResult
+from robometrics.registry import MetricDefinition, MetricRegistry, registry
+from robometrics.results import EvaluationResult, MetricResult
 
 
 class EvaluationInputError(ValueError):
@@ -16,7 +16,7 @@ class EvaluationInputError(ValueError):
 
 
 class Evaluator:
-    """Evaluate registered RobotMetrics metrics against local Python inputs."""
+    """Evaluate registered RoboMetrics metrics against local Python inputs."""
 
     def __init__(self, metric_registry: MetricRegistry | None = None) -> None:
         self.registry = metric_registry or registry

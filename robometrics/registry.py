@@ -1,4 +1,4 @@
-"""Metric registry for RobotMetrics."""
+"""Metric registry for RoboMetrics."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Any
 
 import numpy as np
 
-from robotmetrics import comfort, physics, prediction, safety, trajectory
+from robometrics import comfort, physics, prediction, safety, trajectory
 
 MetricFn = Callable[..., Any]
 CompatibilityFn = Callable[[Mapping[str, Any]], bool]

@@ -5,7 +5,7 @@ import json
 import pandas as pd
 import pytest
 
-from robotmetrics.results import EvaluationResult, MetricResult
+from robometrics.results import EvaluationResult, MetricResult
 
 
 def test_metric_result_exports_dict_and_json() -> None:

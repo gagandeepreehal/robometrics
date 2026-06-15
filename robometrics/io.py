@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
 
-from robotmetrics.geometry import FloatArray, as_trajectory
+from robometrics.geometry import FloatArray, as_trajectory
 
 
 def load_numpy(source: str | Path | ArrayLike) -> FloatArray:

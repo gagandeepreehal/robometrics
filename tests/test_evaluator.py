@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from robotmetrics import EvaluationInputError, Evaluator, UnknownMetricError
+from robometrics import EvaluationInputError, Evaluator, UnknownMetricError
 
 
 def test_evaluator_runs_named_metrics_with_thresholds() -> None:

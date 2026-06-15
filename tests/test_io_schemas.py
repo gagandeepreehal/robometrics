@@ -6,14 +6,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from robotmetrics.io import (
+from robometrics.io import (
     load_csv,
     load_json,
     load_numpy,
     load_trajectory,
     trajectory_to_json_records,
 )
-from robotmetrics.schemas import EvaluationResult, MetricResult, Trajectory
+from robometrics.schemas import EvaluationResult, MetricResult, Trajectory
 
 
 def test_load_numpy_from_array_and_file(tmp_path) -> None:

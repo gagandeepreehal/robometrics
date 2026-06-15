@@ -8,16 +8,16 @@ from typing import Literal
 import numpy as np
 from numpy.typing import ArrayLike
 
-from robotmetrics.comfort import acceleration, jerk
-from robotmetrics.geometry import (
+from robometrics.comfort import acceleration, jerk
+from robometrics.geometry import (
     FloatArray,
     as_trajectory,
     validate_nonnegative,
     validate_positive,
     vector_norms,
 )
-from robotmetrics.schemas import MetricResult
-from robotmetrics.trajectory import curvature
+from robometrics.schemas import MetricResult
+from robometrics.trajectory import curvature
 
 
 def speed_profile(traj: ArrayLike, dt: float) -> FloatArray:

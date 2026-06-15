@@ -21,6 +21,6 @@ jobs:
       - name: Ruff
         run: ruff check .
       - name: Mypy
-        run: mypy robotmetrics
+        run: mypy robometrics
       - name: Pytest
         run: pytest

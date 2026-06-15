@@ -1,4 +1,4 @@
-"""Geometry helpers shared by RobotMetrics modules."""
+"""Geometry helpers shared by RoboMetrics modules."""
 
 from __future__ import annotations
 

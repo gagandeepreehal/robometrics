@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from robotmetrics import (
+from robometrics import (
     acceleration,
     jerk,
     jerk_cost,

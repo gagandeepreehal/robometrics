@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import numpy as np
 
-from robotmetrics import Evaluator, average_displacement_error, collision_rate, jerk_cost
+if __package__ is None:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from robometrics import Evaluator, average_displacement_error, collision_rate, jerk_cost
 
 
 def main() -> None:
