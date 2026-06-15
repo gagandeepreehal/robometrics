@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from robotmetrics.results import EvaluationResult, MetricResult
@@ -47,7 +48,7 @@ class Trajectory(BaseModel):
             raise ValueError("timestamps length must match points length")
         return self
 
-    def array(self) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+    def array(self) -> NDArray[np.float64]:
         """Return trajectory points as a NumPy array."""
         return np.asarray(self.points, dtype=np.float64)
 
