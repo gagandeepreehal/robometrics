@@ -1,0 +1,419 @@
+"""Metric registry for RobotMetrics."""
+
+from __future__ import annotations
+
+from collections.abc import Callable, Iterable, Mapping
+from dataclasses import dataclass, field
+from typing import Any
+
+import numpy as np
+
+from robotmetrics import comfort, physics, prediction, safety, trajectory
+
+MetricFn = Callable[..., Any]
+CompatibilityFn = Callable[[Mapping[str, Any]], bool]
+
+
+class UnknownMetricError(KeyError):
+    """Raised when a metric name is not registered."""
+
+
+@dataclass(frozen=True)
+class MetricDefinition:
+    """Registered metric metadata and execution contract."""
+
+    name: str
+    fn: MetricFn
+    category: str
+    unit: str
+    description: str = ""
+    required_inputs: tuple[str, ...] = ()
+    default_kwargs: Mapping[str, Any] = field(default_factory=dict)
+    aliases: tuple[str, ...] = ()
+    compatibility: CompatibilityFn | None = field(default=None, repr=False, compare=False)
+
+    def is_compatible(self, inputs: Mapping[str, Any]) -> bool:
+        """Return True when the available inputs can run this metric."""
+        if any(key not in inputs or inputs[key] is None for key in self.required_inputs):
+            return False
+        if self.compatibility is None:
+            return True
+        return self.compatibility(inputs)
+
+
+class MetricRegistry:
+    """Registry for named metric callables."""
+
+    def __init__(self) -> None:
+        self._metrics: dict[str, MetricDefinition] = {}
+        self._aliases: dict[str, str] = {}
+
+    def register(
+        self,
+        *,
+        name: str,
+        fn: MetricFn,
+        category: str,
+        unit: str = "",
+        description: str | None = None,
+        required_inputs: Iterable[str] = (),
+        default_kwargs: Mapping[str, Any] | None = None,
+        aliases: Iterable[str] = (),
+        compatibility: CompatibilityFn | None = None,
+    ) -> MetricDefinition:
+        """Register a metric function and return its definition."""
+        normalized_name = _normalize_name(name)
+        if normalized_name in self._metrics or normalized_name in self._aliases:
+            raise ValueError(f"metric already registered: {name}")
+
+        metric = MetricDefinition(
+            name=normalized_name,
+            fn=fn,
+            category=category,
+            unit=unit,
+            description=description or _first_doc_line(fn),
+            required_inputs=tuple(required_inputs),
+            default_kwargs=dict(default_kwargs or {}),
+            aliases=tuple(aliases),
+            compatibility=compatibility,
+        )
+        self._metrics[normalized_name] = metric
+
+        for alias in aliases:
+            normalized_alias = _normalize_name(alias)
+            if normalized_alias in self._metrics or normalized_alias in self._aliases:
+                raise ValueError(f"metric alias already registered: {alias}")
+            self._aliases[normalized_alias] = normalized_name
+
+        return metric
+
+    def get(self, name: str) -> MetricDefinition:
+        """Return a metric definition by canonical name or alias."""
+        normalized_name = _normalize_name(name)
+        canonical = self._aliases.get(normalized_name, normalized_name)
+        try:
+            return self._metrics[canonical]
+        except KeyError as exc:
+            raise UnknownMetricError(f"unknown metric: {name}") from exc
+
+    def list_metrics(self, *, category: str | None = None) -> list[MetricDefinition]:
+        """Return registered metrics, optionally filtered by category."""
+        if category is None:
+            return list(self._metrics.values())
+        normalized_category = category.lower()
+        return [
+            metric
+            for metric in self._metrics.values()
+            if metric.category.lower() == normalized_category
+        ]
+
+    def categories(self) -> list[str]:
+        """Return registered metric categories."""
+        return sorted({metric.category for metric in self._metrics.values()})
+
+
+def create_default_registry() -> MetricRegistry:
+    """Create the default registry for all built-in metric functions."""
+    reg = MetricRegistry()
+
+    reg.register(
+        name="ade",
+        aliases=("average_displacement_error",),
+        fn=trajectory.average_displacement_error,
+        category="trajectory",
+        unit="meters",
+        required_inputs=("pred", "gt"),
+        compatibility=_same_shape("pred", "gt"),
+    )
+    reg.register(
+        name="fde",
+        aliases=("final_displacement_error",),
+        fn=trajectory.final_displacement_error,
+        category="trajectory",
+        unit="meters",
+        required_inputs=("pred", "gt"),
+        compatibility=_same_shape("pred", "gt"),
+    )
+    reg.register(
+        name="hausdorff_distance",
+        fn=trajectory.hausdorff_distance,
+        category="trajectory",
+        unit="meters",
+        required_inputs=("pred", "gt"),
+        compatibility=_same_dimensionality("pred", "gt"),
+    )
+    reg.register(
+        name="path_length",
+        fn=trajectory.path_length,
+        category="trajectory",
+        unit="meters",
+        required_inputs=("traj",),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="curvature",
+        fn=trajectory.curvature,
+        category="trajectory",
+        unit="1/m",
+        required_inputs=("traj",),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="lateral_error",
+        fn=trajectory.lateral_error,
+        category="trajectory",
+        unit="meters",
+        required_inputs=("pred", "ref"),
+        compatibility=_same_shape("pred", "ref"),
+    )
+    reg.register(
+        name="longitudinal_error",
+        fn=trajectory.longitudinal_error,
+        category="trajectory",
+        unit="meters",
+        required_inputs=("pred", "ref"),
+        compatibility=_same_shape("pred", "ref"),
+    )
+
+    reg.register(
+        name="min_ade",
+        aliases=("minade",),
+        fn=prediction.min_ade,
+        category="prediction",
+        unit="meters",
+        required_inputs=("predictions", "gt"),
+        compatibility=_prediction_matches_ground_truth("predictions", "gt"),
+    )
+    reg.register(
+        name="min_fde",
+        aliases=("minfde",),
+        fn=prediction.min_fde,
+        category="prediction",
+        unit="meters",
+        required_inputs=("predictions", "gt"),
+        compatibility=_prediction_matches_ground_truth("predictions", "gt"),
+    )
+    reg.register(
+        name="miss_rate",
+        fn=prediction.miss_rate,
+        category="prediction",
+        unit="ratio",
+        required_inputs=("predictions", "gt"),
+        default_kwargs={"threshold": 2.0},
+        compatibility=_prediction_matches_ground_truth("predictions", "gt"),
+    )
+    reg.register(
+        name="topk_trajectory_error",
+        fn=prediction.topk_trajectory_error,
+        category="prediction",
+        unit="meters",
+        required_inputs=("predictions", "gt"),
+        default_kwargs={"k": 1},
+        compatibility=_prediction_matches_ground_truth("predictions", "gt"),
+    )
+
+    reg.register(
+        name="acceleration",
+        fn=comfort.acceleration,
+        category="comfort",
+        unit="m/s^2",
+        required_inputs=("traj", "dt"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="jerk",
+        fn=comfort.jerk,
+        category="comfort",
+        unit="m/s^3",
+        required_inputs=("traj", "dt"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="jerk_cost",
+        fn=comfort.jerk_cost,
+        category="comfort",
+        unit="m^2/s^6",
+        required_inputs=("traj", "dt"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="max_acceleration",
+        fn=comfort.max_acceleration,
+        category="comfort",
+        unit="m/s^2",
+        required_inputs=("traj", "dt"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="max_deceleration",
+        fn=comfort.max_deceleration,
+        category="comfort",
+        unit="m/s^2",
+        required_inputs=("traj", "dt"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="smoothness_score",
+        fn=comfort.smoothness_score,
+        category="comfort",
+        unit="score",
+        required_inputs=("traj", "dt"),
+        compatibility=_trajectory_input("traj"),
+    )
+
+    reg.register(
+        name="collision_rate",
+        fn=safety.collision_rate,
+        category="safety",
+        unit="ratio",
+        required_inputs=("ego_traj", "actor_trajs", "ego_radius", "actor_radius"),
+        compatibility=_trajectory_input("ego_traj"),
+    )
+    reg.register(
+        name="time_to_collision",
+        fn=safety.time_to_collision,
+        category="safety",
+        unit="seconds",
+        required_inputs=("ego_state", "actor_state"),
+    )
+    reg.register(
+        name="min_distance_to_actors",
+        fn=safety.min_distance_to_actors,
+        category="safety",
+        unit="meters",
+        required_inputs=("ego_traj", "actor_trajs"),
+        compatibility=_trajectory_input("ego_traj"),
+    )
+    reg.register(
+        name="lane_departure_rate",
+        fn=safety.lane_departure_rate,
+        category="safety",
+        unit="ratio",
+        required_inputs=("ego_traj", "lane_boundary"),
+        compatibility=_trajectory_input("ego_traj"),
+    )
+
+    reg.register(
+        name="speed_profile",
+        fn=physics.speed_profile,
+        category="physics",
+        unit="m/s",
+        required_inputs=("traj", "dt"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="acceleration_limits_violated",
+        fn=physics.acceleration_limits_violated,
+        category="physics",
+        unit="m/s^2",
+        required_inputs=("traj", "dt", "max_accel"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="jerk_limits_violated",
+        fn=physics.jerk_limits_violated,
+        category="physics",
+        unit="m/s^3",
+        required_inputs=("traj", "dt", "max_jerk"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="curvature_limits_violated",
+        fn=physics.curvature_limits_violated,
+        category="physics",
+        unit="1/m",
+        required_inputs=("traj", "max_curvature"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="dynamic_feasibility_score",
+        fn=physics.dynamic_feasibility_score,
+        category="physics",
+        unit="score",
+        required_inputs=("traj", "dt"),
+        default_kwargs={"constraints": {}},
+        compatibility=_trajectory_input("traj"),
+    )
+
+    return reg
+
+
+def _normalize_name(name: str) -> str:
+    return name.strip().lower().replace("-", "_").replace(" ", "_")
+
+
+def _first_doc_line(fn: MetricFn) -> str:
+    doc = getattr(fn, "__doc__", None)
+    if not isinstance(doc, str) or not doc:
+        return ""
+    return doc.strip().splitlines()[0]
+
+
+def _shape(value: Any) -> tuple[int, ...] | None:
+    try:
+        return tuple(np.asarray(value).shape)
+    except (TypeError, ValueError):
+        return None
+
+
+def _is_trajectory_shape(shape: tuple[int, ...] | None) -> bool:
+    return shape is not None and len(shape) == 2 and shape[0] > 0 and shape[1] in (2, 3)
+
+
+def _is_prediction_shape(shape: tuple[int, ...] | None) -> bool:
+    return (
+        shape is not None
+        and len(shape) == 3
+        and shape[0] > 0
+        and shape[1] > 0
+        and shape[2] in (2, 3)
+    )
+
+
+def _trajectory_input(key: str) -> CompatibilityFn:
+    def compatible(inputs: Mapping[str, Any]) -> bool:
+        return _is_trajectory_shape(_shape(inputs[key]))
+
+    return compatible
+
+
+def _same_shape(left: str, right: str) -> CompatibilityFn:
+    def compatible(inputs: Mapping[str, Any]) -> bool:
+        left_shape = _shape(inputs[left])
+        right_shape = _shape(inputs[right])
+        return _is_trajectory_shape(left_shape) and left_shape == right_shape
+
+    return compatible
+
+
+def _same_dimensionality(left: str, right: str) -> CompatibilityFn:
+    def compatible(inputs: Mapping[str, Any]) -> bool:
+        left_shape = _shape(inputs[left])
+        right_shape = _shape(inputs[right])
+        return (
+            _is_trajectory_shape(left_shape)
+            and _is_trajectory_shape(right_shape)
+            and left_shape is not None
+            and right_shape is not None
+            and left_shape[1] == right_shape[1]
+        )
+
+    return compatible
+
+
+def _prediction_matches_ground_truth(predictions_key: str, gt_key: str) -> CompatibilityFn:
+    def compatible(inputs: Mapping[str, Any]) -> bool:
+        prediction_shape = _shape(inputs[predictions_key])
+        gt_shape = _shape(inputs[gt_key])
+        return (
+            _is_prediction_shape(prediction_shape)
+            and _is_trajectory_shape(gt_shape)
+            and prediction_shape is not None
+            and gt_shape is not None
+            and prediction_shape[1:] == gt_shape
+        )
+
+    return compatible
+
+
+registry = create_default_registry()
