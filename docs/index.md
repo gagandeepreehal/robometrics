@@ -11,4 +11,5 @@ Use it when you need evaluation utilities that can run inside an existing roboti
 - [Evaluation API](evaluation.md)
 - [Evaluator](evaluator.md)
 - [Contributing](contributing.md)
+- [Publishing](publishing.md)
 - [Release Checklist](release_checklist.md)

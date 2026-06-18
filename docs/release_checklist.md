@@ -31,6 +31,10 @@ Use this checklist before publishing a public release.
 ## Publishing
 
 - [ ] Update `CHANGELOG.md`.
+- [ ] Configure PyPI Trusted Publishing for `.github/workflows/publish-pypi.yml` with environment `pypi`.
+- [ ] Configure TestPyPI Trusted Publishing for `.github/workflows/publish-testpypi.yml` with environment `testpypi`.
+- [ ] Run the manual `Publish to TestPyPI` workflow and install from TestPyPI.
 - [ ] Tag the release only after final approval.
-- [ ] Publish to PyPI only after final approval.
+- [ ] Publish a GitHub Release only after final approval; this triggers the PyPI publish workflow.
+- [ ] Install from PyPI in a fresh environment and verify import/version.
 - [ ] Create GitHub release notes only after final approval.
