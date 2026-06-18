@@ -22,6 +22,19 @@ def test_metric_result_exports_dict_and_json() -> None:
     assert json.loads(result.to_json())["value"] == 0.42
 
 
+def test_metric_result_json_replaces_non_finite_values_with_null() -> None:
+    result = MetricResult(
+        name="miss_rate",
+        value=float("nan"),
+        metadata={"raw_value": [1.0, float("inf")]},
+    )
+
+    payload = result.to_dict()
+    assert payload["value"] is None
+    assert payload["metadata"]["raw_value"] == [1.0, None]
+    assert json.loads(result.to_json())["value"] is None
+
+
 def test_evaluation_result_summary_and_exports() -> None:
     result = EvaluationResult(
         results=[

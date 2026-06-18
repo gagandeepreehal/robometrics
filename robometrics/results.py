@@ -37,7 +37,7 @@ class MetricResult(BaseModel):
 
     def to_json(self) -> str:
         """Return a JSON string representation."""
-        return json.dumps(self.to_dict(), sort_keys=True)
+        return json.dumps(self.to_dict(), allow_nan=False, sort_keys=True)
 
 
 class EvaluationResult(BaseModel):
@@ -115,7 +115,7 @@ class EvaluationResult(BaseModel):
 
     def to_json(self) -> str:
         """Return a JSON string representation."""
-        return json.dumps(self.to_dict(), sort_keys=True)
+        return json.dumps(self.to_dict(), allow_nan=False, sort_keys=True)
 
     def to_markdown(self) -> str:
         """Return a GitHub-flavored Markdown table."""
@@ -184,9 +184,11 @@ def _format_float(value: float) -> str:
 
 def _json_safe(value: Any) -> Any:
     if isinstance(value, np.ndarray):
-        return value.tolist()
+        return _json_safe(value.tolist())
     if isinstance(value, np.generic):
-        return value.item()
+        return _json_safe(value.item())
+    if isinstance(value, float):
+        return value if np.isfinite(value) else None
     if isinstance(value, dict):
         return {str(key): _json_safe(item) for key, item in value.items()}
     if isinstance(value, (list, tuple)):

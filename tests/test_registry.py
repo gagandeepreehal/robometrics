@@ -19,6 +19,8 @@ def test_registry_get_supports_aliases() -> None:
     assert registry.get("ade").fn is average_displacement_error
     assert registry.get("average_displacement_error").name == "ade"
     assert registry.get("ADE").name == "ade"
+    assert registry.get("minade").name == "min_ade"
+    assert registry.get("minfde").name == "min_fde"
 
 
 def test_registry_filters_by_category() -> None:

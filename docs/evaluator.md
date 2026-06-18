@@ -1,0 +1,64 @@
+# Evaluator
+
+This page is a discoverable entry point for the evaluation-object API. The full guide is also available in [Evaluation API](evaluation.md).
+The same examples are available as a runnable script in `examples/evaluator_usage.py`.
+
+## Single-Trajectory Metrics
+
+```python
+import numpy as np
+
+from robometrics import Evaluator
+
+pred = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+gt = np.array([[0.0, 0.0], [1.1, 0.0], [2.2, 0.0]])
+
+trajectory_result = Evaluator().evaluate(
+    prediction=pred,
+    ground_truth=gt,
+    metrics=["ade", "fde"],
+    thresholds={"ade": 0.5, "fde": 1.0},
+)
+
+print(trajectory_result.summary())
+print(trajectory_result.to_markdown())
+```
+
+## Multimodal Prediction Metrics
+
+Prediction metrics such as `min_ade`, `min_fde`, `miss_rate`, and `topk_trajectory_error` expect a `KxTx2` or `KxTx3` prediction array and a `Tx2` or `Tx3` ground-truth trajectory.
+
+```python
+import numpy as np
+
+from robometrics import Evaluator
+
+predictions = np.array(
+    [
+        [[0.0, 0.0], [1.8, 0.0], [3.0, 0.0]],
+        [[0.0, 0.0], [1.1, 0.0], [2.2, 0.0]],
+    ]
+)
+gt = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+
+prediction_result = Evaluator().evaluate(
+    prediction=predictions,
+    ground_truth=gt,
+    metrics=["min_ade", "min_fde", "miss_rate", "topk_trajectory_error"],
+    threshold=0.5,
+    thresholds={
+        "min_ade": 0.5,
+        "min_fde": 0.5,
+        "miss_rate": 0.0,
+        "topk_trajectory_error": 0.5,
+    },
+    metric_kwargs={"topk_trajectory_error": {"k": 2}},
+)
+
+print(prediction_result.summary())
+print(prediction_result.to_json())
+```
+
+## Error Behavior
+
+Unknown metric names raise `UnknownMetricError` before evaluation starts. If a known metric cannot run with the supplied inputs, evaluation continues and that metric is returned as a failed `MetricResult` with `metadata["error"]`.

@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from robometrics.io import (
+    TrajectoryIOError,
     load_csv,
     load_json,
     load_numpy,
@@ -50,6 +51,26 @@ def test_load_csv_and_json(tmp_path) -> None:
     assert np.allclose(load_csv(csv_path), traj)
     assert np.allclose(load_json(json_path), traj)
     assert np.allclose(load_trajectory(json_path), traj)
+
+
+def test_loaders_raise_trajectory_io_error_for_file_failures(tmp_path) -> None:
+    missing_path = tmp_path / "missing.json"
+    malformed_json_path = tmp_path / "bad.json"
+    malformed_json_path.write_text("{bad json", encoding="utf-8")
+
+    with pytest.raises(TrajectoryIOError, match="trajectory file does not exist"):
+        load_trajectory(missing_path)
+
+    with pytest.raises(TrajectoryIOError, match="could not parse JSON trajectory file"):
+        load_json(malformed_json_path)
+
+
+def test_load_csv_missing_columns_stays_validation_error(tmp_path) -> None:
+    csv_path = tmp_path / "missing_xy.csv"
+    pd.DataFrame({"x": [0.0]}).to_csv(csv_path, index=False)
+
+    with pytest.raises(ValueError, match="CSV file is missing required columns"):
+        load_csv(csv_path)
 
 
 def test_trajectory_to_json_records() -> None:

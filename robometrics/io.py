@@ -13,21 +13,30 @@ from numpy.typing import ArrayLike
 from robometrics.geometry import FloatArray, as_trajectory
 
 
+class TrajectoryIOError(ValueError):
+    """Raised when a trajectory file cannot be read or parsed."""
+
+
 def load_numpy(source: str | Path | ArrayLike) -> FloatArray:
     """Load a trajectory from an in-memory array or .npy/.npz file."""
     if isinstance(source, str | Path):
         path = Path(source)
-        if path.suffix == ".npz":
-            with np.load(path) as data:
-                if "trajectory" in data:
-                    arr = data["trajectory"]
-                else:
-                    keys = list(data.keys())
-                    if not keys:
-                        raise ValueError("npz file does not contain arrays")
-                    arr = data[keys[0]]
-        else:
-            arr = np.load(path)
+        if not path.exists():
+            raise TrajectoryIOError(f"trajectory file does not exist: {path}")
+        try:
+            if path.suffix == ".npz":
+                with np.load(path) as data:
+                    if "trajectory" in data:
+                        arr = data["trajectory"]
+                    else:
+                        keys = list(data.keys())
+                        if not keys:
+                            raise ValueError("npz file does not contain arrays")
+                        arr = data[keys[0]]
+            else:
+                arr = np.load(path)
+        except OSError as exc:
+            raise TrajectoryIOError(f"could not read NumPy trajectory file {path}: {exc}") from exc
     else:
         arr = np.asarray(source, dtype=np.float64)
     return as_trajectory(arr, name="trajectory")
@@ -41,7 +50,13 @@ def load_csv(
     z_col: str | None = None,
 ) -> FloatArray:
     """Load a trajectory from a CSV file with x/y columns and optional z."""
-    frame = pd.read_csv(path)
+    csv_path = Path(path)
+    if not csv_path.exists():
+        raise TrajectoryIOError(f"trajectory file does not exist: {csv_path}")
+    try:
+        frame = pd.read_csv(csv_path)
+    except (OSError, pd.errors.ParserError) as exc:
+        raise TrajectoryIOError(f"could not read CSV trajectory file {csv_path}: {exc}") from exc
     columns = [x_col, y_col] if z_col is None else [x_col, y_col, z_col]
     missing = [column for column in columns if column not in frame.columns]
     if missing:
@@ -56,7 +71,15 @@ def load_json(path: str | Path) -> FloatArray:
     {"trajectory": [{"t": 0.0, "x": 0.0, "y": 0.0}, ...]}
     A top-level list of point objects is also accepted.
     """
-    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    json_path = Path(path)
+    if not json_path.exists():
+        raise TrajectoryIOError(f"trajectory file does not exist: {json_path}")
+    try:
+        payload = json.loads(json_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise TrajectoryIOError(f"could not parse JSON trajectory file {json_path}: {exc}") from exc
+    except OSError as exc:
+        raise TrajectoryIOError(f"could not read JSON trajectory file {json_path}: {exc}") from exc
     records = (
         payload["trajectory"]
         if isinstance(payload, dict) and "trajectory" in payload

@@ -17,7 +17,7 @@ result = evaluator.evaluate(
     prediction=pred,
     ground_truth=gt,
     metrics=["ade", "fde"],
-    thresholds={"ade": 1.0},
+    thresholds={"ade": 1.0, "fde": 2.0},
 )
 
 print(result.summary())
@@ -25,5 +25,8 @@ print(result.to_markdown())
 ```
 
 All trajectory inputs should be finite, non-empty `Nx2` or `Nx3` arrays. Prediction inputs should be `KxTx2` or `KxTx3` arrays.
+Single-point trajectories are accepted by metrics with well-defined degenerate outputs, and `Nx3` trajectories are accepted wherever trajectory metrics accept `Nx2`.
 
 Use `metrics="all"` to run every compatible registered metric, or select groups with `categories=["trajectory"]`.
+
+File IO helpers raise `TrajectoryIOError` for missing or malformed files, and `ValueError` for invalid trajectory contents.

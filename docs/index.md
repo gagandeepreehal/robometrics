@@ -9,3 +9,6 @@ Use it when you need evaluation utilities that can run inside an existing roboti
 - [Quickstart](quickstart.md)
 - [Metrics](metrics.md)
 - [Evaluation API](evaluation.md)
+- [Evaluator](evaluator.md)
+- [Contributing](contributing.md)
+- [Release Checklist](release_checklist.md)

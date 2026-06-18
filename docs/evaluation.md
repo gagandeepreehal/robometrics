@@ -11,7 +11,7 @@ evaluator = Evaluator()
 result = evaluator.evaluate(
     prediction=pred,
     ground_truth=gt,
-    metrics=["ade", "fde", "miss_rate"],
+    metrics=["ade", "fde"],
 )
 ```
 
@@ -65,6 +65,7 @@ result = evaluator.evaluate(
 Some metric functions also have their own parameters. For example, `miss_rate` uses a final-point distance threshold internally. Pass it as a normal keyword argument or through `metric_kwargs`:
 
 ```python
+# predictions should be a KxTx2 or KxTx3 multimodal trajectory array.
 result = evaluator.evaluate(
     prediction=predictions,
     ground_truth=gt,
@@ -84,6 +85,8 @@ markdown = result.to_markdown()
 frame = result.to_dataframe()
 ```
 
+`to_json()` emits standards-compliant JSON. Non-finite metric values such as `NaN` or `inf` are exported as `null`.
+
 Each row is a `MetricResult` with:
 
 - `name`
@@ -93,7 +96,7 @@ Each row is a `MetricResult` with:
 - `threshold`
 - `metadata`
 
-If a metric fails during execution, evaluation continues and the returned `MetricResult` contains `metadata["error"]`.
+If a known metric fails during execution, evaluation continues and the returned `MetricResult` contains `metadata["error"]`. Unknown metric names fail before execution with `UnknownMetricError`, so no partial `EvaluationResult` is returned for misspelled metric names.
 
 ## Registry
 
@@ -108,3 +111,5 @@ registry.get("average_displacement_error")
 ```
 
 Custom registries can be passed into `Evaluator(metric_registry=...)` for benchmark profiles or local project-specific metric sets.
+
+For a complete runnable script that separates single-trajectory and multimodal prediction workflows, see `examples/evaluator_usage.py`.

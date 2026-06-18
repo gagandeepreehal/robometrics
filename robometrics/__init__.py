@@ -9,6 +9,7 @@ from robometrics.comfort import (
     smoothness_score,
 )
 from robometrics.evaluator import EvaluationInputError, Evaluator
+from robometrics.io import TrajectoryIOError
 from robometrics.physics import (
     acceleration_limits_violated,
     curvature_limits_violated,
@@ -45,6 +46,7 @@ __all__ = [
     "MetricRegistry",
     "MetricResult",
     "Trajectory",
+    "TrajectoryIOError",
     "UnknownMetricError",
     "acceleration",
     "acceleration_limits_violated",

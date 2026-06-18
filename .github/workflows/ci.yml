@@ -23,4 +23,10 @@ jobs:
       - name: Mypy
         run: mypy robometrics
       - name: Pytest
-        run: pytest
+        run: pytest --cov=robometrics --cov-report=term-missing
+      - name: Examples smoke test
+        run: |
+          python examples/basic_metrics.py
+          python examples/evaluator_quickstart.py
+          python examples/thresholds.py
+          python examples/export_results.py

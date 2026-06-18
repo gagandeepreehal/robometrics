@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from robometrics import (
     acceleration_limits_violated,
@@ -43,4 +44,13 @@ def test_dynamic_feasibility_score() -> None:
 
     assert dynamic_feasibility_score(smooth, 1.0, {"max_accel": 1.0}) == 1.0
     assert dynamic_feasibility_score(aggressive, 1.0, {"max_accel": 1.0}) < 1.0
+    assert dynamic_feasibility_score(smooth, 1.0, {"max_speed": 2.0}) == 1.0
+    assert dynamic_feasibility_score(smooth, 1.0, {"max_speed": 0.5}) < 1.0
     assert dynamic_feasibility_score(smooth, 1.0, {}) == 1.0
+
+
+def test_dynamic_feasibility_score_rejects_unknown_constraints() -> None:
+    smooth = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+
+    with pytest.raises(ValueError, match="unknown dynamic feasibility constraints: max_snap"):
+        dynamic_feasibility_score(smooth, 1.0, {"max_snap": 10.0})

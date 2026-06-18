@@ -19,6 +19,10 @@ from robometrics.geometry import (
 from robometrics.schemas import MetricResult
 from robometrics.trajectory import curvature
 
+_DYNAMIC_FEASIBILITY_CONSTRAINTS = frozenset(
+    {"max_speed", "max_accel", "max_jerk", "max_curvature"}
+)
+
 
 def speed_profile(traj: ArrayLike, dt: float) -> FloatArray:
     """Return speed magnitude at each trajectory point."""
@@ -81,13 +85,23 @@ def dynamic_feasibility_score(
     dt: float,
     constraints: Mapping[str, float],
 ) -> float:
-    """Return a 0..1 feasibility score against optional accel, jerk, and curvature limits."""
+    """Return a 0..1 feasibility score against optional dynamic limits."""
+    unknown_constraints = sorted(set(constraints) - _DYNAMIC_FEASIBILITY_CONSTRAINTS)
+    if unknown_constraints:
+        allowed = ", ".join(sorted(_DYNAMIC_FEASIBILITY_CONSTRAINTS))
+        unknown = ", ".join(unknown_constraints)
+        raise ValueError(f"unknown dynamic feasibility constraints: {unknown}; allowed: {allowed}")
+
     if not constraints:
         as_trajectory(traj, name="traj")
         validate_positive(float(dt), name="dt")
         return 1.0
 
     penalties: list[float] = []
+    if "max_speed" in constraints:
+        limit = validate_positive(float(constraints["max_speed"]), name="constraints['max_speed']")
+        observed = float(np.max(speed_profile(traj, dt)))
+        penalties.append(_relative_violation(observed, limit))
     if "max_accel" in constraints:
         limit = validate_positive(float(constraints["max_accel"]), name="constraints['max_accel']")
         observed = float(np.max(vector_norms(acceleration(traj, dt))))

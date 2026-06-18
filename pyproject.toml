@@ -5,22 +5,27 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "robometrics"
 version = "0.1.0"
-description = "Lightweight metrics for Physical AI, robotics, autonomy, drones, and manipulation systems."
+description = "Evaluation infrastructure for Physical AI."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "RoboMetrics contributors" }]
+maintainers = [{ name = "RoboMetrics contributors" }]
 keywords = ["robotics", "autonomy", "metrics", "evaluation", "physical-ai"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Robotics",
+  "Typing :: Typed",
 ]
 dependencies = [
   "numpy>=1.23",
@@ -31,17 +36,26 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "coverage[toml]>=7",
   "mypy>=1.10",
+  "pre-commit>=3.5",
+  "pytest-cov>=5",
   "pytest>=8",
   "ruff>=0.5",
 ]
 
 [project.urls]
 Homepage = "https://github.com/robometrics/robometrics"
+Documentation = "https://github.com/robometrics/robometrics/tree/main/docs"
+Source = "https://github.com/robometrics/robometrics"
 Issues = "https://github.com/robometrics/robometrics/issues"
+Changelog = "https://github.com/robometrics/robometrics/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 include = ["robometrics*"]
+
+[tool.setuptools.package-data]
+robometrics = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -66,3 +80,11 @@ strict_equality = true
 [[tool.mypy.overrides]]
 module = ["pandas.*", "scipy.*"]
 ignore_missing_imports = true
+
+[tool.coverage.run]
+branch = true
+source = ["robometrics"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

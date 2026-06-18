@@ -1,6 +1,13 @@
 # Metrics
 
-Built-in metrics are registered for evaluation through `robometrics.registry`. The evaluator uses short canonical names for common displacement metrics, including `ade` and `fde`, while aliases such as `average_displacement_error` and `final_displacement_error` remain available through registry lookup.
+Built-in metrics are registered for evaluation through `robometrics.registry`. The evaluator uses short canonical names for common displacement metrics, including `ade` and `fde`, while aliases remain available through registry lookup.
+
+Registered aliases:
+
+- `average_displacement_error` -> `ade`
+- `final_displacement_error` -> `fde`
+- `minade` -> `min_ade`
+- `minfde` -> `min_fde`
 
 ## Trajectory
 
@@ -32,7 +39,7 @@ Built-in metrics are registered for evaluation through `robometrics.registry`. T
 
 - `collision_rate(ego_traj, actor_trajs, ego_radius, actor_radius)`: fraction of ego timesteps colliding with any actor.
 - `time_to_collision(ego_state, actor_state)`: constant-velocity disc-agent TTC.
-- `min_distance_to_actors(ego_traj, actor_trajs)`: minimum time-aligned XY distance to actors.
+- `min_distance_to_actors(ego_traj, actor_trajs)`: minimum time-aligned XY distance to actors. Returns `math.inf` when no actor trajectories are provided.
 - `lane_departure_rate(ego_traj, lane_boundary)`: fraction of ego points outside a polygonal lane boundary.
 
 ## Physical Consistency
@@ -41,4 +48,12 @@ Built-in metrics are registered for evaluation through `robometrics.registry`. T
 - `acceleration_limits_violated(traj, dt, max_accel)`: thresholded acceleration result.
 - `jerk_limits_violated(traj, dt, max_jerk)`: thresholded jerk result.
 - `curvature_limits_violated(traj, max_curvature)`: thresholded curvature result.
-- `dynamic_feasibility_score(traj, dt, constraints)`: `0..1` feasibility score for optional acceleration, jerk, and curvature limits.
+- `dynamic_feasibility_score(traj, dt, constraints)`: `0..1` feasibility score for optional speed, acceleration, jerk, and curvature limits. Supported constraint keys are `max_speed`, `max_accel`, `max_jerk`, and `max_curvature`; unknown keys raise `ValueError`.
+
+## Edge-Case Behavior
+
+- Empty arrays, one-dimensional arrays, invalid shapes, and trajectories with `NaN` or infinite values raise `ValueError`.
+- Single-point trajectories are valid for metrics that can define a degenerate result, such as `path_length`, `curvature`, `speed_profile`, comfort metrics, and dynamic feasibility checks.
+- `Nx3` trajectories are supported anywhere trajectory inputs accept `Nx2`; planar metrics such as `curvature` use the XY components.
+- Thresholded physics metrics return structured `MetricResult` objects with `value`, `unit`, `passed`, `threshold`, and `metadata`.
+- `min_distance_to_actors(ego_traj, [])` returns `math.inf` because there is no finite actor distance to report.
