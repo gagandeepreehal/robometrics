@@ -9,7 +9,7 @@ from typing import Any, Optional
 
 import numpy as np
 
-from robometrics import comfort, driving, physics, prediction, safety, task, trajectory
+from robometrics import comfort, driving, manipulation, physics, prediction, safety, task, trajectory
 
 MetricFn = Callable[..., Any]
 CompatibilityFn = Callable[[Mapping[str, Any]], bool]
@@ -477,6 +477,48 @@ def create_default_registry() -> MetricRegistry:
         reference=(
             "Anderson et al., Habitat: A Platform for Embodied AI Research, ICCV 2019"
         ),
+    )
+    reg.register(
+        name="grasp_success_rate",
+        fn=manipulation.grasp_success_rate,
+        category="task",
+        unit="ratio",
+        required_inputs=("attempts", "successes"),
+        reference="Mahler et al., Dex-Net 2.0, RSS 2017",
+    )
+    reg.register(
+        name="contact_richness",
+        fn=manipulation.contact_richness,
+        category="task",
+        unit="score",
+        required_inputs=("contact_forces",),
+        default_kwargs={"threshold": 0.1},
+        reference="Handa et al., DexPilot, ICRA 2020",
+    )
+    reg.register(
+        name="force_limit_compliance",
+        fn=manipulation.force_limit_compliance,
+        category="task",
+        unit="score",
+        required_inputs=("forces", "max_force"),
+        reference="ISO/TS 15066 collaborative robot safety",
+    )
+    reg.register(
+        name="joint_limit_violation_rate",
+        fn=manipulation.joint_limit_violation_rate,
+        category="task",
+        unit="ratio",
+        required_inputs=("joint_angles", "lower_limits", "upper_limits"),
+        reference="Siciliano et al., Robotics, Springer 2009",
+    )
+    reg.register(
+        name="end_effector_tracking_error",
+        fn=manipulation.end_effector_tracking_error,
+        category="task",
+        unit="meters",
+        required_inputs=("ee_traj", "target_traj"),
+        compatibility=_same_shape("ee_traj", "target_traj"),
+        reference="Siciliano et al., Robotics, Springer 2009",
     )
 
     return reg

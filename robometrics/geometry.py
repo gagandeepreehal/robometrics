@@ -52,6 +52,24 @@ def as_1d_array(data: ArrayLike, *, name: str) -> FloatArray:
     return arr
 
 
+def as_boolean_mask(data: ArrayLike, *, name: str) -> NDArray[np.bool_]:
+    """Return a non-empty 1D boolean mask from bool or 0/1 values."""
+    raw = np.asarray(data)
+    if raw.ndim != 1:
+        raise ValueError(f"{name} must be a 1D array")
+    if raw.shape[0] == 0:
+        raise ValueError(f"{name} must contain at least one value")
+    if raw.dtype == np.bool_:
+        return np.asarray(raw, dtype=np.bool_)
+
+    arr = np.asarray(data, dtype=np.float64)
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain only finite values")
+    if not np.all((arr == 0.0) | (arr == 1.0)):
+        raise ValueError(f"{name} must contain only boolean or 0/1 values")
+    return np.asarray(arr.astype(np.bool_), dtype=np.bool_)
+
+
 def as_points(data: ArrayLike, *, name: str) -> FloatArray:
     """Return a finite non-empty NxD point array."""
     arr = np.asarray(data, dtype=np.float64)

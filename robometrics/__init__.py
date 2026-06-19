@@ -21,6 +21,13 @@ from robometrics.driving import (
 )
 from robometrics.evaluator import EvaluationInputError, Evaluator
 from robometrics.io import TrajectoryIOError
+from robometrics.manipulation import (
+    contact_richness,
+    end_effector_tracking_error,
+    force_limit_compliance,
+    grasp_success_rate,
+    joint_limit_violation_rate,
+)
 from robometrics.physics import (
     acceleration_limits_violated,
     curvature_limits_violated,
@@ -74,19 +81,24 @@ __all__ = [
     "ade",
     "average_displacement_error",
     "collision_rate",
+    "contact_richness",
     "curvature",
     "curvature_profile",
     "curvature_limits_violated",
     "displacement_at_k",
     "dynamic_feasibility_score",
+    "end_effector_tracking_error",
     "fde",
     "final_displacement_error",
+    "force_limit_compliance",
     "goal_reaching_accuracy",
+    "grasp_success_rate",
     "hausdorff_distance",
     "jerk",
     "jerk_cost",
     "jerk_magnitude",
     "jerk_limits_violated",
+    "joint_limit_violation_rate",
     "lane_departure_rate",
     "lateral_error",
     "longitudinal_error",
