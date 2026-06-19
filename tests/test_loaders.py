@@ -63,6 +63,39 @@ def test_load_nuscenes_trajectories_filters_instance_token(tmp_path) -> None:
     assert np.allclose(trajectories["actor-b"], np.array([[10.0, 0.0, 0.0]]))
 
 
+def test_load_nuscenes_trajectories_sorts_by_timestamp(tmp_path) -> None:
+    path = tmp_path / "sample_annotation.json"
+    path.write_text(
+        json.dumps(
+            [
+                {
+                    "instance_token": "actor-a",
+                    "timestamp": 300,
+                    "translation": [3.0, 0.0, 0.0],
+                },
+                {
+                    "instance_token": "actor-a",
+                    "timestamp": 100,
+                    "translation": [1.0, 0.0, 0.0],
+                },
+                {
+                    "instance_token": "actor-a",
+                    "timestamp": 200,
+                    "translation": [2.0, 0.0, 0.0],
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    trajectories = load_nuscenes_trajectories(path)
+
+    assert np.allclose(
+        trajectories["actor-a"],
+        np.array([[1.0, 0.0, 0.0], [2.0, 0.0, 0.0], [3.0, 0.0, 0.0]]),
+    )
+
+
 def test_load_nuscenes_trajectories_missing_file_raises(tmp_path) -> None:
     with pytest.raises(TrajectoryIOError, match="does not exist"):
         load_nuscenes_trajectories(tmp_path / "missing.json")

@@ -25,7 +25,11 @@ _DYNAMIC_FEASIBILITY_CONSTRAINTS = frozenset(
 
 
 def speed_profile(traj: ArrayLike, dt: float) -> FloatArray:
-    """Return speed magnitude at each trajectory point."""
+    """Return one speed estimate per trajectory point.
+
+    The returned array has length N for an N-point trajectory. Endpoint speeds
+    are finite-difference gradient estimates rather than N-1 interval speeds.
+    """
     traj_arr = as_trajectory(traj, name="traj")
     timestep = validate_positive(float(dt), name="dt")
     if traj_arr.shape[0] == 1:

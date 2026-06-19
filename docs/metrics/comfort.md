@@ -20,6 +20,8 @@ Unit: m/s^2
 Direction: lower magnitude is smoother
 
 Acceleration returns vector samples for downstream peak, mean, or RMS summaries.
+Values with absolute magnitude below `1e-10` are returned as zero to suppress
+finite-difference roundoff noise.
 
 jerk(traj, dt) -> NDArray[np.float64]
 Formula: third finite difference of position divided by dt cubed.
@@ -28,6 +30,8 @@ Unit: m/s^3
 Direction: lower magnitude is smoother
 
 Jerk exposes rapid acceleration changes that often correlate with discomfort.
+Values with absolute magnitude below `1e-10` are returned as zero to suppress
+finite-difference roundoff noise.
 
 jerk_cost(traj, dt) -> float
 Formula: mean squared jerk magnitude.
@@ -91,4 +95,6 @@ Reference: RoboMetrics internal heuristic
 Unit: score
 Direction: higher is better
 
-Smoothness score maps trajectory regularity to a bounded score.
+Smoothness score maps trajectory regularity to a bounded score. Trajectories
+with fewer than four points return `1.0` with a `RuntimeWarning` because third
+finite differences are not measurable.

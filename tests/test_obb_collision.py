@@ -83,6 +83,18 @@ def test_collision_rate_obb_rejects_actor_yaw_length_mismatch() -> None:
         )
 
 
+def test_collision_rate_obb_rejects_actor_dims_count_mismatch() -> None:
+    with pytest.raises(ValueError, match="got 0 dims entries for 1 actor_trajs"):
+        collision_rate_obb(
+            ego_traj=np.array([[0.0, 0.0]]),
+            ego_dims=np.array([4.0, 2.0]),
+            ego_yaws=np.array([0.0]),
+            actor_trajs=[np.array([[0.0, 0.0]])],
+            actor_dims=[],
+            actor_yaws=[np.array([0.0])],
+        )
+
+
 def test_obb_overlap_axis_aligned_helper() -> None:
     assert obb_overlap(
         np.array([0.0, 0.0]),

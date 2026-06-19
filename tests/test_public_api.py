@@ -48,6 +48,9 @@ def test_public_api_exports_core_objects() -> None:
         "jerk_limits_violated",
         "joint_limit_violation_rate",
         "load_pack",
+        "load_trajectory_csv",
+        "load_trajectory_dir",
+        "load_trajectory_json",
         "max_acceleration",
         "max_deceleration",
         "mean_acceleration",
@@ -71,6 +74,14 @@ def test_public_api_exports_core_objects() -> None:
     assert expected.issubset(set(robometrics.__all__))
     for name in expected:
         assert hasattr(robometrics, name)
+
+
+def test_public_api_reexports_trajectory_loaders() -> None:
+    from robometrics import load_trajectory_csv, load_trajectory_dir, load_trajectory_json
+
+    assert load_trajectory_csv is robometrics.load_trajectory_csv
+    assert load_trajectory_dir is robometrics.load_trajectory_dir
+    assert load_trajectory_json is robometrics.load_trajectory_json
 
 
 def test_project_urls_use_canonical_repository() -> None:

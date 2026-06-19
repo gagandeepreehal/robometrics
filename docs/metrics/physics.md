@@ -14,12 +14,14 @@ print(dynamic_feasibility_score(traj, dt, constraints={"max_speed": 8.0}))
 ```
 Metrics
 speed_profile(traj, dt) -> NDArray[np.float64]
-Formula: norm of first finite difference divided by dt.
+Formula: norm of first finite-difference gradient divided by dt.
 Reference: Standard finite-difference kinematics
 Unit: m/s
 Direction: context dependent
 
-Speed profile exposes sampled velocity for limits and diagnostics.
+Speed profile exposes sampled velocity for limits and diagnostics. It returns
+one speed estimate per trajectory point; endpoint values are gradient-estimated
+rather than `N-1` interval speeds.
 
 acceleration_limits_violated(traj, dt, max_accel) -> MetricResult
 Formula: true when any acceleration magnitude exceeds max_accel.

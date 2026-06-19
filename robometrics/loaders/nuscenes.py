@@ -25,8 +25,8 @@ def load_nuscenes_trajectories(
     This function:
       1. Loads the JSON file.
       2. Groups records by instance_token.
-      3. For each instance, sorts records by their list position (proxy for
-         time, since sample_annotation.json is ordered by scene/sample).
+      3. For each instance, sorts records by timestamp when available, using
+         list position only as a stable tie-breaker.
       4. Extracts translation[0:3] as the XYZ position.
       5. Returns {instance_token: Nx3 array}.
 
@@ -64,7 +64,7 @@ def load_nuscenes_trajectories(
     if not isinstance(payload, list):
         raise ValueError("nuScenes sample_annotation JSON must be a list of records")
 
-    grouped: dict[str, list[list[float]]] = {}
+    grouped: dict[str, list[tuple[float, int, list[float]]]] = {}
     for index, record in enumerate(payload):
         if not isinstance(record, dict):
             raise ValueError(f"nuScenes sample_annotation record {index} must be an object")
@@ -90,9 +90,34 @@ def load_nuscenes_trajectories(
             raise ValueError(
                 f"nuScenes sample_annotation record {index} translation must be finite"
             )
-        grouped.setdefault(token, []).append(point)
+        timestamp = _record_timestamp(record, index)
+        grouped.setdefault(token, []).append((timestamp, index, point))
 
     return {
-        token: np.asarray(points, dtype=np.float64)
+        token: np.asarray(
+            [point for _, _, point in sorted(points, key=lambda item: (item[0], item[1]))],
+            dtype=np.float64,
+        )
         for token, points in grouped.items()
     }
+
+
+def _record_timestamp(record: dict[str, object], index: int) -> float:
+    timestamp = record.get("timestamp")
+    if timestamp is None:
+        return float(index)
+    if not isinstance(timestamp, (int, float, str)):
+        raise ValueError(
+            f"nuScenes sample_annotation record {index} timestamp must be numeric"
+        )
+    try:
+        timestamp_value = float(timestamp)
+    except ValueError as exc:
+        raise ValueError(
+            f"nuScenes sample_annotation record {index} timestamp must be numeric"
+        ) from exc
+    if not np.isfinite(timestamp_value):
+        raise ValueError(
+            f"nuScenes sample_annotation record {index} timestamp must be finite"
+        )
+    return timestamp_value

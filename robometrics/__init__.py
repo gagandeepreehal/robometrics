@@ -25,7 +25,12 @@ from robometrics.driving import (
 )
 from robometrics.evaluator import EvaluationInputError, Evaluator
 from robometrics.history import CheckpointEntry, EvaluationHistory
-from robometrics.io import TrajectoryIOError
+from robometrics.io import (
+    TrajectoryIOError,
+    load_trajectory_csv,
+    load_trajectory_dir,
+    load_trajectory_json,
+)
 from robometrics.manipulation import (
     contact_richness,
     end_effector_tracking_error,
@@ -121,6 +126,9 @@ __all__ = [
     "lane_departure_rate",
     "lateral_error",
     "load_pack",
+    "load_trajectory_csv",
+    "load_trajectory_dir",
+    "load_trajectory_json",
     "longitudinal_error",
     "max_acceleration",
     "max_deceleration",

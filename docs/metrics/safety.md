@@ -5,12 +5,22 @@ Hayward, Time-to-collision, 1972; Gottschalk et al., OBBTree, SIGGRAPH 1996; Cae
 ## Quick Example
 ```python
 import numpy as np
-from robometrics import collision_rate, min_distance_to_actors
+from robometrics import AgentState, collision_rate, collision_rate_obb, min_distance_to_actors, time_to_collision
 
 ego = np.array([[0.0, 0.0], [1.0, 0.0]])
 actors = [np.array([[10.0, 0.0], [1.4, 0.0]])]
 print(collision_rate(ego, actors, ego_radius=0.5, actor_radius=0.5))
 print(min_distance_to_actors(ego, actors))
+
+ego_state = AgentState(x=0.0, y=0.0, vx=2.0, vy=0.0, radius=0.5)
+actor_state = AgentState(x=8.0, y=0.0, vx=0.0, vy=0.0, radius=0.5)
+print(time_to_collision(ego_state, actor_state))
+
+ego_dims = np.array([4.5, 2.0])
+ego_yaws = np.array([0.0, 0.0])
+actor_dims = [np.array([4.5, 2.0])]
+actor_yaws = [np.array([0.0, 0.0])]
+print(collision_rate_obb(ego, ego_dims, ego_yaws, actors, actor_dims, actor_yaws))
 ```
 Metrics
 collision_rate(ego_traj, actor_trajs, ego_radius, actor_radius) -> float
@@ -36,6 +46,9 @@ Unit: seconds
 Direction: higher is safer
 
 Time to collision estimates imminent risk under constant velocity.
+It accepts `AgentState`, dict, flat `[x, y, vx, vy, radius]` arrays, or
+trajectory arrays when `dt` is supplied; trajectory inputs estimate velocity
+from their first segment.
 
 min_distance_to_actors(ego_traj, actor_trajs) -> float
 Formula: minimum time-aligned Euclidean distance from ego to any actor.

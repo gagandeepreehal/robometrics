@@ -52,6 +52,18 @@ def test_time_to_collision_constant_velocity() -> None:
     assert time_to_collision([0.0, 0.0, 0.0, 0.0, 1.0], [1.0, 0.0, 0.0, 0.0, 1.0]) == 0.0
 
 
+def test_time_to_collision_accepts_trajectory_inputs_with_dt() -> None:
+    ego = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+    actor = np.array([[10.0, 0.0], [10.0, 0.0], [10.0, 0.0]])
+
+    assert time_to_collision(ego, actor, dt=1.0) == pytest.approx(10.0)
+
+
+def test_time_to_collision_trajectory_inputs_require_two_points() -> None:
+    with pytest.raises(ValueError, match="at least two points"):
+        time_to_collision(np.array([[0.0, 0.0]]), np.array([[1.0, 0.0]]), dt=1.0)
+
+
 def test_min_distance_to_actors() -> None:
     ego = np.array([[0.0, 0.0], [1.0, 0.0]])
     actors = [np.array([[5.0, 0.0], [1.5, 0.0]])]

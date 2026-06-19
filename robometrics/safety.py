@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from math import inf, sqrt
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -15,6 +15,7 @@ from robometrics.geometry import (
     obb_overlap,
     points_in_polygon,
     validate_nonnegative,
+    validate_positive,
 )
 from robometrics.schemas import AgentState
 
@@ -118,16 +119,24 @@ def collision_rate_obb(
 def time_to_collision(
     ego_state: Union[AgentState, ArrayLike, dict[str, Any]],
     actor_state: Union[AgentState, ArrayLike, dict[str, Any]],
+    *,
+    dt: Optional[float] = None,
 ) -> float:
     """Return constant-velocity time to collision for two disc agents.
 
     States must provide x, y, vx, and vy. Radius is optional and defaults to 0.
+    When ``dt`` is supplied, Nx2/Nx3 trajectories are also accepted and the
+    first segment is used to estimate each agent's constant velocity.
     A non-colliding or diverging pair returns math.inf.
     This metric is 2D only. For 3D TTC, supply a 3D AgentState and
     extend this function in a subclass.
     """
-    ego = _coerce_agent_state(ego_state)
-    actor = _coerce_agent_state(actor_state)
+    if dt is None:
+        ego = _coerce_agent_state(ego_state)
+        actor = _coerce_agent_state(actor_state)
+    else:
+        ego = _coerce_ttc_state(ego_state, dt=dt, name="ego_state")
+        actor = _coerce_ttc_state(actor_state, dt=dt, name="actor_state")
 
     relative_position = np.array([actor.x - ego.x, actor.y - ego.y], dtype=np.float64)
     relative_velocity = np.array([actor.vx - ego.vx, actor.vy - ego.vy], dtype=np.float64)
@@ -211,6 +220,33 @@ def _coerce_agent_state(state: Union[AgentState, ArrayLike, dict[str, Any]]) -> 
     )
 
 
+def _coerce_ttc_state(
+    state: Union[AgentState, ArrayLike, dict[str, Any]],
+    *,
+    dt: float,
+    name: str,
+) -> AgentState:
+    timestep = validate_positive(float(dt), name="dt")
+    if isinstance(state, (AgentState, dict)):
+        return _coerce_agent_state(state)
+
+    arr = np.asarray(state, dtype=np.float64)
+    if arr.ndim == 1:
+        return _coerce_agent_state(arr)
+    traj = as_trajectory(arr, name=name)
+    if traj.shape[0] < 2:
+        raise ValueError(
+            f"{name} trajectory input must contain at least two points when dt is set"
+        )
+    velocity = (traj[1, :2] - traj[0, :2]) / timestep
+    return AgentState(
+        x=float(traj[0, 0]),
+        y=float(traj[0, 1]),
+        vx=float(velocity[0]),
+        vy=float(velocity[1]),
+    )
+
+
 def _as_xy_trajectory(data: ArrayLike, *, name: str, allow_empty: bool) -> FloatArray:
     arr = np.asarray(data, dtype=np.float64)
     if arr.ndim != 2 or arr.shape[1] != 2:
@@ -259,7 +295,10 @@ def _as_actor_dims_list(actor_dims: object, actors: list[FloatArray]) -> list[Fl
     if not isinstance(actor_dims, list):
         raise ValueError("actor_dims must be a list with one entry per actor")
     if len(actor_dims) != len(actors):
-        raise ValueError("actor_dims must have the same length as actor_trajs")
+        raise ValueError(
+            f"actor_dims must have one entry per actor trajectory; "
+            f"got {len(actor_dims)} dims entries for {len(actors)} actor_trajs"
+        )
     return [
         _as_dims_array(dims, name=f"actor_dims[{index}]", length=actor.shape[0])
         for index, (dims, actor) in enumerate(zip(actor_dims, actors))
@@ -270,7 +309,10 @@ def _as_actor_yaws_list(actor_yaws: object, actors: list[FloatArray]) -> list[Fl
     if not isinstance(actor_yaws, list):
         raise ValueError("actor_yaws must be a list with one entry per actor")
     if len(actor_yaws) != len(actors):
-        raise ValueError("actor_yaws must have the same length as actor_trajs")
+        raise ValueError(
+            f"actor_yaws must have one entry per actor trajectory; "
+            f"got {len(actor_yaws)} yaw entries for {len(actors)} actor_trajs"
+        )
     return [
         _as_yaw_array(yaws, name=f"actor_yaws[{index}]", length=actor.shape[0])
         for index, (yaws, actor) in enumerate(zip(actor_yaws, actors))

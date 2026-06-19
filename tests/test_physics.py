@@ -16,6 +16,7 @@ def test_speed_profile_for_constant_velocity() -> None:
     traj = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
 
     assert np.allclose(speed_profile(traj, dt=1.0), np.ones(3))
+    assert speed_profile(traj, dt=1.0).shape == (traj.shape[0],)
 
 
 def test_acceleration_limit_result() -> None:

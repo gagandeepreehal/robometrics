@@ -43,18 +43,18 @@ safety geometry, and TTC are planar XY metrics.
 - `mean_acceleration(traj, dt)`: mean acceleration magnitude.
 - `rms_acceleration(traj, dt)`: root-mean-square acceleration magnitude.
 - `max_deceleration(traj, dt)`: maximum longitudinal deceleration magnitude.
-- `smoothness_score(traj)`: bounded shape score where `1.0` is smoother. The formula is `1 / (1 + log1p(cost))`, where `cost` is mean squared third finite difference normalized by mean squared step length. It is unitless, spatial-scale-invariant for geometrically similar paths, and separate from physical `jerk_cost(traj, dt)`. Trajectories shorter than four points return `1.0` because third finite differences are not measurable.
+- `smoothness_score(traj)`: bounded shape score where `1.0` is smoother. The formula is `1 / (1 + log1p(cost))`, where `cost` is mean squared third finite difference normalized by mean squared step length. It is unitless, spatial-scale-invariant for geometrically similar paths, and separate from physical `jerk_cost(traj, dt)`. Trajectories shorter than four points return `1.0` with a `RuntimeWarning` because third finite differences are not measurable.
 
 ## Safety
 
 - `collision_rate(ego_traj, actor_trajs, ego_radius, actor_radius)`: fraction of actor-covered ego timesteps colliding with any actor. For example, if the ego has five timesteps and the only actor has three, the denominator is the first three aligned ego timesteps.
-- `time_to_collision(ego_state, actor_state)`: constant-velocity disc-agent TTC.
+- `time_to_collision(ego_state, actor_state, *, dt=None)`: constant-velocity disc-agent TTC. Use `AgentState`, dicts, flat `[x, y, vx, vy, radius]` arrays, or trajectory arrays with `dt`.
 - `min_distance_to_actors(ego_traj, actor_trajs)`: minimum time-aligned XY distance to actors. Returns `math.inf` when no actor trajectories are provided.
 - `lane_departure_rate(ego_traj, lane_boundary)`: fraction of ego points outside a polygonal lane boundary.
 
 ## Physical Consistency
 
-- `speed_profile(traj, dt)`: speed at each point.
+- `speed_profile(traj, dt)`: speed at each point. Returns length N for an N-point trajectory; endpoint values are finite-difference gradient estimates rather than `N-1` interval speeds.
 - `acceleration_limits_violated(traj, dt, max_accel)`: thresholded acceleration result.
 - `jerk_limits_violated(traj, dt, max_jerk)`: thresholded jerk result.
 - `curvature_limits_violated(traj, max_curvature)`: thresholded curvature result.
