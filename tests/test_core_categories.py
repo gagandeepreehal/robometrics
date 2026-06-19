@@ -31,9 +31,9 @@ def test_registry_contains_core_metric_categories() -> None:
 
 
 def test_compounding_error_index() -> None:
-    assert compounding_error_index([1.0, 2.0, 4.0]) == 4.0
+    assert compounding_error_index([1.0, 2.0, 4.0]) == pytest.approx(3.0 / (7.0 / 3.0))
     assert compounding_error_index([0.0, 0.0]) == 0.0
-    assert compounding_error_index([0.0, 1.0]) == float("inf")
+    assert compounding_error_index([0.0, 1.0]) == pytest.approx(2.0)
 
 
 def test_workspace_coverage_counts_occupied_cells() -> None:

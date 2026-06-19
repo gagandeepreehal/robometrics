@@ -493,7 +493,15 @@ def _add_bootstrap_confidence_interval(
         size=(bootstrap_ci, finite_values.size),
     )
     means = np.mean(finite_values[indices], axis=1)
-    lower, upper = np.percentile(means, [ci_alpha / 2.0 * 100.0, (1.0 - ci_alpha / 2.0) * 100.0])
+    percentiles = np.asarray(
+        np.percentile(
+            means,
+            [ci_alpha / 2.0 * 100.0, (1.0 - ci_alpha / 2.0) * 100.0],
+        ),
+        dtype=np.float64,
+    )
+    lower = float(percentiles[0])
+    upper = float(percentiles[1])
     metric.metadata["ci_lower"] = float(lower)
     metric.metadata["ci_upper"] = float(upper)
     metric.metadata["ci_alpha"] = float(ci_alpha)
