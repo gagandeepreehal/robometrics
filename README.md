@@ -5,7 +5,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PyPI](https://img.shields.io/badge/PyPI-not%20released-lightgrey)
 
-Evaluation infrastructure for Physical AI.
+Evaluation metrics for Physical AI.
 
 RoboMetrics is a lightweight Python package for evaluating trajectories, predictions, comfort, safety, and physical consistency in robotics and autonomy workflows. It is local-first: no simulator, ROS, GPU, cloud service, database, or dashboard is required.
 
