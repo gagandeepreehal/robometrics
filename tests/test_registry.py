@@ -18,6 +18,10 @@ def test_default_registry_lists_built_in_metrics() -> None:
     assert registry.get("smoothness_score").required_inputs == ("traj",)
 
 
+def test_default_registry_metrics_have_references() -> None:
+    assert all(metric.reference for metric in registry.list_metrics())
+
+
 def test_registry_get_supports_aliases() -> None:
     assert registry.get("ade").fn is average_displacement_error
     assert registry.get("average_displacement_error").name == "ade"

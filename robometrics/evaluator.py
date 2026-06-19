@@ -257,8 +257,7 @@ def _validate_common_array(
 def _result_from_raw(metric: MetricDefinition, raw_value: Any) -> MetricResult:
     if isinstance(raw_value, MetricResult):
         metadata = dict(raw_value.metadata)
-        metadata.setdefault("category", metric.category)
-        metadata.setdefault("description", metric.description)
+        metadata.update(_metric_metadata(metric, metadata))
         return MetricResult(
             name=metric.name,
             value=raw_value.value,
@@ -269,8 +268,7 @@ def _result_from_raw(metric: MetricDefinition, raw_value: Any) -> MetricResult:
         )
 
     value, metadata = _coerce_metric_value(raw_value)
-    metadata.setdefault("category", metric.category)
-    metadata.setdefault("description", metric.description)
+    metadata.update(_metric_metadata(metric, metadata))
     return MetricResult(name=metric.name, value=value, unit=metric.unit, metadata=metadata)
 
 
@@ -307,10 +305,9 @@ def _error_result(
     exc: Optional[Exception] = None,
 ) -> MetricResult:
     metadata: dict[str, Any] = {
-        "category": metric.category,
-        "description": metric.description,
         "error": message,
     }
+    metadata.update(_metric_metadata(metric, metadata))
     if exc is not None:
         metadata["error_type"] = type(exc).__name__
     return MetricResult(
@@ -394,6 +391,8 @@ def _aggregate_dataset_results(
                 metadata={
                     "category": first.metadata.get("category"),
                     "description": first.metadata.get("description"),
+                    "reference": first.metadata.get("reference"),
+                    "is_novel": first.metadata.get("is_novel"),
                     "sample_count": len(sample_results),
                     "finite_count": int(finite_values.size),
                     "mean": value if finite_values.size else None,
@@ -419,3 +418,12 @@ def _aggregate_dataset_results(
             "dataset": True,
         },
     )
+
+
+def _metric_metadata(metric: MetricDefinition, existing: Mapping[str, Any]) -> dict[str, Any]:
+    metadata = dict(existing)
+    metadata.setdefault("category", metric.category)
+    metadata.setdefault("description", metric.description)
+    metadata.setdefault("reference", metric.reference)
+    metadata.setdefault("is_novel", metric.is_novel)
+    return metadata

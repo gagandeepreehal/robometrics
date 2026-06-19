@@ -31,6 +31,8 @@ class MetricDefinition:
     required_inputs: tuple[str, ...] = ()
     default_kwargs: Mapping[str, Any] = field(default_factory=dict)
     aliases: tuple[str, ...] = ()
+    reference: str = ""
+    is_novel: bool = False
     compatibility: Optional[CompatibilityFn] = field(default=None, repr=False, compare=False)
 
     def is_compatible(self, inputs: Mapping[str, Any]) -> bool:
@@ -61,6 +63,8 @@ class MetricRegistry:
         required_inputs: Iterable[str] = (),
         default_kwargs: Optional[Mapping[str, Any]] = None,
         aliases: Iterable[str] = (),
+        reference: str = "",
+        is_novel: bool = False,
         compatibility: Optional[CompatibilityFn] = None,
     ) -> MetricDefinition:
         """Register a metric function and return its definition."""
@@ -78,6 +82,8 @@ class MetricRegistry:
                 required_inputs=tuple(required_inputs),
                 default_kwargs=dict(default_kwargs or {}),
                 aliases=tuple(aliases),
+                reference=reference,
+                is_novel=bool(is_novel),
                 compatibility=compatibility,
             )
             self._metrics[normalized_name] = metric
@@ -129,6 +135,7 @@ def create_default_registry() -> MetricRegistry:
         category="trajectory",
         unit="meters",
         required_inputs=("pred", "gt"),
+        reference="Alahi et al., Social Force, CVPR 2016",
         compatibility=_same_shape("pred", "gt"),
     )
     reg.register(
@@ -138,6 +145,7 @@ def create_default_registry() -> MetricRegistry:
         category="trajectory",
         unit="meters",
         required_inputs=("pred", "gt"),
+        reference="Alahi et al., Social Force, CVPR 2016",
         compatibility=_same_shape("pred", "gt"),
     )
     reg.register(
@@ -146,6 +154,7 @@ def create_default_registry() -> MetricRegistry:
         category="trajectory",
         unit="meters",
         required_inputs=("pred", "gt"),
+        reference="Hausdorff, Grundzüge der Mengenlehre, 1914",
         compatibility=_same_dimensionality("pred", "gt"),
     )
     reg.register(
@@ -154,6 +163,7 @@ def create_default_registry() -> MetricRegistry:
         category="trajectory",
         unit="meters",
         required_inputs=("traj",),
+        reference="Standard arc length formula for sampled trajectories",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -162,6 +172,7 @@ def create_default_registry() -> MetricRegistry:
         category="trajectory",
         unit="1/m",
         required_inputs=("traj",),
+        reference="Standard differential geometry curvature formula",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -170,6 +181,7 @@ def create_default_registry() -> MetricRegistry:
         category="trajectory",
         unit="1/m",
         required_inputs=("traj",),
+        reference="Standard mean of differential geometry curvature over trajectory samples",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -178,6 +190,7 @@ def create_default_registry() -> MetricRegistry:
         category="trajectory",
         unit="meters",
         required_inputs=("pred", "ref"),
+        reference="Standard Frenet-frame lateral tracking error",
         compatibility=_same_shape("pred", "ref"),
     )
     reg.register(
@@ -186,6 +199,7 @@ def create_default_registry() -> MetricRegistry:
         category="trajectory",
         unit="meters",
         required_inputs=("pred", "ref"),
+        reference="Standard Frenet-frame longitudinal tracking error",
         compatibility=_same_shape("pred", "ref"),
     )
 
@@ -196,6 +210,7 @@ def create_default_registry() -> MetricRegistry:
         category="prediction",
         unit="meters",
         required_inputs=("predictions", "gt"),
+        reference="Gupta et al., Social GAN, CVPR 2018",
         compatibility=_prediction_matches_ground_truth("predictions", "gt"),
     )
     reg.register(
@@ -205,6 +220,7 @@ def create_default_registry() -> MetricRegistry:
         category="prediction",
         unit="meters",
         required_inputs=("predictions", "gt"),
+        reference="Gupta et al., Social GAN, CVPR 2018",
         compatibility=_prediction_matches_ground_truth("predictions", "gt"),
     )
     reg.register(
@@ -214,6 +230,7 @@ def create_default_registry() -> MetricRegistry:
         unit="ratio",
         required_inputs=("predictions", "gt"),
         default_kwargs={"threshold": 2.0},
+        reference="Chang et al., Argoverse, CVPR 2019",
         compatibility=_prediction_matches_ground_truth("predictions", "gt"),
     )
     reg.register(
@@ -223,6 +240,7 @@ def create_default_registry() -> MetricRegistry:
         unit="meters",
         required_inputs=("predictions", "gt"),
         default_kwargs={"k": 1},
+        reference="Thiede & Brahma, Analyzing Failures of CVAE, 2019",
         compatibility=_prediction_matches_ground_truth("predictions", "gt"),
     )
 
@@ -232,6 +250,7 @@ def create_default_registry() -> MetricRegistry:
         category="comfort",
         unit="m/s^2",
         required_inputs=("traj", "dt"),
+        reference="Standard finite-difference kinematics",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -240,6 +259,7 @@ def create_default_registry() -> MetricRegistry:
         category="comfort",
         unit="m/s^3",
         required_inputs=("traj", "dt"),
+        reference="Standard finite-difference kinematics",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -248,6 +268,8 @@ def create_default_registry() -> MetricRegistry:
         category="comfort",
         unit="m^2/s^6",
         required_inputs=("traj", "dt"),
+        reference="RoboMetrics internal comfort cost",
+        is_novel=True,
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -256,6 +278,7 @@ def create_default_registry() -> MetricRegistry:
         category="comfort",
         unit="m/s^2",
         required_inputs=("traj", "dt"),
+        reference="Standard finite-difference kinematics",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -264,6 +287,7 @@ def create_default_registry() -> MetricRegistry:
         category="comfort",
         unit="m/s^3",
         required_inputs=("traj", "dt"),
+        reference="Standard finite-difference kinematics",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -272,6 +296,7 @@ def create_default_registry() -> MetricRegistry:
         category="comfort",
         unit="m/s^2",
         required_inputs=("traj", "dt"),
+        reference="Standard peak acceleration evaluation",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -280,6 +305,7 @@ def create_default_registry() -> MetricRegistry:
         category="comfort",
         unit="m/s^2",
         required_inputs=("traj", "dt"),
+        reference="Standard mean acceleration evaluation",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -288,6 +314,7 @@ def create_default_registry() -> MetricRegistry:
         category="comfort",
         unit="m/s^2",
         required_inputs=("traj", "dt"),
+        reference="Standard RMS acceleration evaluation",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -296,6 +323,7 @@ def create_default_registry() -> MetricRegistry:
         category="comfort",
         unit="m/s^2",
         required_inputs=("traj", "dt"),
+        reference="Standard peak deceleration evaluation",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -304,6 +332,8 @@ def create_default_registry() -> MetricRegistry:
         category="comfort",
         unit="score",
         required_inputs=("traj",),
+        reference="RoboMetrics internal heuristic",
+        is_novel=True,
         compatibility=_trajectory_input("traj"),
     )
 
@@ -313,6 +343,7 @@ def create_default_registry() -> MetricRegistry:
         category="safety",
         unit="ratio",
         required_inputs=("ego_traj", "actor_trajs", "ego_radius", "actor_radius"),
+        reference="Standard disc-overlap collision metric for robotics simulation",
         compatibility=_trajectory_input("ego_traj"),
     )
     reg.register(
@@ -321,6 +352,7 @@ def create_default_registry() -> MetricRegistry:
         category="safety",
         unit="seconds",
         required_inputs=("ego_state", "actor_state"),
+        reference="Hayward, Time-to-collision, 1972",
     )
     reg.register(
         name="min_distance_to_actors",
@@ -328,6 +360,7 @@ def create_default_registry() -> MetricRegistry:
         category="safety",
         unit="meters",
         required_inputs=("ego_traj", "actor_trajs"),
+        reference="Standard minimum Euclidean separation metric",
         compatibility=_trajectory_input("ego_traj"),
     )
     reg.register(
@@ -336,6 +369,7 @@ def create_default_registry() -> MetricRegistry:
         category="safety",
         unit="ratio",
         required_inputs=("ego_traj", "lane_boundary"),
+        reference="Standard lane boundary containment metric",
         compatibility=_trajectory_input("ego_traj"),
     )
 
@@ -345,6 +379,7 @@ def create_default_registry() -> MetricRegistry:
         category="physics",
         unit="m/s",
         required_inputs=("traj", "dt"),
+        reference="Standard finite-difference kinematics",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -353,6 +388,7 @@ def create_default_registry() -> MetricRegistry:
         category="physics",
         unit="m/s^2",
         required_inputs=("traj", "dt", "max_accel"),
+        reference="Standard acceleration constraint violation metric",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -361,6 +397,7 @@ def create_default_registry() -> MetricRegistry:
         category="physics",
         unit="m/s^3",
         required_inputs=("traj", "dt", "max_jerk"),
+        reference="Standard jerk constraint violation metric",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -369,6 +406,7 @@ def create_default_registry() -> MetricRegistry:
         category="physics",
         unit="1/m",
         required_inputs=("traj", "max_curvature"),
+        reference="Standard curvature constraint violation metric",
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
@@ -378,6 +416,8 @@ def create_default_registry() -> MetricRegistry:
         unit="score",
         required_inputs=("traj", "dt"),
         default_kwargs={"constraints": {}},
+        reference="RoboMetrics internal heuristic",
+        is_novel=True,
         compatibility=_trajectory_input("traj"),
     )
 

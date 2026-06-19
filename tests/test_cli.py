@@ -31,7 +31,9 @@ def test_cli_lists_metrics_as_json(capsys) -> None:
 
     payload = json.loads(capsys.readouterr().out)
 
-    assert any(metric["name"] == "ade" for metric in payload)
+    ade = next(metric for metric in payload if metric["name"] == "ade")
+    assert ade["reference"] == "Alahi et al., Social Force, CVPR 2016"
+    assert ade["is_novel"] is False
 
 
 def test_cli_lists_metrics_as_csv(capsys) -> None:

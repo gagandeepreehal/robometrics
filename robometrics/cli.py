@@ -17,6 +17,8 @@ class MetricPayload(TypedDict):
     unit: str
     required_inputs: list[str]
     aliases: list[str]
+    reference: str
+    is_novel: bool
     description: str
 
 
@@ -115,6 +117,8 @@ def _describe_metric(metric_name: str, *, output_format: str) -> int:
     print(f"Unit: {payload['unit'] or '-'}")
     print(f"Required inputs: {', '.join(payload['required_inputs']) or '-'}")
     print(f"Aliases: {', '.join(payload['aliases']) or '-'}")
+    print(f"Reference: {payload['reference'] or '-'}")
+    print(f"Novel: {payload['is_novel']}")
     print(f"Description: {payload['description'] or '-'}")
     return 0
 
@@ -126,6 +130,8 @@ def _metric_payload(metric: MetricDefinition) -> MetricPayload:
         "unit": metric.unit,
         "required_inputs": list(metric.required_inputs),
         "aliases": list(metric.aliases),
+        "reference": metric.reference,
+        "is_novel": metric.is_novel,
         "description": metric.description,
     }
 

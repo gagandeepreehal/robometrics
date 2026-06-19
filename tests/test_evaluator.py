@@ -21,6 +21,8 @@ def test_evaluator_runs_named_metrics_with_thresholds() -> None:
     assert result.results[0].value == pytest.approx((0.0 + 0.1 + 0.1) / 3.0)
     assert result.results[0].passed is True
     assert result.passed is True
+    assert result.results[0].metadata["reference"] == "Alahi et al., Social Force, CVPR 2016"
+    assert result.results[0].metadata["is_novel"] is False
     assert result.metadata["robometrics_version"] == __version__
 
 
