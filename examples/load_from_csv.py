@@ -26,7 +26,11 @@ def main() -> None:
                 ]
             )
 
-        trajectory = load_trajectory_csv(csv_path)
+        try:
+            trajectory = load_trajectory_csv(csv_path)
+        except ImportError as exc:
+            print(exc)
+            return
         print(f"Loaded shape: {trajectory.shape}")
         print(f"Path length: {path_length(trajectory):.3f} m")
 

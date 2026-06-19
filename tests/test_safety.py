@@ -11,6 +11,7 @@ from robometrics import (
     min_distance_to_actors,
     time_to_collision,
 )
+from robometrics.geometry import point_in_polygon, points_in_polygon
 from robometrics.schemas import AgentState
 
 
@@ -19,6 +20,13 @@ def test_collision_rate_counts_time_aligned_collisions() -> None:
     actors = np.array([[[10.0, 0.0], [1.4, 0.0], [10.0, 0.0]]])
 
     assert collision_rate(ego, actors, ego_radius=0.5, actor_radius=0.5) == pytest.approx(1.0 / 3.0)
+
+
+def test_collision_rate_uses_3d_distances() -> None:
+    ego = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+    actors = np.array([[[0.0, 0.0, 2.0], [1.0, 0.0, 0.4]]])
+
+    assert collision_rate(ego, actors, ego_radius=0.5, actor_radius=0.5) == pytest.approx(0.5)
 
 
 def test_collision_rate_no_actors_or_no_collision() -> None:
@@ -45,12 +53,31 @@ def test_time_to_collision_constant_velocity() -> None:
     assert time_to_collision([0.0, 0.0, 0.0, 0.0, 1.0], [1.0, 0.0, 0.0, 0.0, 1.0]) == 0.0
 
 
+def test_time_to_collision_accepts_trajectory_inputs_with_dt() -> None:
+    ego = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+    actor = np.array([[10.0, 0.0], [10.0, 0.0], [10.0, 0.0]])
+
+    assert time_to_collision(ego, actor, dt=1.0) == pytest.approx(10.0)
+
+
+def test_time_to_collision_trajectory_inputs_require_two_points() -> None:
+    with pytest.raises(ValueError, match="at least two points"):
+        time_to_collision(np.array([[0.0, 0.0]]), np.array([[1.0, 0.0]]), dt=1.0)
+
+
 def test_min_distance_to_actors() -> None:
     ego = np.array([[0.0, 0.0], [1.0, 0.0]])
     actors = [np.array([[5.0, 0.0], [1.5, 0.0]])]
 
     assert min_distance_to_actors(ego, actors) == pytest.approx(0.5)
     assert min_distance_to_actors(ego, []) == inf
+
+
+def test_min_distance_to_actors_uses_3d_distances() -> None:
+    ego = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+    actors = [np.array([[0.0, 0.0, 3.0], [1.0, 0.0, 4.0]])]
+
+    assert min_distance_to_actors(ego, actors) == pytest.approx(3.0)
 
 
 def test_lane_departure_rate_uses_polygon_boundary() -> None:
@@ -75,6 +102,23 @@ def test_lane_departure_rejects_collinear_polygon() -> None:
 
     with pytest.raises(ValueError, match="non-zero polygon area"):
         lane_departure_rate(ego, lane)
+
+
+def test_points_in_polygon_matches_scalar_helper_for_boundary_and_interior() -> None:
+    points = np.array(
+        [
+            [0.0, 0.0],
+            [2.0, 0.0],
+            [3.0, 0.0],
+            [-1.0, -1.0],
+        ]
+    )
+    polygon = np.array([[-1.0, -1.0], [2.0, -1.0], [2.0, 1.0], [-1.0, 1.0]])
+
+    vectorized = points_in_polygon(points, polygon)
+    scalar = np.array([point_in_polygon(point, polygon) for point in points])
+
+    assert np.array_equal(vectorized, scalar)
 
 
 def test_safety_rejects_invalid_values() -> None:

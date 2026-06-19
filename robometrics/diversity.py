@@ -1,4 +1,4 @@
-"""Behavioral diversity metrics."""
+"""Behavioral and trajectory diversity metrics."""
 
 from __future__ import annotations
 
@@ -8,7 +8,21 @@ from typing import Optional
 import numpy as np
 from numpy.typing import ArrayLike
 
-from robometrics.geometry import FloatArray, as_numeric_array
+from robometrics.geometry import FloatArray, as_numeric_array, as_prediction_set
+
+
+def trajectory_diversity(predictions: ArrayLike) -> float:
+    """Return mean pairwise ADE between predicted trajectory modes."""
+    pred_arr = as_prediction_set(predictions)
+    if pred_arr.shape[0] < 2:
+        return 0.0
+
+    distances = []
+    for left in range(pred_arr.shape[0]):
+        for right in range(left + 1, pred_arr.shape[0]):
+            pairwise = np.linalg.norm(pred_arr[left] - pred_arr[right], axis=1)
+            distances.append(float(np.mean(pairwise)))
+    return float(np.mean(distances))
 
 
 def behavioral_diversity(
@@ -17,24 +31,7 @@ def behavioral_diversity(
     max_pairs: Optional[int] = 10_000,
     normalize: bool = False,
 ) -> float:
-    """Return mean pairwise distance between unique behaviors.
-
-    Formula:
-        Accept behavior embeddings shaped ``NxD`` or trajectory/action batches
-        shaped ``NxTxD``. Flatten each behavior to one vector, remove duplicate
-        rows, and compute the mean Euclidean distance over unique behavior
-        pairs. If ``normalize`` is true, divide each distance by
-        ``sqrt(feature_count)``.
-
-    Inputs:
-        Finite numeric behavior arrays. ``max_pairs`` optionally caps the
-        number of pair distances using deterministic, evenly spaced pair
-        indices; no randomness is used.
-
-    Output:
-        A non-negative diversity score where higher means more diverse.
-        Fewer than two unique behaviors return ``0.0``.
-    """
+    """Return mean pairwise distance between unique behaviors."""
     matrix = _as_behavior_matrix(behaviors)
     unique_behaviors = np.unique(matrix, axis=0)
     count = unique_behaviors.shape[0]
@@ -76,7 +73,6 @@ def _as_behavior_matrix(behaviors: ArrayLike) -> FloatArray:
 
 
 def _pair_from_condensed_index(index: int, count: int) -> tuple[int, int]:
-    # Pair order matches nested loops: (0, 1), (0, 2), ..., (1, 2), ...
     left = int((2 * count - 1 - sqrt((2 * count - 1) ** 2 - 8 * index)) // 2)
     pairs_before_left = left * (2 * count - left - 1) // 2
     right = index - pairs_before_left + left + 1

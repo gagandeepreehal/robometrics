@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import Literal
 
 import numpy as np
 from numpy.typing import ArrayLike
 
 from robometrics.geometry import FloatArray, as_trajectory, validate_positive, vector_norms
+
+_FLOAT_NOISE_TOLERANCE = 1e-10
 
 
 def acceleration(traj: ArrayLike, dt: float) -> FloatArray:
@@ -21,7 +24,7 @@ def _acceleration_from_array(traj_arr: FloatArray, timestep: float) -> FloatArra
     if traj_arr.shape[0] < 3:
         return np.zeros_like(traj_arr, dtype=np.float64)
     velocity = _gradient(traj_arr, timestep)
-    return _gradient(velocity, timestep)
+    return _clip_float_noise(_gradient(velocity, timestep))
 
 
 def jerk(traj: ArrayLike, dt: float) -> FloatArray:
@@ -31,7 +34,7 @@ def jerk(traj: ArrayLike, dt: float) -> FloatArray:
     accel = _acceleration_from_array(traj_arr, timestep)
     if accel.shape[0] < 3:
         return np.zeros_like(accel, dtype=np.float64)
-    return _gradient(accel, timestep)
+    return _clip_float_noise(_gradient(accel, timestep))
 
 
 def acceleration_magnitude(traj: ArrayLike, dt: float) -> FloatArray:
@@ -94,8 +97,24 @@ def smoothness_score(traj: ArrayLike) -> float:
     so shorter trajectories return 1.0 after normal input validation. This is
     a dimensionless shape score, not an inverse of physical ``jerk_cost()``.
     """
-    cost = _dimensionless_jerk_cost(traj)
+    traj_arr = as_trajectory(traj, name="traj")
+    if traj_arr.shape[0] < 4:
+        warnings.warn(
+            "smoothness_score() returns 1.0 for trajectories with fewer than four points "
+            "because third finite differences are not measurable",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return 1.0
+    cost = _dimensionless_jerk_cost(traj_arr)
     return float(1.0 / (1.0 + np.log1p(cost)))
+
+
+def _clip_float_noise(values: FloatArray) -> FloatArray:
+    return np.where(np.abs(values) < _FLOAT_NOISE_TOLERANCE, 0.0, values).astype(
+        np.float64,
+        copy=False,
+    )
 
 
 def _gradient(values: FloatArray, dt: float) -> FloatArray:

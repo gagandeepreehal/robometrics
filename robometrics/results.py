@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -87,6 +87,68 @@ class MetricResult:
         return cls.from_dict(data)
 
 
+@dataclass
+class MetricComparison:
+    """Comparison of one metric across two evaluation results."""
+
+    name: str
+    value_a: float
+    value_b: float
+    delta: float
+    percent_change: float
+    winner: str
+    higher_is_better: bool
+
+
+@dataclass
+class ComparisonResult:
+    """Metric-by-metric comparison between two evaluation results."""
+
+    comparisons: list[MetricComparison]
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_markdown(self) -> str:
+        """Return a GitHub-flavored Markdown comparison table."""
+        lines = [
+            "| Metric | A | B | Delta | Winner |",
+            "| --- | ---: | ---: | ---: | --- |",
+        ]
+        for comparison in self.comparisons:
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        comparison.name,
+                        _format_float(comparison.value_a),
+                        _format_float(comparison.value_b),
+                        _format_float(comparison.delta),
+                        comparison.winner,
+                    ]
+                )
+                + " |"
+            )
+        return "\n".join(lines)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-compatible dictionary."""
+        return {
+            "comparisons": [_json_safe(asdict(comparison)) for comparison in self.comparisons],
+            "metadata": _json_safe(self.metadata),
+            "winner_count": self.winner_count(),
+        }
+
+    def to_json(self) -> str:
+        """Return a JSON string representation."""
+        return json.dumps(self.to_dict(), allow_nan=False, sort_keys=True)
+
+    def winner_count(self) -> dict[str, int]:
+        """Return counts for A, B, and tied metric comparisons."""
+        counts = {"a": 0, "b": 0, "tie": 0}
+        for comparison in self.comparisons:
+            counts[comparison.winner] += 1
+        return counts
+
+
 @dataclass(init=False)
 class EvaluationResult:
     """Collection of metric results from one local evaluation run.
@@ -137,6 +199,54 @@ class EvaluationResult:
         if not statuses:
             return None
         return all(statuses)
+
+    def compare(self, other: EvaluationResult) -> ComparisonResult:
+        """Compare two evaluation results metric by metric.
+
+        Returns a ComparisonResult with per-metric deltas, percent changes,
+        and a winner flag ("a", "b", or "tie") per metric.
+        Directionality is read from metric metadata when available. Results
+        created by ``Evaluator`` include this metadata from the registry.
+        Name-based inference is retained only for manually constructed legacy
+        results that do not carry direction metadata.
+        """
+        self_by_name = {metric.name: metric for metric in self.results}
+        other_by_name = {metric.name: metric for metric in other.results}
+        names = list(self_by_name)
+        names.extend(name for name in other_by_name if name not in self_by_name)
+
+        comparisons = []
+        for name in names:
+            metric_a = self_by_name.get(name)
+            metric_b = other_by_name.get(name)
+            value_a = metric_a.value if metric_a is not None else float("nan")
+            value_b = metric_b.value if metric_b is not None else float("nan")
+            delta = float(value_b - value_a)
+            percent_change = (
+                float(delta / abs(value_a) * 100.0)
+                if np.isfinite(value_a) and value_a != 0.0
+                else float("nan")
+            )
+            higher_is_better = _higher_is_better(name, metric_a, metric_b)
+            comparisons.append(
+                MetricComparison(
+                    name=name,
+                    value_a=value_a,
+                    value_b=value_b,
+                    delta=delta,
+                    percent_change=percent_change,
+                    winner=_winner(value_a, value_b, higher_is_better),
+                    higher_is_better=higher_is_better,
+                )
+            )
+
+        return ComparisonResult(
+            comparisons=comparisons,
+            metadata={
+                "result_a": self.metadata,
+                "result_b": other.metadata,
+            },
+        )
 
     def summary(self) -> dict[str, Any]:
         """Return metric counts, categories, pass status, and aggregate statistics."""
@@ -253,7 +363,7 @@ class EvaluationResult:
 
     def to_dataframe(self) -> Any:
         """Return a pandas DataFrame with one row per metric result."""
-        import pandas as pd
+        pd = _require_pandas("to_dataframe()")
 
         rows = []
         for metric in self.results:
@@ -272,6 +382,7 @@ class EvaluationResult:
 
     def to_csv(self, path: Optional[Union[str, Path]] = None) -> str:
         """Return CSV text, optionally writing it to ``path``."""
+        _require_pandas("to_csv()")
         csv_text = str(self.to_dataframe().to_csv(index=False))
         if path is not None:
             Path(path).write_text(csv_text, encoding="utf-8")
@@ -287,6 +398,63 @@ def _display_name(name: str) -> str:
         "miss_rate": "Miss Rate",
     }
     return special.get(name, name.replace("_", " ").title())
+
+
+def _require_pandas(function_name: str) -> Any:
+    try:
+        import pandas as pd
+    except ImportError as exc:
+        raise ImportError(
+            f"pandas is required for {function_name}. "
+            "Install it with: pip install robometrics[io]"
+        ) from exc
+    return pd
+
+
+_LOWER_IS_BETTER_OVERRIDES = {
+    "collision_rate",
+    "miss_rate",
+    "lane_departure_rate",
+    "near_miss_rate",
+    "offroad_rate",
+    "physics_violation_rate",
+    "joint_limit_violation_rate",
+}
+
+
+def _higher_is_better(
+    name: str,
+    metric_a: Optional[MetricResult] = None,
+    metric_b: Optional[MetricResult] = None,
+) -> bool:
+    for metric in (metric_b, metric_a):
+        if metric is None:
+            continue
+        value = metric.metadata.get("higher_is_better")
+        if isinstance(value, bool):
+            return value
+    if name in _LOWER_IS_BETTER_OVERRIDES:
+        return False
+    suffixes = (
+        "_score",
+        "_rate",
+        "_accuracy",
+        "_diversity",
+        "_smoothness",
+        "success_rate",
+        "feasibility",
+    )
+    return any(name.endswith(suffix) or name == suffix for suffix in suffixes)
+
+
+def _winner(value_a: float, value_b: float, higher_is_better: bool) -> str:
+    if not np.isfinite(value_a) or not np.isfinite(value_b):
+        return "tie"
+    if np.isclose(value_a, value_b, rtol=1e-12, atol=1e-12):
+        return "tie"
+    if higher_is_better:
+        return "a" if value_a > value_b else "b"
+    return "a" if value_a < value_b else "b"
 
 
 def _format_float(value: float) -> str:

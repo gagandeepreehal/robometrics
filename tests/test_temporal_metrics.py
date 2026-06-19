@@ -102,6 +102,8 @@ def test_temporal_metrics_reject_invalid_inputs_and_are_deterministic() -> None:
         action_jerk(valid, dt=0.0)
     with pytest.raises(ValueError, match="non-negative"):
         compounding_error_index(np.array([0.0, -1.0]))
+    with pytest.raises(ValueError, match="T or BxT"):
+        compounding_error_index(np.zeros((1, 1, 1)))
 
     first = long_horizon_drift(valid + 1.0, valid)
     second = long_horizon_drift(valid + 1.0, valid)

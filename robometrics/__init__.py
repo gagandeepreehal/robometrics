@@ -1,6 +1,7 @@
 """RoboMetrics: lightweight robotics metrics for Python."""
 
 from robometrics._version import __version__
+from robometrics.accumulator import MetricAccumulator
 from robometrics.calibration import calibration_error
 from robometrics.comfort import (
     acceleration,
@@ -14,10 +15,29 @@ from robometrics.comfort import (
     rms_acceleration,
     smoothness_score,
 )
-from robometrics.coverage import coverage_score
-from robometrics.diversity import behavioral_diversity
+from robometrics.coverage import coverage_score, workspace_coverage
+from robometrics.diversity import behavioral_diversity, trajectory_diversity
+from robometrics.driving import (
+    displacement_at_k,
+    offroad_rate,
+    prediction_nll,
+    soft_ttc,
+)
 from robometrics.evaluator import EvaluationInputError, Evaluator
-from robometrics.io import TrajectoryIOError
+from robometrics.history import CheckpointEntry, EvaluationHistory
+from robometrics.io import (
+    TrajectoryIOError,
+    load_trajectory_csv,
+    load_trajectory_dir,
+    load_trajectory_json,
+)
+from robometrics.manipulation import (
+    contact_richness,
+    end_effector_tracking_error,
+    force_limit_compliance,
+    grasp_success_rate,
+    joint_limit_violation_rate,
+)
 from robometrics.physics import (
     acceleration_limits_violated,
     curvature_limits_violated,
@@ -29,10 +49,17 @@ from robometrics.physics import (
     speed_profile,
 )
 from robometrics.prediction import min_ade, min_fde, miss_rate, topk_trajectory_error
-from robometrics.registry import MetricDefinition, MetricRegistry, UnknownMetricError, registry
-from robometrics.results import EvaluationResult, MetricResult
+from robometrics.registry import (
+    MetricDefinition,
+    MetricRegistry,
+    UnknownMetricError,
+    load_pack,
+    registry,
+)
+from robometrics.results import ComparisonResult, EvaluationResult, MetricComparison, MetricResult
 from robometrics.safety import (
     collision_rate,
+    collision_rate_obb,
     failure_severity,
     intervention_free_time,
     lane_departure_rate,
@@ -42,6 +69,7 @@ from robometrics.safety import (
     time_to_collision,
 )
 from robometrics.schemas import AgentState, Trajectory
+from robometrics.task import goal_reaching_accuracy, task_success_rate
 from robometrics.temporal import (
     action_jerk,
     compounding_error_index,
@@ -66,10 +94,15 @@ fde = final_displacement_error
 
 __all__ = [
     "AgentState",
+    "CheckpointEntry",
+    "ComparisonResult",
     "EvaluationInputError",
+    "EvaluationHistory",
     "EvaluationResult",
     "Evaluator",
     "MetricDefinition",
+    "MetricComparison",
+    "MetricAccumulator",
     "MetricRegistry",
     "MetricResult",
     "Trajectory",
@@ -85,26 +118,38 @@ __all__ = [
     "behavioral_diversity",
     "calibration_error",
     "collision_rate",
+    "collision_rate_obb",
     "compounding_error_index",
+    "contact_richness",
     "control_smoothness",
     "coverage_score",
     "curvature",
     "curvature_profile",
     "curvature_limits_violated",
+    "displacement_at_k",
     "dynamic_feasibility",
     "dynamic_feasibility_score",
+    "end_effector_tracking_error",
     "failure_severity",
     "fde",
     "final_displacement_error",
+    "force_limit_compliance",
+    "goal_reaching_accuracy",
+    "grasp_success_rate",
     "hausdorff_distance",
     "intervention_free_time",
     "jerk",
     "jerk_cost",
     "jerk_magnitude",
     "jerk_limits_violated",
+    "joint_limit_violation_rate",
     "kinematic_feasibility",
     "lane_departure_rate",
     "lateral_error",
+    "load_pack",
+    "load_trajectory_csv",
+    "load_trajectory_dir",
+    "load_trajectory_json",
     "long_horizon_drift",
     "longitudinal_error",
     "max_acceleration",
@@ -116,14 +161,20 @@ __all__ = [
     "min_fde",
     "miss_rate",
     "near_miss_rate",
+    "offroad_rate",
     "path_length",
     "physics_violation_rate",
+    "prediction_nll",
     "recovery_success_rate",
     "registry",
     "rms_acceleration",
     "smoothness_score",
+    "soft_ttc",
     "speed_profile",
+    "task_success_rate",
     "temporal_drift",
     "time_to_collision",
     "topk_trajectory_error",
+    "trajectory_diversity",
+    "workspace_coverage",
 ]

@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/gagandeepreehal/robometrics/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gagandeepreehal/robometrics/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
+![Coverage](https://img.shields.io/badge/coverage-90%25%20minimum-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![PyPI](https://img.shields.io/pypi/v/robometrics.svg)](https://pypi.org/project/robometrics/)
 
@@ -22,10 +23,15 @@ codebases.
 
 ```bash
 pip install robometrics
+pip install "robometrics[io]"  # CSV loading and pandas exports
 ```
 
 RoboMetrics is primarily a Python library. The installed CLI is intentionally
 small and meant for package verification and metric discovery:
+
+If a user-level pip install places `robometrics` outside `PATH`, use
+`python -m robometrics ...` or add the script directory reported by pip, such as
+`$HOME/Library/Python/3.9/bin` on macOS system Python, to `PATH`.
 
 ```bash
 python -m robometrics --help
@@ -34,10 +40,6 @@ robometrics list-metrics --format json
 robometrics describe ade
 robometrics version
 ```
-
-If a user-level pip install places `robometrics` outside `PATH`, use
-`python -m robometrics ...` or add the script directory reported by pip, such as
-`$HOME/Library/Python/3.9/bin` on macOS system Python, to `PATH`.
 
 For local development:
 
@@ -68,12 +70,19 @@ print("Path length (m):", path_length(ground_truth))
 Runnable examples:
 
 ```bash
+python examples/basic_metrics.py
+python examples/evaluator_quickstart.py
+python examples/thresholds.py
+python examples/export_results.py
 python examples/trajectory_metrics.py
 python examples/prediction_metrics.py
+python examples/driving_metrics.py
 python examples/safety_metrics.py
 python examples/comfort_metrics.py
 python examples/new_metrics_example.py
 python examples/load_from_csv.py
+python examples/evaluator_usage.py
+python examples/manipulation_metrics.py
 ```
 
 ## Input Shapes
@@ -97,6 +106,8 @@ constant-velocity TTC are planar XY metrics.
 
 Empty arrays, NaN/inf values, bad ranks, mismatched trajectory lengths, invalid
 `dt`, and incompatible dimensions raise `ValueError` with a targeted message.
+The `Evaluator` also accepts `Trajectory` schema objects and converts them with
+`.array()` before dispatching metric functions.
 
 ## Units
 
@@ -120,9 +131,15 @@ for common CI summaries. Threshold-style physics helpers return
 and metadata.
 
 `EvaluationResult` is a small container for local batches of metric results and
-can export and reload dictionaries, strict JSON, CSV, Markdown tables, and pandas DataFrames.
+can export and reload dictionaries, strict JSON, Markdown tables, CSV, and
+pandas DataFrames. Install `robometrics[io]` for CSV and pandas-backed exports.
 Non-finite metric values are serialized as `null` in JSON with metadata that
 records whether the original value was `nan`, `inf`, or `-inf`.
+
+`speed_profile()` returns one speed estimate per input point; endpoint speeds
+are finite-difference gradient estimates, not `N-1` interval speeds.
+`curvature()` assumes uniformly spaced samples; resample irregular timestamped
+paths before using curvature or curvature-derived metrics.
 
 ## Metric Categories
 
@@ -187,18 +204,39 @@ rate.
 ```python
 import numpy as np
 
-from robometrics import collision_rate, min_distance_to_actors
+from robometrics import (
+    AgentState,
+    collision_rate,
+    collision_rate_obb,
+    min_distance_to_actors,
+    time_to_collision,
+)
 
 ego = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
 actors = [np.array([[0.0, 2.0], [1.0, 1.0], [2.0, 0.4]])]
 
 print(min_distance_to_actors(ego, actors))                 # meters
 print(collision_rate(ego, actors, ego_radius=0.3, actor_radius=0.3))
+
+ego_state = AgentState(x=0.0, y=0.0, vx=2.0, vy=0.0, radius=0.3)
+actor_state = AgentState(x=10.0, y=0.0, vx=0.0, vy=0.0, radius=0.3)
+print(time_to_collision(ego_state, actor_state))           # seconds
+
+ego_dims = np.array([4.5, 2.0])                            # length, width
+ego_yaws = np.array([0.0, 0.0, 0.0])
+actor_dims = [np.array([4.5, 2.0])]
+actor_yaws = [np.array([0.0, 0.0, 0.0])]
+print(collision_rate_obb(ego, ego_dims, ego_yaws, actors, actor_dims, actor_yaws))
 ```
 
 `collision_rate()` divides by ego timesteps covered by at least one actor
 trajectory. If an actor has only two timesteps, only those two aligned ego
 timesteps contribute to the denominator.
+`time_to_collision()` accepts `AgentState`, dict, flat `[x, y, vx, vy, radius]`
+state arrays, or trajectory arrays when `dt` is supplied. For trajectory inputs,
+the first segment estimates each agent's constant velocity.
+`collision_rate_obb()` uses oriented bounding boxes with dimensions ordered as
+`[length, width]` and yaw angles in radians.
 
 ### Comfort
 
@@ -220,7 +258,9 @@ print(smoothness_score(trajectory))
 squared third finite difference normalized by mean squared step length. The
 score is unitless, invariant to coordinate scale, and separate from physical
 `jerk_cost(traj, dt)`. It returns `1.0` for trajectories with fewer than four
-points because third finite differences are not measurable.
+points with a `RuntimeWarning` because third finite differences are not
+measurable. `acceleration()` and `jerk()` suppress finite-difference roundoff
+noise below `1e-10`.
 
 ### Physics
 
@@ -243,7 +283,7 @@ Zero limits are accepted; positive observed motion against a zero limit scores
 ## CSV And JSON
 
 ```python
-from robometrics.io import load_trajectory_csv, load_trajectory_json
+from robometrics import load_trajectory_csv, load_trajectory_json
 
 csv_traj = load_trajectory_csv("trajectory.csv")
 json_traj = load_trajectory_json("trajectory.json")
@@ -260,7 +300,7 @@ The evaluator and registry are intentionally small helpers for local scripts.
 Use them when named metric selection or threshold reporting is useful:
 
 ```python
-from robometrics import Evaluator, registry
+from robometrics import EvaluationResult, Evaluator, registry
 
 print(registry.list_metrics())
 
@@ -272,7 +312,7 @@ result = Evaluator().evaluate(
 )
 
 print(result.to_json())
-reloaded = result.from_json(result.to_json())
+reloaded = EvaluationResult.from_json(result.to_json())
 ```
 
 Unknown metric names raise `UnknownMetricError` before evaluation starts.
@@ -301,12 +341,19 @@ Before opening a pull request:
 ruff check .
 mypy robometrics
 pytest --cov=robometrics --cov-report=term-missing
+python examples/basic_metrics.py
+python examples/evaluator_quickstart.py
+python examples/thresholds.py
+python examples/export_results.py
 python examples/trajectory_metrics.py
 python examples/prediction_metrics.py
+python examples/driving_metrics.py
 python examples/safety_metrics.py
 python examples/comfort_metrics.py
 python examples/new_metrics_example.py
 python examples/load_from_csv.py
+python examples/evaluator_usage.py
+python examples/manipulation_metrics.py
 ```
 
 ## License

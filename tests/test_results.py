@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 
-import pandas as pd
+import numpy as np
 import pytest
 
+import robometrics.cli as cli
 from robometrics.results import EvaluationResult, MetricResult
 
 
@@ -94,12 +95,14 @@ def test_evaluation_result_summary_and_exports() -> None:
     assert "| Metric | Value | Unit | Passed | Threshold |" in markdown
     assert "ADE" in markdown
 
+    pd = pytest.importorskip("pandas")
     frame = result.to_dataframe()
     assert isinstance(frame, pd.DataFrame)
     assert list(frame["name"]) == ["ade", "fde"]
 
 
 def test_evaluation_result_exports_csv(tmp_path) -> None:
+    pytest.importorskip("pandas")
     result = EvaluationResult(results=[MetricResult(name="ade", value=0.42, unit="meters")])
     path = tmp_path / "results.csv"
 
@@ -195,7 +198,7 @@ def test_evaluation_result_empty_and_nonfinite_formatting() -> None:
             MetricResult(name="fde", value=float("inf")),
             MetricResult(name="min_ade", value=float("-inf")),
         ],
-        metadata={"array": pd.Series([1]).to_numpy(), "scalar": pd.Series([2]).to_numpy()[0]},
+        metadata={"array": np.array([1]), "scalar": np.float64(2)},
     )
     markdown = result.to_markdown()
     payload = result.to_dict()
@@ -204,3 +207,126 @@ def test_evaluation_result_empty_and_nonfinite_formatting() -> None:
     assert "inf" in markdown
     assert "-inf" in markdown
     assert payload["metadata"] == {"array": [1], "scalar": 2}
+
+
+def test_comparison_identical_results_are_ties() -> None:
+    result = EvaluationResult(
+        results=[
+            MetricResult(name="ade", value=1.0),
+            MetricResult(name="task_success_rate", value=0.8),
+        ]
+    )
+
+    comparison = result.compare(result)
+
+    assert all(item.winner == "tie" for item in comparison.comparisons)
+    assert all(item.delta == 0.0 for item in comparison.comparisons)
+    assert comparison.winner_count() == {"a": 0, "b": 0, "tie": 2}
+
+
+def test_comparison_a_wins_all_metrics() -> None:
+    result_a = EvaluationResult(
+        results=[
+            MetricResult(name="ade", value=1.0),
+            MetricResult(name="task_success_rate", value=0.9),
+            MetricResult(name="collision_rate", value=0.0),
+        ]
+    )
+    result_b = EvaluationResult(
+        results=[
+            MetricResult(name="ade", value=2.0),
+            MetricResult(name="task_success_rate", value=0.5),
+            MetricResult(name="collision_rate", value=0.25),
+        ]
+    )
+
+    comparison = result_a.compare(result_b)
+
+    assert comparison.winner_count()["a"] == 3
+    assert {item.name: item.higher_is_better for item in comparison.comparisons} == {
+        "ade": False,
+        "task_success_rate": True,
+        "collision_rate": False,
+    }
+
+
+def test_comparison_uses_registry_direction_metadata_when_present() -> None:
+    result_a = EvaluationResult(
+        results=[
+            MetricResult(
+                name="custom_reward",
+                value=0.5,
+                metadata={"higher_is_better": True},
+            )
+        ]
+    )
+    result_b = EvaluationResult(
+        results=[
+            MetricResult(
+                name="custom_reward",
+                value=0.7,
+                metadata={"higher_is_better": True},
+            )
+        ]
+    )
+
+    comparison = result_a.compare(result_b)
+
+    assert comparison.comparisons[0].winner == "b"
+    assert comparison.comparisons[0].higher_is_better is True
+
+
+def test_comparison_treats_safety_and_violation_rates_as_lower_is_better() -> None:
+    result_a = EvaluationResult(
+        results=[
+            MetricResult(name="offroad_rate", value=0.1),
+            MetricResult(name="joint_limit_violation_rate", value=0.1),
+        ]
+    )
+    result_b = EvaluationResult(
+        results=[
+            MetricResult(name="offroad_rate", value=0.5),
+            MetricResult(name="joint_limit_violation_rate", value=0.5),
+        ]
+    )
+
+    comparison = result_a.compare(result_b)
+
+    assert {item.name: item.winner for item in comparison.comparisons} == {
+        "offroad_rate": "a",
+        "joint_limit_violation_rate": "a",
+    }
+    assert not any(item.higher_is_better for item in comparison.comparisons)
+
+
+def test_comparison_markdown_contains_metric_names() -> None:
+    result_a = EvaluationResult(
+        results=[
+            MetricResult(name="ade", value=1.0),
+            MetricResult(name="task_success_rate", value=0.9),
+        ]
+    )
+    result_b = EvaluationResult(
+        results=[
+            MetricResult(name="ade", value=2.0),
+            MetricResult(name="task_success_rate", value=0.5),
+        ]
+    )
+
+    markdown = result_a.compare(result_b).to_markdown()
+
+    assert "ade" in markdown
+    assert "task_success_rate" in markdown
+
+
+def test_cli_compare_outputs_text(tmp_path, capsys) -> None:
+    result_a = EvaluationResult(results=[MetricResult(name="ade", value=1.0)])
+    result_b = EvaluationResult(results=[MetricResult(name="ade", value=2.0)])
+    a_path = tmp_path / "a.json"
+    b_path = tmp_path / "b.json"
+    a_path.write_text(result_a.to_json(), encoding="utf-8")
+    b_path.write_text(result_b.to_json(), encoding="utf-8")
+
+    assert cli.main(["compare", str(a_path), str(b_path), "--format", "text"]) == 0
+
+    assert capsys.readouterr().out.strip()

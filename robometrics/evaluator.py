@@ -10,6 +10,7 @@ import numpy as np
 from robometrics._version import __version__
 from robometrics.registry import MetricDefinition, MetricRegistry, registry
 from robometrics.results import EvaluationResult, MetricResult
+from robometrics.schemas import Trajectory
 
 
 class EvaluationInputError(ValueError):
@@ -104,9 +105,17 @@ class Evaluator:
         categories: Optional[Union[str, Sequence[str]]] = None,
         thresholds: Optional[Mapping[str, float]] = None,
         metric_kwargs: Optional[Mapping[str, Mapping[str, Any]]] = None,
+        bootstrap_ci: Optional[int] = None,
+        ci_alpha: float = 0.05,
+        bootstrap_seed: Optional[int] = 0,
         **inputs: Any,
     ) -> EvaluationResult:
         """Evaluate matching prediction/ground-truth sequences and aggregate by metric."""
+        _validate_confidence_interval_config(
+            bootstrap_ci=bootstrap_ci,
+            ci_alpha=ci_alpha,
+            bootstrap_seed=bootstrap_seed,
+        )
         if len(predictions) != len(ground_truths):
             raise EvaluationInputError("predictions and ground_truths must have the same length")
         if len(predictions) == 0:
@@ -129,6 +138,9 @@ class Evaluator:
             sample_results,
             thresholds=threshold_map,
             categories=_category_list(categories),
+            bootstrap_ci=bootstrap_ci,
+            ci_alpha=ci_alpha,
+            bootstrap_seed=bootstrap_seed,
         )
 
     def _select_metrics(
@@ -218,16 +230,35 @@ def _build_inputs(
     ground_truth: Optional[Any],
     inputs: Mapping[str, Any],
 ) -> dict[str, Any]:
-    values = {key: value for key, value in inputs.items() if value is not None}
+    values = {
+        key: _coerce_input_value(value)
+        for key, value in inputs.items()
+        if value is not None
+    }
     if prediction is not None:
-        values["prediction"] = prediction
-        for alias in ("pred", "predicted", "predictions", "traj", "trajectory", "ego_traj"):
-            values.setdefault(alias, prediction)
+        prediction_value = _coerce_input_value(prediction)
+        values["prediction"] = prediction_value
+        for alias in ("pred", "predictions", "traj", "trajectory", "ego_traj"):
+            values.setdefault(alias, prediction_value)
     if ground_truth is not None:
-        values["ground_truth"] = ground_truth
+        ground_truth_value = _coerce_input_value(ground_truth)
+        values["ground_truth"] = ground_truth_value
         for alias in ("gt", "ref", "reference"):
-            values.setdefault(alias, ground_truth)
+            values.setdefault(alias, ground_truth_value)
     return values
+
+
+def _coerce_input_value(value: Any) -> Any:
+    if isinstance(value, Trajectory):
+        return value.array()
+    if isinstance(value, list) and any(isinstance(item, Trajectory) for item in value):
+        return [
+            item.array() if isinstance(item, Trajectory) else item
+            for item in value
+        ]
+    if isinstance(value, tuple) and any(isinstance(item, Trajectory) for item in value):
+        return tuple(item.array() if isinstance(item, Trajectory) else item for item in value)
+    return value
 
 
 def _validate_common_array(
@@ -239,7 +270,7 @@ def _validate_common_array(
     if value is None:
         return
     try:
-        arr = np.asarray(value, dtype=np.float64)
+        arr = np.asarray(_coerce_input_value(value), dtype=np.float64)
     except (TypeError, ValueError) as exc:
         raise EvaluationInputError(f"{name} must be a numeric array-like value") from exc
 
@@ -257,8 +288,7 @@ def _validate_common_array(
 def _result_from_raw(metric: MetricDefinition, raw_value: Any) -> MetricResult:
     if isinstance(raw_value, MetricResult):
         metadata = dict(raw_value.metadata)
-        metadata.setdefault("category", metric.category)
-        metadata.setdefault("description", metric.description)
+        metadata.update(_metric_metadata(metric, metadata))
         return MetricResult(
             name=metric.name,
             value=raw_value.value,
@@ -269,8 +299,7 @@ def _result_from_raw(metric: MetricDefinition, raw_value: Any) -> MetricResult:
         )
 
     value, metadata = _coerce_metric_value(raw_value)
-    metadata.setdefault("category", metric.category)
-    metadata.setdefault("description", metric.description)
+    metadata.update(_metric_metadata(metric, metadata))
     return MetricResult(name=metric.name, value=value, unit=metric.unit, metadata=metadata)
 
 
@@ -307,10 +336,9 @@ def _error_result(
     exc: Optional[Exception] = None,
 ) -> MetricResult:
     metadata: dict[str, Any] = {
-        "category": metric.category,
-        "description": metric.description,
         "error": message,
     }
+    metadata.update(_metric_metadata(metric, metadata))
     if exc is not None:
         metadata["error_type"] = type(exc).__name__
     return MetricResult(
@@ -362,6 +390,9 @@ def _aggregate_dataset_results(
     *,
     thresholds: Mapping[str, float],
     categories: list[str],
+    bootstrap_ci: Optional[int] = None,
+    ci_alpha: float = 0.05,
+    bootstrap_seed: Optional[int] = 0,
 ) -> EvaluationResult:
     metric_names: list[str] = []
     for sample in sample_results:
@@ -377,38 +408,39 @@ def _aggregate_dataset_results(
             for index, result in enumerate(sample.results)
             if result.name == name
         ]
-        finite_values = np.asarray(
-            [result.value for result in per_sample if np.isfinite(result.value)],
-            dtype=np.float64,
-        )
         first = per_sample[0]
-        value = float(np.mean(finite_values)) if finite_values.size else float("nan")
-        threshold = thresholds.get(name)
-        aggregate_results.append(
-            MetricResult(
-                name=name,
-                value=value,
-                unit=first.unit,
-                threshold=threshold,
-                passed=None if threshold is None else bool(value <= threshold),
-                metadata={
-                    "category": first.metadata.get("category"),
-                    "description": first.metadata.get("description"),
-                    "sample_count": len(sample_results),
-                    "finite_count": int(finite_values.size),
-                    "mean": value if finite_values.size else None,
-                    "std": float(np.std(finite_values)) if finite_values.size else None,
-                    "min": float(np.min(finite_values)) if finite_values.size else None,
-                    "max": float(np.max(finite_values)) if finite_values.size else None,
-                    "values": [result.value for result in per_sample],
-                    "errors": [
-                        result.metadata.get("error")
-                        for result in per_sample
-                        if "error" in result.metadata
-                    ],
-                },
-            )
+        metric = _aggregate_metric_values(
+            name=name,
+            values=[result.value for result in per_sample],
+            unit=first.unit,
+            metadata_template={
+                "category": first.metadata.get("category"),
+                "description": first.metadata.get("description"),
+                "reference": first.metadata.get("reference"),
+                "is_novel": first.metadata.get("is_novel"),
+                "sample_count": len(sample_results),
+                "errors": [
+                    result.metadata.get("error")
+                    for result in per_sample
+                    if "error" in result.metadata
+                ],
+            },
         )
+        threshold = thresholds.get(name)
+        metric.threshold = threshold
+        metric.passed = None if threshold is None else bool(metric.value <= threshold)
+        aggregate_results.append(metric)
+
+    if bootstrap_ci is not None:
+        rng = np.random.default_rng(bootstrap_seed)
+        for metric in aggregate_results:
+            _add_bootstrap_confidence_interval(
+                metric,
+                bootstrap_ci=bootstrap_ci,
+                ci_alpha=ci_alpha,
+                rng=rng,
+            )
+            metric.metadata["bootstrap_seed"] = bootstrap_seed
 
     return EvaluationResult(
         results=aggregate_results,
@@ -417,5 +449,99 @@ def _aggregate_dataset_results(
             "sample_count": len(sample_results),
             "categories": categories,
             "dataset": True,
+            "bootstrap_seed": bootstrap_seed if bootstrap_ci is not None else None,
         },
     )
+
+
+def _validate_confidence_interval_config(
+    *,
+    bootstrap_ci: Optional[int],
+    ci_alpha: float,
+    bootstrap_seed: Optional[int],
+) -> None:
+    if not 0.0 < float(ci_alpha) < 0.5:
+        raise EvaluationInputError("ci_alpha must be in the open interval (0, 0.5)")
+    if bootstrap_ci is None:
+        return
+    if not isinstance(bootstrap_ci, int) or isinstance(bootstrap_ci, bool) or bootstrap_ci < 100:
+        raise EvaluationInputError(
+            "bootstrap_ci must be at least 100 for reliable confidence intervals"
+        )
+    if (
+        bootstrap_seed is not None
+        and (not isinstance(bootstrap_seed, int) or isinstance(bootstrap_seed, bool))
+    ):
+        raise EvaluationInputError("bootstrap_seed must be an integer or None")
+
+
+def _add_bootstrap_confidence_interval(
+    metric: MetricResult,
+    *,
+    bootstrap_ci: int,
+    ci_alpha: float,
+    rng: np.random.Generator,
+) -> None:
+    values = np.asarray(metric.metadata.get("values", []), dtype=np.float64)
+    finite_values = values[np.isfinite(values)]
+    if finite_values.size < 2:
+        return
+
+    indices = rng.integers(
+        low=0,
+        high=finite_values.size,
+        size=(bootstrap_ci, finite_values.size),
+    )
+    means = np.mean(finite_values[indices], axis=1)
+    percentiles = np.asarray(
+        np.percentile(
+            means,
+            [ci_alpha / 2.0 * 100.0, (1.0 - ci_alpha / 2.0) * 100.0],
+        ),
+        dtype=np.float64,
+    )
+    lower = float(percentiles[0])
+    upper = float(percentiles[1])
+    metric.metadata["ci_lower"] = float(lower)
+    metric.metadata["ci_upper"] = float(upper)
+    metric.metadata["ci_alpha"] = float(ci_alpha)
+    metric.metadata["bootstrap_n"] = int(bootstrap_ci)
+
+
+def _aggregate_metric_values(
+    name: str,
+    values: Sequence[float],
+    unit: str,
+    metadata_template: Mapping[str, Any],
+) -> MetricResult:
+    """Aggregate scalar metric values into one dataset-style MetricResult."""
+    raw_values = [float(value) for value in values]
+    finite_values = np.asarray(
+        [value for value in raw_values if np.isfinite(value)],
+        dtype=np.float64,
+    )
+    value = float(np.mean(finite_values)) if finite_values.size else float("nan")
+    metadata = dict(metadata_template)
+    metadata.update(
+        {
+            "sample_count": int(metadata.get("sample_count", len(raw_values))),
+            "finite_count": int(finite_values.size),
+            "mean": value if finite_values.size else None,
+            "std": float(np.std(finite_values)) if finite_values.size else None,
+            "min": float(np.min(finite_values)) if finite_values.size else None,
+            "max": float(np.max(finite_values)) if finite_values.size else None,
+            "values": raw_values,
+            "errors": list(metadata.get("errors", [])),
+        }
+    )
+    return MetricResult(name=name, value=value, unit=unit, metadata=metadata)
+
+
+def _metric_metadata(metric: MetricDefinition, existing: Mapping[str, Any]) -> dict[str, Any]:
+    metadata = dict(existing)
+    metadata.setdefault("category", metric.category)
+    metadata.setdefault("description", metric.description)
+    metadata.setdefault("reference", metric.reference)
+    metadata.setdefault("is_novel", metric.is_novel)
+    metadata.setdefault("higher_is_better", metric.higher_is_better)
+    return metadata

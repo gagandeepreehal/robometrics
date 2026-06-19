@@ -1,4 +1,4 @@
-"""State and action coverage metrics."""
+"""State, action, and workspace coverage metrics."""
 
 from __future__ import annotations
 
@@ -7,7 +7,15 @@ from typing import Union
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from robometrics.geometry import FloatArray, as_numeric_array
+from robometrics.geometry import FloatArray, as_numeric_array, as_points, validate_positive
+
+
+def workspace_coverage(points: ArrayLike, cell_size: float = 1.0) -> float:
+    """Return the number of occupied grid cells visited by sampled positions."""
+    point_arr = as_points(points, name="points")
+    cell = validate_positive(float(cell_size), name="cell_size")
+    cells = np.floor(point_arr / cell).astype(np.int64)
+    return float(np.unique(cells, axis=0).shape[0])
 
 
 def coverage_score(
@@ -15,24 +23,7 @@ def coverage_score(
     bounds: ArrayLike,
     bins: Union[int, ArrayLike] = 10,
 ) -> float:
-    """Return occupied grid-bin coverage for state or action samples.
-
-    Formula:
-        Given samples shaped ``NxD``, bounds shaped ``Dx2``, and ``bins`` as
-        either a scalar or one positive integer per dimension, assign in-bound
-        samples to grid bins. The score is
-        ``unique_occupied_bins / total_possible_bins``.
-
-    Inputs:
-        ``samples`` are finite numeric state/action rows. ``bounds`` are
-        inclusive lower and upper limits per dimension. Samples outside the
-        bounds are ignored rather than clipped. Duplicate samples in the same
-        bin do not increase coverage.
-
-    Output:
-        A unitless score in ``[0, 1]`` where higher means broader coverage.
-        If no samples fall inside the configured bounds, the score is ``0.0``.
-    """
+    """Return occupied grid-bin coverage for state or action samples."""
     sample_arr = _as_sample_matrix(samples)
     bounds_arr = _as_bounds(bounds, sample_arr.shape[1])
     bin_counts = _as_bin_counts(bins, sample_arr.shape[1])

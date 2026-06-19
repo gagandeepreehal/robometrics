@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 import numpy as np
+import pytest
 
 from robometrics import Evaluator, average_displacement_error, registry
 
@@ -44,4 +45,5 @@ def test_readme_threshold_and_export_examples() -> None:
     assert result.to_dict()["summary"]["passed"] is True
     assert json.loads(result.to_json())["summary"]["passed"] is True
     assert "| Metric | Value | Unit | Passed | Threshold |" in result.to_markdown()
+    pytest.importorskip("pandas")
     assert list(result.to_dataframe()["name"]) == ["ade", "fde"]

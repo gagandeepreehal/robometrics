@@ -4,6 +4,27 @@ All notable changes to RoboMetrics will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows semantic versioning once public releases begin.
 
+## [Unreleased]
+
+### Fixed
+
+- Corrected comparison directionality for `offroad_rate` and
+  `joint_limit_violation_rate`.
+- Made `robometrics compare` pass exact ties on thresholded metrics while still
+  failing missing or non-finite candidate values.
+- Loaded metric packs into a caller-provided registry with
+  `load_pack(module_name, registry=custom_registry)`.
+- Vectorized polygon containment and OBB collision checks used by safety
+  metrics.
+
+### Added
+
+- Registry-level `higher_is_better` metadata for built-in and custom metrics.
+- Documentation site configuration, performance notes, and alpha roadmap.
+- CI coverage threshold and a Python 3.12 `[io]` extras matrix cell.
+- `Evaluator` support for `Trajectory` schema inputs and configurable
+  `bootstrap_seed` for dataset confidence intervals.
+
 ## [0.1.1] - 2026-06-19
 
 ### Added

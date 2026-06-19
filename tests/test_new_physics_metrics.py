@@ -46,6 +46,13 @@ def test_kinematic_feasibility_timestamps_curvature_and_invalid_inputs() -> None
         kinematic_feasibility(positions, max_curvature=1.0)
 
 
+def test_kinematic_feasibility_no_measurable_checks_and_empty_inputs() -> None:
+    assert kinematic_feasibility([0.0], max_velocity=1.0, max_acceleration=1.0) == 1.0
+
+    with pytest.raises(ValueError, match="at least one value"):
+        kinematic_feasibility([], max_velocity=1.0)
+
+
 def test_dynamic_feasibility_force_and_acceleration_cases() -> None:
     accelerations = np.array([[3.0]])
 
@@ -90,6 +97,49 @@ def test_dynamic_feasibility_torque_friction_and_invalid_inputs() -> None:
             accelerations=accelerations,
             friction_coefficients=0.5,
             normal_forces=[10.0],
+        )
+
+
+def test_dynamic_feasibility_explicit_forces_vector_friction_and_invalid_shapes() -> None:
+    accelerations = np.array([[1.0, 0.0], [0.0, 1.0]])
+
+    assert dynamic_feasibility(
+        mass=2.0,
+        accelerations=accelerations,
+        forces=np.array([[1.0, 0.0], [0.0, 1.0]]),
+        max_force=2.0,
+    ) == 1.0
+    assert dynamic_feasibility(
+        mass=1.0,
+        accelerations=accelerations,
+        friction_coefficients=[0.5, 0.5],
+        normal_forces=[10.0, 10.0],
+        tangential_forces=np.array([[3.0, 4.0], [6.0, 0.0]]),
+    ) == pytest.approx(0.5)
+
+    with pytest.raises(ValueError, match="matching samples"):
+        dynamic_feasibility(
+            mass=1.0,
+            accelerations=accelerations,
+            friction_coefficients=0.5,
+            normal_forces=[10.0],
+            tangential_forces=np.array([[1.0, 0.0], [1.0, 0.0]]),
+        )
+    with pytest.raises(ValueError, match="non-negative"):
+        dynamic_feasibility(
+            mass=1.0,
+            accelerations=accelerations,
+            friction_coefficients=-0.1,
+            normal_forces=[10.0, 10.0],
+            tangential_forces=[1.0, 1.0],
+        )
+    with pytest.raises(ValueError, match="1D or 2D"):
+        dynamic_feasibility(
+            mass=1.0,
+            accelerations=accelerations,
+            friction_coefficients=0.5,
+            normal_forces=[10.0, 10.0],
+            tangential_forces=np.zeros((2, 1, 1)),
         )
 
 

@@ -52,7 +52,7 @@ def path_length(traj: ArrayLike) -> float:
 
 
 def curvature(traj: ArrayLike) -> FloatArray:
-    """Return approximate planar XY curvature at each trajectory point."""
+    """Return approximate planar XY curvature assuming uniformly spaced samples."""
     traj_arr = as_trajectory(traj, name="traj")
     points = xy(traj_arr)
     if points.shape[0] < 3:

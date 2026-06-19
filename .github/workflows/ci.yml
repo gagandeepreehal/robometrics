@@ -9,7 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        include:
+          - python-version: "3.9"
+            install-target: ".[dev]"
+          - python-version: "3.10"
+            install-target: ".[dev]"
+          - python-version: "3.11"
+            install-target: ".[dev]"
+          - python-version: "3.12"
+            install-target: ".[dev,io]"
 
     steps:
       - uses: actions/checkout@v4
@@ -17,13 +25,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -e "${{ matrix.install-target }}"
       - name: Ruff
         run: ruff check .
       - name: Mypy
         run: mypy robometrics
       - name: Pytest
-        run: pytest --cov=robometrics --cov-report=term-missing
+        run: pytest --cov=robometrics --cov-report=term-missing --cov-fail-under=90
       - name: Examples smoke test
         run: |
           python examples/basic_metrics.py
@@ -32,6 +40,9 @@ jobs:
           python examples/export_results.py
           python examples/trajectory_metrics.py
           python examples/prediction_metrics.py
+          python examples/driving_metrics.py
           python examples/safety_metrics.py
           python examples/comfort_metrics.py
           python examples/load_from_csv.py
+          python examples/evaluator_usage.py
+          python examples/manipulation_metrics.py

@@ -23,6 +23,14 @@ python examples/basic_metrics.py
 python examples/evaluator_quickstart.py
 python examples/thresholds.py
 python examples/export_results.py
+python examples/trajectory_metrics.py
+python examples/prediction_metrics.py
+python examples/driving_metrics.py
+python examples/safety_metrics.py
+python examples/comfort_metrics.py
+python examples/load_from_csv.py
+python examples/evaluator_usage.py
+python examples/manipulation_metrics.py
 ```
 
 ## Adding Metrics

@@ -34,6 +34,7 @@ def test_failure_severity_numeric_category_and_monotonic_cases() -> None:
     assert failure_severity([1.0, 2.0, 3.0], aggregation="max") == pytest.approx(3.0)
     assert failure_severity([]) == 0.0
     assert failure_severity(["minor", "critical"]) == pytest.approx(2.5)
+    assert failure_severity(["stall"], category_scores={"stall": 2.5}) == pytest.approx(2.5)
     assert failure_severity([3.0, 4.0]) > failure_severity([1.0, 2.0])
 
 
@@ -42,6 +43,10 @@ def test_failure_severity_invalid_inputs() -> None:
         failure_severity([1.0], aggregation="median")  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="non-negative"):
         failure_severity([-1.0])
+    with pytest.raises(ValueError, match="finite"):
+        failure_severity([float("inf")])
+    with pytest.raises(ValueError, match="non-negative"):
+        failure_severity(["minor"], category_scores={"minor": -1.0})
     with pytest.raises(ValueError, match="unknown failure category"):
         failure_severity(["unknown"])
 
@@ -50,6 +55,7 @@ def test_near_miss_rate_hand_calculated_collision_exclusion() -> None:
     clearances = np.array([0.2, 0.5, 1.5, 0.1])
     collisions = np.array([False, True, False, False])
 
+    assert near_miss_rate(clearances, threshold=1.0) == 0.75
     assert near_miss_rate(clearances, threshold=1.0, collision_mask=collisions) == 0.5
     assert near_miss_rate(clearances, threshold=0.3, collision_mask=collisions) == 0.5
     assert near_miss_rate(clearances, threshold=2.0, collision_mask=collisions) == 0.75
@@ -60,6 +66,8 @@ def test_near_miss_rate_invalid_inputs() -> None:
         near_miss_rate([0.1], threshold=0.0)
     with pytest.raises(ValueError, match="same shape"):
         near_miss_rate([0.1, 0.2], threshold=1.0, collision_mask=[False])
+    with pytest.raises(ValueError, match="at least one value"):
+        near_miss_rate([], threshold=1.0)
 
 
 def test_intervention_free_time_interval_convention_and_modes() -> None:
@@ -80,6 +88,8 @@ def test_intervention_free_time_invalid_and_deterministic() -> None:
         intervention_free_time([0.0, 2.0, 1.0], interventions)
     with pytest.raises(ValueError, match="same shape"):
         intervention_free_time(timestamps, [False, True])
+    with pytest.raises(ValueError, match="1D"):
+        intervention_free_time(timestamps, [[False, True, False]])
     with pytest.raises(ValueError, match="mode"):
         intervention_free_time(timestamps, interventions, mode="median")  # type: ignore[arg-type]
 

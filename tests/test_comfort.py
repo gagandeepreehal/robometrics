@@ -37,7 +37,8 @@ def test_smoothness_score_is_spatial_scale_invariant() -> None:
 def test_smoothness_score_short_trajectories_are_degenerate() -> None:
     traj = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
 
-    assert smoothness_score(traj) == 1.0
+    with pytest.warns(RuntimeWarning, match="fewer than four points"):
+        assert smoothness_score(traj) == 1.0
 
 
 def test_smoothness_score_penalizes_rough_shape() -> None:
@@ -79,6 +80,13 @@ def test_quadratic_motion_has_constant_acceleration() -> None:
     assert rms_acceleration(traj, dt=1.0) == pytest.approx(2.0)
     assert np.allclose(jerk_magnitude(traj, dt=1.0), np.zeros(5))
     assert jerk_cost(traj, dt=1.0) == pytest.approx(0.0)
+
+
+def test_quadratic_motion_jerk_clips_roundoff_noise() -> None:
+    t = np.arange(6, dtype=np.float64)
+    traj = np.column_stack((t**2, np.zeros_like(t)))
+
+    assert np.array_equal(jerk(traj, dt=0.5), np.zeros_like(traj))
 
 
 def test_max_deceleration_for_slowing_trajectory() -> None:

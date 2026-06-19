@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Optional
+
 import numpy as np
 from numpy.typing import ArrayLike
 
@@ -10,29 +12,21 @@ from robometrics.geometry import as_boolean_mask, as_numeric_array
 
 def calibration_error(
     confidences: ArrayLike,
-    correctness: ArrayLike,
+    correctness: Optional[ArrayLike] = None,
     *,
+    outcomes: Optional[ArrayLike] = None,
     n_bins: int = 10,
 ) -> float:
-    """Return Expected Calibration Error for confidence predictions.
+    """Return Expected Calibration Error for confidence predictions."""
+    if correctness is None and outcomes is None:
+        raise ValueError("calibration_error requires correctness or outcomes")
+    if correctness is not None and outcomes is not None:
+        raise ValueError("provide either correctness or outcomes, not both")
+    labels = correctness if correctness is not None else outcomes
+    assert labels is not None
 
-    Formula:
-        Flatten confidence and correctness arrays. Partition confidence values
-        into ``n_bins`` uniform bins over ``[0, 1]``. For every non-empty bin,
-        compute ``abs(mean(correctness_bin) - mean(confidence_bin))`` and weight
-        it by ``count_bin / total_count``. The result is the sum of these
-        weighted gaps.
-
-    Inputs:
-        ``confidences`` must be finite probabilities in ``[0, 1]``.
-        ``correctness`` must be boolean or 0/1 labels with the same shape.
-
-    Output:
-        A unitless non-negative error where lower is better. Perfect
-        calibration returns ``0.0`` for the chosen bins.
-    """
     confidence_arr = as_numeric_array(confidences, name="confidences").reshape(-1)
-    correctness_arr = as_boolean_mask(correctness, name="correctness").reshape(-1)
+    correctness_arr = as_boolean_mask(labels, name="correctness").reshape(-1)
     if confidence_arr.shape != correctness_arr.shape:
         raise ValueError("confidences and correctness must have the same shape")
     if confidence_arr.size == 0:
@@ -42,12 +36,17 @@ def calibration_error(
     if n_bins <= 0:
         raise ValueError("n_bins must be positive")
 
-    bin_indices = np.minimum((confidence_arr * n_bins).astype(np.int64), n_bins - 1)
+    edges = np.linspace(0.0, 1.0, int(n_bins) + 1)
     total = float(confidence_arr.size)
     error = 0.0
     correctness_float = correctness_arr.astype(np.float64)
-    for bin_index in range(n_bins):
-        member_mask = bin_indices == bin_index
+    for bin_index in range(int(n_bins)):
+        lower = edges[bin_index]
+        upper = edges[bin_index + 1]
+        if bin_index == int(n_bins) - 1:
+            member_mask = (confidence_arr >= lower) & (confidence_arr <= upper)
+        else:
+            member_mask = (confidence_arr >= lower) & (confidence_arr < upper)
         if not np.any(member_mask):
             continue
         bin_accuracy = float(np.mean(correctness_float[member_mask]))

@@ -15,10 +15,7 @@ result = evaluator.evaluate(
 )
 ```
 
-`prediction` and `ground_truth` are mapped to the argument names used by
-built-in metrics. Metric-specific inputs can be supplied as keyword arguments,
-such as `dt`, `actor_trajs`, `ego_radius`, `actor_radius`, `lane_boundary`,
-`constraints`, `actions`, `clearances`, `bounds`, `bins`, `k`, or `threshold`.
+`prediction` and `ground_truth` are mapped to the argument names used by built-in metrics. They may be NumPy-like arrays or `Trajectory` schema objects. Metric-specific inputs can be supplied as keyword arguments, such as `dt`, `actor_trajs`, `ego_radius`, `actor_radius`, `lane_boundary`, `constraints`, `k`, or `threshold`.
 If an automatically selected category has no runnable metrics because a
 required input is missing, the evaluator reports the missing input names, such
 as `dt` for comfort metrics.
@@ -90,8 +87,11 @@ payload = result.to_json()
 markdown = result.to_markdown()
 frame = result.to_dataframe()
 csv_text = result.to_csv()
-reloaded = result.from_json(result.to_json())
+reloaded = EvaluationResult.from_json(result.to_json())
 ```
+
+`to_dataframe()` and `to_csv()` require pandas. Install `robometrics[io]` to use
+those export paths.
 
 `to_json()` emits standards-compliant JSON. Non-finite metric values such as `NaN` or `inf` are exported as `null`.
 Each affected metric includes `metadata["value_serialization"]` so strict JSON
@@ -133,11 +133,16 @@ dataset_result = evaluator.evaluate_dataset(
     ground_truths=[gt_a, gt_b],
     metrics=["ade", "fde"],
     thresholds={"ade": 0.5, "fde": 1.0},
+    bootstrap_ci=1000,
+    bootstrap_seed=0,
 )
 ```
 
 Each aggregate result stores the mean in `value` and sample count, finite count,
 min, max, standard deviation, raw values, and sample errors in metadata.
+When `bootstrap_ci` is set, `bootstrap_seed` controls the random resampling used
+for confidence intervals; the default `0` preserves reproducible output, and
+passing another integer changes the resampling stream.
 
 ## Registry
 

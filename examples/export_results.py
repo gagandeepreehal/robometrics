@@ -29,7 +29,10 @@ def main() -> None:
     print("\nMarkdown:")
     print(result.to_markdown())
     print("\nDataFrame:")
-    print(result.to_dataframe())
+    try:
+        print(result.to_dataframe())
+    except ImportError as exc:
+        print(exc)
 
 
 if __name__ == "__main__":
