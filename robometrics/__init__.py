@@ -1,6 +1,7 @@
 """RoboMetrics: lightweight robotics metrics for Python."""
 
 from robometrics._version import __version__
+from robometrics.accumulator import MetricAccumulator
 from robometrics.calibration import calibration_error
 from robometrics.comfort import (
     acceleration,
@@ -79,6 +80,7 @@ __all__ = [
     "Evaluator",
     "MetricDefinition",
     "MetricComparison",
+    "MetricAccumulator",
     "MetricRegistry",
     "MetricResult",
     "Trajectory",

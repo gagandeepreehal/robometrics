@@ -374,40 +374,28 @@ def _aggregate_dataset_results(
             for index, result in enumerate(sample.results)
             if result.name == name
         ]
-        finite_values = np.asarray(
-            [result.value for result in per_sample if np.isfinite(result.value)],
-            dtype=np.float64,
-        )
         first = per_sample[0]
-        value = float(np.mean(finite_values)) if finite_values.size else float("nan")
-        threshold = thresholds.get(name)
-        aggregate_results.append(
-            MetricResult(
-                name=name,
-                value=value,
-                unit=first.unit,
-                threshold=threshold,
-                passed=None if threshold is None else bool(value <= threshold),
-                metadata={
-                    "category": first.metadata.get("category"),
-                    "description": first.metadata.get("description"),
-                    "reference": first.metadata.get("reference"),
-                    "is_novel": first.metadata.get("is_novel"),
-                    "sample_count": len(sample_results),
-                    "finite_count": int(finite_values.size),
-                    "mean": value if finite_values.size else None,
-                    "std": float(np.std(finite_values)) if finite_values.size else None,
-                    "min": float(np.min(finite_values)) if finite_values.size else None,
-                    "max": float(np.max(finite_values)) if finite_values.size else None,
-                    "values": [result.value for result in per_sample],
-                    "errors": [
-                        result.metadata.get("error")
-                        for result in per_sample
-                        if "error" in result.metadata
-                    ],
-                },
-            )
+        metric = _aggregate_metric_values(
+            name=name,
+            values=[result.value for result in per_sample],
+            unit=first.unit,
+            metadata_template={
+                "category": first.metadata.get("category"),
+                "description": first.metadata.get("description"),
+                "reference": first.metadata.get("reference"),
+                "is_novel": first.metadata.get("is_novel"),
+                "sample_count": len(sample_results),
+                "errors": [
+                    result.metadata.get("error")
+                    for result in per_sample
+                    if "error" in result.metadata
+                ],
+            },
         )
+        threshold = thresholds.get(name)
+        metric.threshold = threshold
+        metric.passed = None if threshold is None else bool(metric.value <= threshold)
+        aggregate_results.append(metric)
 
     return EvaluationResult(
         results=aggregate_results,
@@ -418,6 +406,35 @@ def _aggregate_dataset_results(
             "dataset": True,
         },
     )
+
+
+def _aggregate_metric_values(
+    name: str,
+    values: Sequence[float],
+    unit: str,
+    metadata_template: Mapping[str, Any],
+) -> MetricResult:
+    """Aggregate scalar metric values into one dataset-style MetricResult."""
+    raw_values = [float(value) for value in values]
+    finite_values = np.asarray(
+        [value for value in raw_values if np.isfinite(value)],
+        dtype=np.float64,
+    )
+    value = float(np.mean(finite_values)) if finite_values.size else float("nan")
+    metadata = dict(metadata_template)
+    metadata.update(
+        {
+            "sample_count": int(metadata.get("sample_count", len(raw_values))),
+            "finite_count": int(finite_values.size),
+            "mean": value if finite_values.size else None,
+            "std": float(np.std(finite_values)) if finite_values.size else None,
+            "min": float(np.min(finite_values)) if finite_values.size else None,
+            "max": float(np.max(finite_values)) if finite_values.size else None,
+            "values": raw_values,
+            "errors": list(metadata.get("errors", [])),
+        }
+    )
+    return MetricResult(name=name, value=value, unit=unit, metadata=metadata)
 
 
 def _metric_metadata(metric: MetricDefinition, existing: Mapping[str, Any]) -> dict[str, Any]:
