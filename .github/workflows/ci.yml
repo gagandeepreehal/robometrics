@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -30,3 +30,8 @@ jobs:
           python examples/evaluator_quickstart.py
           python examples/thresholds.py
           python examples/export_results.py
+          python examples/trajectory_metrics.py
+          python examples/prediction_metrics.py
+          python examples/safety_metrics.py
+          python examples/comfort_metrics.py
+          python examples/load_from_csv.py

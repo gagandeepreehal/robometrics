@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from math import inf, sqrt
-from typing import Any
+from typing import Any, Union
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -44,8 +44,8 @@ def collision_rate(
 
 
 def time_to_collision(
-    ego_state: AgentState | ArrayLike | dict[str, Any],
-    actor_state: AgentState | ArrayLike | dict[str, Any],
+    ego_state: Union[AgentState, ArrayLike, dict[str, Any]],
+    actor_state: Union[AgentState, ArrayLike, dict[str, Any]],
 ) -> float:
     """Return constant-velocity time to collision for two disc agents.
 
@@ -103,7 +103,7 @@ def lane_departure_rate(ego_traj: ArrayLike, lane_boundary: ArrayLike) -> float:
     return float(np.mean(~inside))
 
 
-def _coerce_agent_state(state: AgentState | ArrayLike | dict[str, Any]) -> AgentState:
+def _coerce_agent_state(state: Union[AgentState, ArrayLike, dict[str, Any]]) -> AgentState:
     if isinstance(state, AgentState):
         return state
     if isinstance(state, dict):

@@ -7,7 +7,7 @@ name = "robometrics"
 version = "0.1.0"
 description = "Lightweight robotics metrics for Python."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 license = "MIT"
 authors = [{ name = "RoboMetrics contributors" }]
 maintainers = [{ name = "RoboMetrics contributors" }]
@@ -19,6 +19,7 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -34,7 +35,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "coverage[toml]>=7",
-  "mypy>=1.10",
+  "mypy>=1.10,<1.18",
   "pre-commit>=3.5",
   "pytest-cov>=5",
   "pytest>=8",
@@ -60,13 +61,14 @@ addopts = "-ra"
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py39"
 
 [tool.ruff.lint]
 select = ["B", "E", "F", "I", "SIM", "UP"]
+ignore = ["UP007", "UP045"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.9"
 packages = ["robometrics"]
 disallow_untyped_defs = true
 no_implicit_optional = true

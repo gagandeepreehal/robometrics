@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -17,9 +17,12 @@ class TrajectoryIOError(ValueError):
     """Raised when a trajectory file cannot be read or parsed."""
 
 
-def load_numpy(source: str | Path | ArrayLike) -> FloatArray:
+PathLike = Union[str, Path]
+
+
+def load_numpy(source: Union[PathLike, ArrayLike]) -> FloatArray:
     """Load a trajectory from an in-memory array or .npy/.npz file."""
-    if isinstance(source, str | Path):
+    if isinstance(source, (str, Path)):
         path = Path(source)
         if not path.exists():
             raise TrajectoryIOError(f"trajectory file does not exist: {path}")
@@ -43,11 +46,11 @@ def load_numpy(source: str | Path | ArrayLike) -> FloatArray:
 
 
 def load_csv(
-    path: str | Path,
+    path: PathLike,
     *,
     x_col: str = "x",
     y_col: str = "y",
-    z_col: str | None = None,
+    z_col: Optional[str] = None,
 ) -> FloatArray:
     """Load a trajectory from a CSV file with x/y columns and optional z."""
     csv_path = Path(path)
@@ -65,17 +68,17 @@ def load_csv(
 
 
 def load_trajectory_csv(
-    path: str | Path,
+    path: PathLike,
     *,
     x_col: str = "x",
     y_col: str = "y",
-    z_col: str | None = None,
+    z_col: Optional[str] = None,
 ) -> FloatArray:
     """Load a finite ``Nx2`` or ``Nx3`` trajectory from a CSV file."""
     return load_csv(path, x_col=x_col, y_col=y_col, z_col=z_col)
 
 
-def load_json(path: str | Path) -> FloatArray:
+def load_json(path: PathLike) -> FloatArray:
     """Load a trajectory from JSON.
 
     Supported format:
@@ -112,12 +115,12 @@ def load_json(path: str | Path) -> FloatArray:
     return as_trajectory(points, name="trajectory")
 
 
-def load_trajectory_json(path: str | Path) -> FloatArray:
+def load_trajectory_json(path: PathLike) -> FloatArray:
     """Load a finite ``Nx2`` or ``Nx3`` trajectory from a JSON file."""
     return load_json(path)
 
 
-def load_trajectory(path: str | Path) -> FloatArray:
+def load_trajectory(path: PathLike) -> FloatArray:
     """Load a trajectory from .npy, .npz, .csv, or .json."""
     trajectory_path = Path(path)
     suffix = trajectory_path.suffix.lower()

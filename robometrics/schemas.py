@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -22,7 +22,7 @@ class Trajectory:
     """
 
     points: list[list[float]]
-    timestamps: list[float] | None = None
+    timestamps: Optional[list[float]] = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -65,7 +65,7 @@ class AgentState:
     y: float
     vx: float = 0.0
     vy: float = 0.0
-    heading: float | None = None
+    heading: Optional[float] = None
     radius: float = 0.0
     metadata: dict[str, Any] = field(default_factory=dict)
 

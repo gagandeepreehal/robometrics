@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional, Union
 
 import numpy as np
 
@@ -25,8 +25,8 @@ class MetricResult:
     name: str
     value: float
     unit: str = ""
-    passed: bool | None = None
-    threshold: float | None = None
+    passed: Optional[bool] = None
+    threshold: Optional[float] = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -67,10 +67,10 @@ class EvaluationResult:
 
     def __init__(
         self,
-        results: list[MetricResult] | None = None,
-        metadata: dict[str, Any] | None = None,
+        results: Optional[list[MetricResult]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         *,
-        metrics: list[MetricResult] | None = None,
+        metrics: Optional[list[MetricResult]] = None,
     ) -> None:
         if results is not None and metrics is not None:
             raise ValueError("provide either results or metrics, not both")
@@ -88,7 +88,7 @@ class EvaluationResult:
         self.results = value
 
     @property
-    def passed(self) -> bool | None:
+    def passed(self) -> Optional[bool]:
         """Return aggregate pass status when all metric results define pass/fail."""
         statuses = [metric.passed for metric in self.results]
         if not statuses or any(status is None for status in statuses):
@@ -108,7 +108,7 @@ class EvaluationResult:
                 if category
             }
         )
-        aggregate: dict[str, float | int | None] = {"count": int(values.size)}
+        aggregate: dict[str, Optional[Union[float, int]]] = {"count": int(values.size)}
         if values.size:
             aggregate.update(
                 {

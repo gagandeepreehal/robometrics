@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import TypeAlias
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-FloatArray: TypeAlias = NDArray[np.float64]
+FloatArray = NDArray[np.float64]
 
 
 def as_trajectory(data: ArrayLike, *, name: str = "trajectory") -> FloatArray:

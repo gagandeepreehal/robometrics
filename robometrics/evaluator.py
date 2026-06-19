@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import Any, Optional, Union
 
 import numpy as np
 
@@ -18,18 +18,18 @@ class EvaluationInputError(ValueError):
 class Evaluator:
     """Evaluate registered RoboMetrics metrics against local Python inputs."""
 
-    def __init__(self, metric_registry: MetricRegistry | None = None) -> None:
+    def __init__(self, metric_registry: Optional[MetricRegistry] = None) -> None:
         self.registry = metric_registry or registry
 
     def evaluate(
         self,
         *,
-        prediction: Any | None = None,
-        ground_truth: Any | None = None,
-        metrics: str | Sequence[str] | None = "all",
-        categories: str | Sequence[str] | None = None,
-        thresholds: Mapping[str, float] | None = None,
-        metric_kwargs: Mapping[str, Mapping[str, Any]] | None = None,
+        prediction: Optional[Any] = None,
+        ground_truth: Optional[Any] = None,
+        metrics: Optional[Union[str, Sequence[str]]] = "all",
+        categories: Optional[Union[str, Sequence[str]]] = None,
+        thresholds: Optional[Mapping[str, float]] = None,
+        metric_kwargs: Optional[Mapping[str, Mapping[str, Any]]] = None,
         **inputs: Any,
     ) -> EvaluationResult:
         """Run selected metrics and return an EvaluationResult.
@@ -94,8 +94,8 @@ class Evaluator:
     def _select_metrics(
         self,
         *,
-        metrics: str | Sequence[str] | None,
-        categories: str | Sequence[str] | None,
+        metrics: Optional[Union[str, Sequence[str]]],
+        categories: Optional[Union[str, Sequence[str]]],
     ) -> tuple[list[MetricDefinition], bool]:
         requested_categories = _category_list(categories)
         if requested_categories:
@@ -134,7 +134,7 @@ class Evaluator:
 
     def _normalize_thresholds(
         self,
-        thresholds: Mapping[str, float] | None,
+        thresholds: Optional[Mapping[str, float]],
     ) -> dict[str, float]:
         normalized: dict[str, float] = {}
         for name, threshold in (thresholds or {}).items():
@@ -147,7 +147,7 @@ class Evaluator:
 
     def _normalize_metric_kwargs(
         self,
-        metric_kwargs: Mapping[str, Mapping[str, Any]] | None,
+        metric_kwargs: Optional[Mapping[str, Mapping[str, Any]]],
     ) -> dict[str, dict[str, Any]]:
         normalized: dict[str, dict[str, Any]] = {}
         for name, kwargs in (metric_kwargs or {}).items():
@@ -174,8 +174,8 @@ class Evaluator:
 
 def _build_inputs(
     *,
-    prediction: Any | None,
-    ground_truth: Any | None,
+    prediction: Optional[Any],
+    ground_truth: Optional[Any],
     inputs: Mapping[str, Any],
 ) -> dict[str, Any]:
     values = {key: value for key, value in inputs.items() if value is not None}
@@ -191,7 +191,7 @@ def _build_inputs(
 
 
 def _validate_common_array(
-    value: Any | None,
+    value: Optional[Any],
     *,
     name: str,
     allowed_ndims: tuple[int, ...],
@@ -264,7 +264,7 @@ def _coerce_metric_value(raw_value: Any) -> tuple[float, dict[str, Any]]:
 def _error_result(
     metric: MetricDefinition,
     message: str,
-    exc: Exception | None = None,
+    exc: Optional[Exception] = None,
 ) -> MetricResult:
     metadata: dict[str, Any] = {
         "category": metric.category,
@@ -282,7 +282,7 @@ def _error_result(
     )
 
 
-def _category_list(categories: str | Sequence[str] | None) -> list[str]:
+def _category_list(categories: Optional[Union[str, Sequence[str]]]) -> list[str]:
     if categories is None:
         return []
     if isinstance(categories, str):

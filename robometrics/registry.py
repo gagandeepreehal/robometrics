@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 
@@ -30,7 +30,7 @@ class MetricDefinition:
     required_inputs: tuple[str, ...] = ()
     default_kwargs: Mapping[str, Any] = field(default_factory=dict)
     aliases: tuple[str, ...] = ()
-    compatibility: CompatibilityFn | None = field(default=None, repr=False, compare=False)
+    compatibility: Optional[CompatibilityFn] = field(default=None, repr=False, compare=False)
 
     def is_compatible(self, inputs: Mapping[str, Any]) -> bool:
         """Return True when the available inputs can run this metric."""
@@ -55,11 +55,11 @@ class MetricRegistry:
         fn: MetricFn,
         category: str,
         unit: str = "",
-        description: str | None = None,
+        description: Optional[str] = None,
         required_inputs: Iterable[str] = (),
-        default_kwargs: Mapping[str, Any] | None = None,
+        default_kwargs: Optional[Mapping[str, Any]] = None,
         aliases: Iterable[str] = (),
-        compatibility: CompatibilityFn | None = None,
+        compatibility: Optional[CompatibilityFn] = None,
     ) -> MetricDefinition:
         """Register a metric function and return its definition."""
         normalized_name = _normalize_name(name)
@@ -96,7 +96,7 @@ class MetricRegistry:
         except KeyError as exc:
             raise UnknownMetricError(f"unknown metric: {name}") from exc
 
-    def list_metrics(self, *, category: str | None = None) -> list[MetricDefinition]:
+    def list_metrics(self, *, category: Optional[str] = None) -> list[MetricDefinition]:
         """Return registered metrics, optionally filtered by category."""
         if category is None:
             return list(self._metrics.values())
@@ -349,18 +349,18 @@ def _first_doc_line(fn: MetricFn) -> str:
     return doc.strip().splitlines()[0]
 
 
-def _shape(value: Any) -> tuple[int, ...] | None:
+def _shape(value: Any) -> Optional[tuple[int, ...]]:
     try:
         return tuple(np.asarray(value).shape)
     except (TypeError, ValueError):
         return None
 
 
-def _is_trajectory_shape(shape: tuple[int, ...] | None) -> bool:
+def _is_trajectory_shape(shape: Optional[tuple[int, ...]]) -> bool:
     return shape is not None and len(shape) == 2 and shape[0] > 0 and shape[1] in (2, 3)
 
 
-def _is_prediction_shape(shape: tuple[int, ...] | None) -> bool:
+def _is_prediction_shape(shape: Optional[tuple[int, ...]]) -> bool:
     return (
         shape is not None
         and len(shape) == 3
