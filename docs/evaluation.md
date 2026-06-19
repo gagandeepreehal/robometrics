@@ -15,7 +15,10 @@ result = evaluator.evaluate(
 )
 ```
 
-`prediction` and `ground_truth` are mapped to the argument names used by built-in metrics. Metric-specific inputs can be supplied as keyword arguments, such as `dt`, `actor_trajs`, `ego_radius`, `actor_radius`, `lane_boundary`, `constraints`, `k`, or `threshold`.
+`prediction` and `ground_truth` are mapped to the argument names used by
+built-in metrics. Metric-specific inputs can be supplied as keyword arguments,
+such as `dt`, `actor_trajs`, `ego_radius`, `actor_radius`, `lane_boundary`,
+`constraints`, `actions`, `clearances`, `bounds`, `bins`, `k`, or `threshold`.
 If an automatically selected category has no runnable metrics because a
 required input is missing, the evaluator reports the missing input names, such
 as `dt` for comfort metrics.

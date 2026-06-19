@@ -40,6 +40,49 @@ def as_prediction_set(data: ArrayLike, *, name: str = "predictions") -> FloatArr
     return arr
 
 
+def as_numeric_array(
+    data: ArrayLike,
+    *,
+    name: str = "values",
+    allow_empty: bool = False,
+) -> FloatArray:
+    """Return a finite numeric NumPy array without changing its rank."""
+    arr = np.asarray(data, dtype=np.float64)
+    if arr.size == 0 and not allow_empty:
+        raise ValueError(f"{name} must contain at least one value")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain only finite values")
+    return arr
+
+
+def as_batch_time_array(data: ArrayLike, *, name: str = "values") -> FloatArray:
+    """Return a finite non-empty BxTxD array from TxD or BxTxD input."""
+    arr = as_numeric_array(data, name=name)
+    if arr.ndim == 2:
+        if arr.shape[0] == 0 or arr.shape[1] == 0:
+            raise ValueError(f"{name} must have non-empty time and feature dimensions")
+        return np.asarray(arr[None, :, :], dtype=np.float64)
+    if arr.ndim == 3:
+        if arr.shape[0] == 0 or arr.shape[1] == 0 or arr.shape[2] == 0:
+            raise ValueError(f"{name} must have non-empty batch, time, and feature dimensions")
+        return arr
+    raise ValueError(f"{name} must be a TxD or BxTxD array")
+
+
+def as_boolean_mask(
+    data: ArrayLike,
+    *,
+    name: str = "mask",
+    allow_empty: bool = False,
+) -> NDArray[np.bool_]:
+    """Return a boolean mask from bool or 0/1 numeric input."""
+    arr = as_numeric_array(data, name=name, allow_empty=allow_empty)
+    valid = (arr == 0.0) | (arr == 1.0)
+    if not np.all(valid):
+        raise ValueError(f"{name} must contain only boolean or 0/1 values")
+    return np.asarray(arr.astype(np.bool_), dtype=np.bool_)
+
+
 def require_same_shape(
     left: FloatArray,
     right: FloatArray,
@@ -92,6 +135,18 @@ def validate_nonnegative(value: float, *, name: str) -> float:
     if not np.isfinite(value) or value < 0.0:
         raise ValueError(f"{name} must be a non-negative finite value")
     return float(value)
+
+
+def validate_timestamps(data: ArrayLike, *, name: str = "timestamps") -> FloatArray:
+    """Return finite strictly increasing 1D timestamps."""
+    timestamps = as_numeric_array(data, name=name)
+    if timestamps.ndim != 1:
+        raise ValueError(f"{name} must be a 1D array")
+    if timestamps.shape[0] == 0:
+        raise ValueError(f"{name} must contain at least one timestamp")
+    if timestamps.shape[0] > 1 and np.any(np.diff(timestamps) <= 0.0):
+        raise ValueError(f"{name} must be strictly increasing")
+    return timestamps
 
 
 def as_actor_trajectories(actor_trajs: object) -> list[FloatArray]:

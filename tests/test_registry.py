@@ -14,8 +14,14 @@ def test_default_registry_lists_built_in_metrics() -> None:
     assert "ade" in names
     assert "fde" in names
     assert "miss_rate" in names
+    assert "temporal_drift" in names
+    assert "coverage_score" in names
+    assert "calibration_error" in names
     assert "dynamic_feasibility_score" in names
+    assert "physics_violation_rate" in names
+    assert "behavioral_diversity" in names
     assert registry.get("smoothness_score").required_inputs == ("traj",)
+    assert registry.get("temporal_drift").required_inputs == ("predicted", "reference")
 
 
 def test_registry_get_supports_aliases() -> None:

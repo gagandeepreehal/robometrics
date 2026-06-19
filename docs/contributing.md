@@ -12,6 +12,7 @@ python examples/trajectory_metrics.py
 python examples/prediction_metrics.py
 python examples/safety_metrics.py
 python examples/comfort_metrics.py
+python examples/new_metrics_example.py
 python examples/load_from_csv.py
 ```
 

@@ -25,10 +25,15 @@ print(result.to_markdown())
 print(distance_error, comfort, collisions)
 ```
 
-All trajectory inputs should be finite, non-empty `Nx2` or `Nx3` arrays. Prediction inputs should be `KxTx2` or `KxTx3` arrays.
+Trajectory inputs should be finite, non-empty `Nx2` or `Nx3` arrays.
+Prediction inputs should be `KxTx2` or `KxTx3` arrays. General time-series
+metrics accept `TxD` or `BxTxD` arrays, and coverage/diversity metrics accept
+finite sample matrices such as `NxD`.
 Single-point trajectories are accepted by metrics with well-defined degenerate outputs, and `Nx3` trajectories are accepted wherever trajectory metrics accept `Nx2`.
 
-Use `metrics="all"` to run every compatible registered metric, or select groups with `categories=["trajectory"]`.
+Use `metrics="all"` to run every compatible registered metric, or select
+groups with categories such as `["trajectory"]`, `["temporal"]`,
+`["safety"]`, or `["physics"]`.
 Use `python -m robometrics --help` or `robometrics list-metrics` to inspect an
 installed package from the shell.
 If `robometrics` is not on `PATH` after a user-level pip install, keep using
