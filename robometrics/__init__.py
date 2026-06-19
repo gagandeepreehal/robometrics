@@ -36,7 +36,13 @@ from robometrics.physics import (
     speed_profile,
 )
 from robometrics.prediction import min_ade, min_fde, miss_rate, topk_trajectory_error
-from robometrics.registry import MetricDefinition, MetricRegistry, UnknownMetricError, registry
+from robometrics.registry import (
+    MetricDefinition,
+    MetricRegistry,
+    UnknownMetricError,
+    load_pack,
+    registry,
+)
 from robometrics.results import ComparisonResult, EvaluationResult, MetricComparison, MetricResult
 from robometrics.safety import (
     collision_rate,
@@ -101,6 +107,7 @@ __all__ = [
     "joint_limit_violation_rate",
     "lane_departure_rate",
     "lateral_error",
+    "load_pack",
     "longitudinal_error",
     "max_acceleration",
     "max_deceleration",

@@ -42,6 +42,7 @@ def test_public_api_exports_core_objects() -> None:
         "jerk_magnitude",
         "jerk_limits_violated",
         "joint_limit_violation_rate",
+        "load_pack",
         "max_acceleration",
         "max_deceleration",
         "mean_acceleration",

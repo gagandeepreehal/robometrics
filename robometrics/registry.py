@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from threading import RLock
@@ -95,6 +96,57 @@ class MetricRegistry:
                 self._aliases[normalized_alias] = normalized_name
 
             return metric
+
+    def register_many(
+        self,
+        definitions: list[dict[str, Any]],
+    ) -> list[MetricDefinition]:
+        """Register multiple metrics from a list of definition dicts.
+
+        Each dict must contain at minimum: name, fn, category.
+        Optional keys: unit, description, required_inputs, default_kwargs,
+        aliases, compatibility, reference, is_novel.
+        Returns a list of created MetricDefinition objects.
+        """
+        created = []
+        required = ("name", "fn", "category")
+        for definition in definitions:
+            for key in required:
+                if key not in definition:
+                    raise ValueError(f"metric definition is missing required key: {key}")
+            created.append(
+                self.register(
+                    name=definition["name"],
+                    fn=definition["fn"],
+                    category=definition["category"],
+                    unit=definition.get("unit", ""),
+                    description=definition.get("description"),
+                    required_inputs=definition.get("required_inputs", ()),
+                    default_kwargs=definition.get("default_kwargs"),
+                    aliases=definition.get("aliases", ()),
+                    compatibility=definition.get("compatibility"),
+                    reference=definition.get("reference", ""),
+                    is_novel=definition.get("is_novel", False),
+                )
+            )
+        return created
+
+    def unregister(self, name: str) -> None:
+        """Remove a registered metric and all its aliases.
+
+        Raises UnknownMetricError if the metric does not exist.
+        Used primarily for testing and pack development.
+        """
+        with self._lock:
+            normalized_name = _normalize_name(name)
+            canonical = self._aliases.get(normalized_name, normalized_name)
+            if canonical not in self._metrics:
+                raise UnknownMetricError(f"unknown metric: {name}")
+
+            del self._metrics[canonical]
+            for alias, target in list(self._aliases.items()):
+                if target == canonical:
+                    del self._aliases[alias]
 
     def get(self, name: str) -> MetricDefinition:
         """Return a metric definition by canonical name or alias."""
@@ -522,6 +574,37 @@ def create_default_registry() -> MetricRegistry:
     )
 
     return reg
+
+
+def load_pack(module_name: str) -> list[MetricDefinition]:
+    """Import a metric pack module and register its metrics.
+
+    The module must expose a module-level list named `METRIC_PACK` where
+    each element is a dict compatible with MetricRegistry.register_many().
+
+    Example pack module:
+
+        METRIC_PACK = [
+            {
+                "name": "my_custom_metric",
+                "fn": my_custom_metric_fn,
+                "category": "custom",
+                "unit": "score",
+                "reference": "My Paper, 2024",
+            }
+        ]
+
+    Raises ImportError if the module cannot be imported.
+    Raises ValueError if the module does not expose METRIC_PACK.
+    Returns the list of registered MetricDefinition objects.
+    """
+    module = importlib.import_module(module_name)
+    if not hasattr(module, "METRIC_PACK"):
+        raise ValueError(f"{module_name} does not expose METRIC_PACK")
+    pack = getattr(module, "METRIC_PACK")
+    if not isinstance(pack, list):
+        raise ValueError(f"{module_name}.METRIC_PACK must be a list")
+    return registry.register_many(pack)
 
 
 def _normalize_name(name: str) -> str:

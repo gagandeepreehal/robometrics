@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import sys
+import types
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from robometrics.registry import MetricRegistry, UnknownMetricError, registry
+from robometrics.registry import MetricRegistry, UnknownMetricError, load_pack, registry
 from robometrics.trajectory import average_displacement_error
 
 
@@ -78,3 +80,93 @@ def test_custom_registry_registers_metrics_from_threads() -> None:
 
     assert names == [f"example_{index}" for index in range(8)]
     assert {metric.name for metric in custom.list_metrics()} == set(names)
+
+
+def test_register_many_registers_multiple_metrics() -> None:
+    custom = MetricRegistry()
+
+    def first() -> float:
+        return 1.0
+
+    def second() -> float:
+        return 2.0
+
+    registered = custom.register_many(
+        [
+            {"name": "first_metric", "fn": first, "category": "custom"},
+            {"name": "second_metric", "fn": second, "category": "custom", "unit": "score"},
+        ]
+    )
+
+    assert [metric.name for metric in registered] == ["first_metric", "second_metric"]
+    assert custom.get("second_metric").unit == "score"
+
+
+def test_register_many_missing_required_key_names_key() -> None:
+    custom = MetricRegistry()
+
+    with pytest.raises(ValueError, match="fn"):
+        custom.register_many([{"name": "missing_fn", "category": "custom"}])
+
+
+def test_unregister_removes_metric_and_aliases() -> None:
+    custom = MetricRegistry()
+
+    def metric() -> float:
+        return 1.0
+
+    custom.register(name="example", fn=metric, category="custom", aliases=("alias",))
+
+    custom.unregister("alias")
+
+    with pytest.raises(UnknownMetricError):
+        custom.get("example")
+    with pytest.raises(UnknownMetricError):
+        custom.get("alias")
+
+
+def test_load_pack_registers_in_memory_module() -> None:
+    module_name = "robometrics_test_pack"
+    module = types.ModuleType(module_name)
+
+    def metric() -> float:
+        return 1.0
+
+    module.METRIC_PACK = [
+        {
+            "name": "test_pack_metric",
+            "fn": metric,
+            "category": "custom",
+            "unit": "score",
+            "reference": "Test Pack, 2026",
+        }
+    ]
+    sys.modules[module_name] = module
+
+    try:
+        registered = load_pack(module_name)
+
+        assert [metric.name for metric in registered] == ["test_pack_metric"]
+        assert registry.get("test_pack_metric").reference == "Test Pack, 2026"
+    finally:
+        sys.modules.pop(module_name, None)
+        try:
+            registry.unregister("test_pack_metric")
+        except UnknownMetricError:
+            pass
+
+
+def test_load_pack_missing_metric_pack_raises_value_error() -> None:
+    module_name = "robometrics_missing_pack"
+    sys.modules[module_name] = types.ModuleType(module_name)
+
+    try:
+        with pytest.raises(ValueError, match="METRIC_PACK"):
+            load_pack(module_name)
+    finally:
+        sys.modules.pop(module_name, None)
+
+
+def test_load_pack_missing_module_raises_import_error() -> None:
+    with pytest.raises(ImportError):
+        load_pack("robometrics_pack_that_does_not_exist")
