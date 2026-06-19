@@ -82,4 +82,4 @@ __all__ = [
     "topk_trajectory_error",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
