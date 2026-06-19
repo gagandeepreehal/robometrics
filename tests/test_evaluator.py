@@ -144,6 +144,96 @@ def test_evaluator_evaluates_dataset() -> None:
     assert result.strict_passed is True
 
 
+def test_evaluator_dataset_bootstrap_ci_contains_mean() -> None:
+    predictions = [
+        np.array([[0.0, 0.0], [1.0, 0.0]]),
+        np.array([[0.0, 0.0], [1.2, 0.0]]),
+        np.array([[0.0, 0.0], [1.4, 0.0]]),
+    ]
+    ground_truths = [
+        np.array([[0.0, 0.0], [1.0, 0.0]]),
+        np.array([[0.0, 0.0], [1.0, 0.0]]),
+        np.array([[0.0, 0.0], [1.0, 0.0]]),
+    ]
+
+    result = Evaluator().evaluate_dataset(
+        predictions=predictions,
+        ground_truths=ground_truths,
+        metrics=["ade"],
+        bootstrap_ci=1000,
+    )
+
+    metric = result.results[0]
+    assert metric.metadata["ci_lower"] <= metric.value <= metric.metadata["ci_upper"]
+    assert metric.metadata["bootstrap_n"] == 1000
+    assert metric.metadata["ci_alpha"] == 0.05
+
+
+def test_evaluator_dataset_bootstrap_ci_varies_when_values_vary() -> None:
+    predictions = [
+        np.array([[0.0, 0.0], [1.0, 0.0]]),
+        np.array([[0.0, 0.0], [3.0, 0.0]]),
+        np.array([[0.0, 0.0], [5.0, 0.0]]),
+    ]
+    ground_truths = [np.array([[0.0, 0.0], [1.0, 0.0]]) for _ in predictions]
+
+    metric = Evaluator().evaluate_dataset(
+        predictions=predictions,
+        ground_truths=ground_truths,
+        metrics=["ade"],
+        bootstrap_ci=1000,
+    ).results[0]
+
+    assert metric.metadata["ci_lower"] < metric.metadata["ci_upper"]
+
+
+def test_evaluator_dataset_bootstrap_ci_degenerate_identical_values() -> None:
+    predictions = [np.array([[0.0, 0.0], [2.0, 0.0]]) for _ in range(3)]
+    ground_truths = [np.array([[0.0, 0.0], [1.0, 0.0]]) for _ in predictions]
+
+    metric = Evaluator().evaluate_dataset(
+        predictions=predictions,
+        ground_truths=ground_truths,
+        metrics=["ade"],
+        bootstrap_ci=1000,
+    ).results[0]
+
+    assert metric.metadata["ci_lower"] == pytest.approx(metric.metadata["ci_upper"])
+    assert metric.metadata["ci_lower"] == pytest.approx(metric.value)
+
+
+def test_evaluator_rejects_too_small_bootstrap_ci() -> None:
+    with pytest.raises(EvaluationInputError, match="bootstrap_ci must be at least 100"):
+        Evaluator().evaluate_dataset(
+            predictions=[np.array([[0.0, 0.0]])],
+            ground_truths=[np.array([[0.0, 0.0]])],
+            metrics=["ade"],
+            bootstrap_ci=50,
+        )
+
+
+def test_evaluator_rejects_invalid_ci_alpha() -> None:
+    with pytest.raises(EvaluationInputError, match="ci_alpha"):
+        Evaluator().evaluate_dataset(
+            predictions=[np.array([[0.0, 0.0]])],
+            ground_truths=[np.array([[0.0, 0.0]])],
+            metrics=["ade"],
+            bootstrap_ci=100,
+            ci_alpha=0.6,
+        )
+
+
+def test_evaluator_dataset_default_has_no_bootstrap_ci_metadata() -> None:
+    metric = Evaluator().evaluate_dataset(
+        predictions=[np.array([[0.0, 0.0], [1.0, 0.0]])],
+        ground_truths=[np.array([[0.0, 0.0], [1.0, 0.0]])],
+        metrics=["ade"],
+    ).results[0]
+
+    assert "ci_lower" not in metric.metadata
+    assert "ci_upper" not in metric.metadata
+
+
 def test_evaluator_rejects_bad_dataset_inputs() -> None:
     with pytest.raises(EvaluationInputError, match="same length"):
         Evaluator().evaluate_dataset(

@@ -104,9 +104,12 @@ class Evaluator:
         categories: Optional[Union[str, Sequence[str]]] = None,
         thresholds: Optional[Mapping[str, float]] = None,
         metric_kwargs: Optional[Mapping[str, Mapping[str, Any]]] = None,
+        bootstrap_ci: Optional[int] = None,
+        ci_alpha: float = 0.05,
         **inputs: Any,
     ) -> EvaluationResult:
         """Evaluate matching prediction/ground-truth sequences and aggregate by metric."""
+        _validate_confidence_interval_config(bootstrap_ci=bootstrap_ci, ci_alpha=ci_alpha)
         if len(predictions) != len(ground_truths):
             raise EvaluationInputError("predictions and ground_truths must have the same length")
         if len(predictions) == 0:
@@ -129,6 +132,8 @@ class Evaluator:
             sample_results,
             thresholds=threshold_map,
             categories=_category_list(categories),
+            bootstrap_ci=bootstrap_ci,
+            ci_alpha=ci_alpha,
         )
 
     def _select_metrics(
@@ -359,6 +364,8 @@ def _aggregate_dataset_results(
     *,
     thresholds: Mapping[str, float],
     categories: list[str],
+    bootstrap_ci: Optional[int] = None,
+    ci_alpha: float = 0.05,
 ) -> EvaluationResult:
     metric_names: list[str] = []
     for sample in sample_results:
@@ -397,6 +404,16 @@ def _aggregate_dataset_results(
         metric.passed = None if threshold is None else bool(metric.value <= threshold)
         aggregate_results.append(metric)
 
+    if bootstrap_ci is not None:
+        rng = np.random.default_rng(0)
+        for metric in aggregate_results:
+            _add_bootstrap_confidence_interval(
+                metric,
+                bootstrap_ci=bootstrap_ci,
+                ci_alpha=ci_alpha,
+                rng=rng,
+            )
+
     return EvaluationResult(
         results=aggregate_results,
         metadata={
@@ -406,6 +423,46 @@ def _aggregate_dataset_results(
             "dataset": True,
         },
     )
+
+
+def _validate_confidence_interval_config(
+    *,
+    bootstrap_ci: Optional[int],
+    ci_alpha: float,
+) -> None:
+    if not 0.0 < float(ci_alpha) < 0.5:
+        raise EvaluationInputError("ci_alpha must be in the open interval (0, 0.5)")
+    if bootstrap_ci is None:
+        return
+    if not isinstance(bootstrap_ci, int) or isinstance(bootstrap_ci, bool) or bootstrap_ci < 100:
+        raise EvaluationInputError(
+            "bootstrap_ci must be at least 100 for reliable confidence intervals"
+        )
+
+
+def _add_bootstrap_confidence_interval(
+    metric: MetricResult,
+    *,
+    bootstrap_ci: int,
+    ci_alpha: float,
+    rng: np.random.Generator,
+) -> None:
+    values = np.asarray(metric.metadata.get("values", []), dtype=np.float64)
+    finite_values = values[np.isfinite(values)]
+    if finite_values.size < 2:
+        return
+
+    indices = rng.integers(
+        low=0,
+        high=finite_values.size,
+        size=(bootstrap_ci, finite_values.size),
+    )
+    means = np.mean(finite_values[indices], axis=1)
+    lower, upper = np.percentile(means, [ci_alpha / 2.0 * 100.0, (1.0 - ci_alpha / 2.0) * 100.0])
+    metric.metadata["ci_lower"] = float(lower)
+    metric.metadata["ci_upper"] = float(upper)
+    metric.metadata["ci_alpha"] = float(ci_alpha)
+    metric.metadata["bootstrap_n"] = int(bootstrap_ci)
 
 
 def _aggregate_metric_values(
