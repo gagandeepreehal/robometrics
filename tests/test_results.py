@@ -5,6 +5,7 @@ import json
 import pandas as pd
 import pytest
 
+import robometrics.cli as cli
 from robometrics.results import EvaluationResult, MetricResult
 
 
@@ -204,3 +205,77 @@ def test_evaluation_result_empty_and_nonfinite_formatting() -> None:
     assert "inf" in markdown
     assert "-inf" in markdown
     assert payload["metadata"] == {"array": [1], "scalar": 2}
+
+
+def test_comparison_identical_results_are_ties() -> None:
+    result = EvaluationResult(
+        results=[
+            MetricResult(name="ade", value=1.0),
+            MetricResult(name="task_success_rate", value=0.8),
+        ]
+    )
+
+    comparison = result.compare(result)
+
+    assert all(item.winner == "tie" for item in comparison.comparisons)
+    assert all(item.delta == 0.0 for item in comparison.comparisons)
+    assert comparison.winner_count() == {"a": 0, "b": 0, "tie": 2}
+
+
+def test_comparison_a_wins_all_metrics() -> None:
+    result_a = EvaluationResult(
+        results=[
+            MetricResult(name="ade", value=1.0),
+            MetricResult(name="task_success_rate", value=0.9),
+            MetricResult(name="collision_rate", value=0.0),
+        ]
+    )
+    result_b = EvaluationResult(
+        results=[
+            MetricResult(name="ade", value=2.0),
+            MetricResult(name="task_success_rate", value=0.5),
+            MetricResult(name="collision_rate", value=0.25),
+        ]
+    )
+
+    comparison = result_a.compare(result_b)
+
+    assert comparison.winner_count()["a"] == 3
+    assert {item.name: item.higher_is_better for item in comparison.comparisons} == {
+        "ade": False,
+        "task_success_rate": True,
+        "collision_rate": False,
+    }
+
+
+def test_comparison_markdown_contains_metric_names() -> None:
+    result_a = EvaluationResult(
+        results=[
+            MetricResult(name="ade", value=1.0),
+            MetricResult(name="task_success_rate", value=0.9),
+        ]
+    )
+    result_b = EvaluationResult(
+        results=[
+            MetricResult(name="ade", value=2.0),
+            MetricResult(name="task_success_rate", value=0.5),
+        ]
+    )
+
+    markdown = result_a.compare(result_b).to_markdown()
+
+    assert "ade" in markdown
+    assert "task_success_rate" in markdown
+
+
+def test_cli_compare_outputs_text(tmp_path, capsys) -> None:
+    result_a = EvaluationResult(results=[MetricResult(name="ade", value=1.0)])
+    result_b = EvaluationResult(results=[MetricResult(name="ade", value=2.0)])
+    a_path = tmp_path / "a.json"
+    b_path = tmp_path / "b.json"
+    a_path.write_text(result_a.to_json(), encoding="utf-8")
+    b_path.write_text(result_b.to_json(), encoding="utf-8")
+
+    assert cli.main(["compare", str(a_path), str(b_path), "--format", "text"]) == 0
+
+    assert capsys.readouterr().out.strip()

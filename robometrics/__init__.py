@@ -24,7 +24,7 @@ from robometrics.physics import (
 )
 from robometrics.prediction import min_ade, min_fde, miss_rate, topk_trajectory_error
 from robometrics.registry import MetricDefinition, MetricRegistry, UnknownMetricError, registry
-from robometrics.results import EvaluationResult, MetricResult
+from robometrics.results import ComparisonResult, EvaluationResult, MetricComparison, MetricResult
 from robometrics.safety import (
     collision_rate,
     lane_departure_rate,
@@ -50,10 +50,12 @@ fde = final_displacement_error
 
 __all__ = [
     "AgentState",
+    "ComparisonResult",
     "EvaluationInputError",
     "EvaluationResult",
     "Evaluator",
     "MetricDefinition",
+    "MetricComparison",
     "MetricRegistry",
     "MetricResult",
     "Trajectory",

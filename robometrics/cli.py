@@ -5,10 +5,12 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Optional, TypedDict
 
 from robometrics._version import __version__
 from robometrics.registry import MetricDefinition, registry
+from robometrics.results import EvaluationResult
 
 
 class MetricPayload(TypedDict):
@@ -30,6 +32,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return _list_metrics(category=args.category, output_format=args.format)
     if args.command == "describe":
         return _describe_metric(args.metric, output_format=args.format)
+    if args.command == "compare":
+        return _compare_results(args.a, args.b, output_format=args.format)
     if args.command == "version":
         print(__version__)
         return 0
@@ -62,6 +66,16 @@ def _build_parser() -> argparse.ArgumentParser:
     describe_parser.add_argument(
         "--format",
         choices=("text", "json"),
+        default="text",
+        help="output format",
+    )
+
+    compare_parser = subparsers.add_parser("compare", help="compare two evaluation result files")
+    compare_parser.add_argument("a", help="first EvaluationResult JSON file")
+    compare_parser.add_argument("b", help="second EvaluationResult JSON file")
+    compare_parser.add_argument(
+        "--format",
+        choices=("markdown", "json", "text"),
         default="text",
         help="output format",
     )
@@ -120,6 +134,26 @@ def _describe_metric(metric_name: str, *, output_format: str) -> int:
     print(f"Reference: {payload['reference'] or '-'}")
     print(f"Novel: {payload['is_novel']}")
     print(f"Description: {payload['description'] or '-'}")
+    return 0
+
+
+def _compare_results(a_path: str, b_path: str, *, output_format: str) -> int:
+    result_a = EvaluationResult.from_json(Path(a_path).read_text(encoding="utf-8"))
+    result_b = EvaluationResult.from_json(Path(b_path).read_text(encoding="utf-8"))
+    comparison = result_a.compare(result_b)
+
+    if output_format == "json":
+        print(comparison.to_json())
+        return 0
+    if output_format == "markdown":
+        print(comparison.to_markdown())
+        return 0
+
+    for item in comparison.comparisons:
+        print(
+            f"{item.name}: A={item.value_a:.6g} B={item.value_b:.6g} "
+            f"Delta={item.delta:.6g} Winner={item.winner}"
+        )
     return 0
 
 

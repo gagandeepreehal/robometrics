@@ -13,9 +13,11 @@ def test_import_robometrics_exposes_version() -> None:
 def test_public_api_exports_core_objects() -> None:
     expected = {
         "ade",
+        "ComparisonResult",
         "Evaluator",
         "EvaluationResult",
         "fde",
+        "MetricComparison",
         "MetricResult",
         "MetricRegistry",
         "TrajectoryIOError",
