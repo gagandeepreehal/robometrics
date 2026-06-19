@@ -12,5 +12,6 @@ dist/
 .coverage
 .coverage.*
 htmlcov/
+site/
 .venv/
 venv/

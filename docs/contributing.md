@@ -1,6 +1,6 @@
 # Contributing
 
-See the root [CONTRIBUTING.md](../CONTRIBUTING.md) for the full contributor guide.
+See the repository [CONTRIBUTING.md](https://github.com/gagandeepreehal/robometrics/blob/main/CONTRIBUTING.md) for the full contributor guide.
 
 ## Local Checks
 

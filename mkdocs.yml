@@ -11,6 +11,7 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Evaluation: evaluation.md
+  - Evaluator: evaluator.md
   - API: api.md
   - Metrics:
       - Overview: metrics.md
