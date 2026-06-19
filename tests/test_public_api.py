@@ -29,6 +29,7 @@ def test_public_api_exports_core_objects() -> None:
         "curvature_profile",
         "dynamic_feasibility_score",
         "final_displacement_error",
+        "goal_reaching_accuracy",
         "jerk",
         "jerk_cost",
         "jerk_magnitude",
@@ -45,6 +46,7 @@ def test_public_api_exports_core_objects() -> None:
         "registry",
         "rms_acceleration",
         "speed_profile",
+        "task_success_rate",
     }
 
     assert expected.issubset(set(robometrics.__all__))

@@ -32,6 +32,7 @@ from robometrics.safety import (
     time_to_collision,
 )
 from robometrics.schemas import AgentState, Trajectory
+from robometrics.task import goal_reaching_accuracy, task_success_rate
 from robometrics.trajectory import (
     average_displacement_error,
     curvature,
@@ -71,6 +72,7 @@ __all__ = [
     "dynamic_feasibility_score",
     "fde",
     "final_displacement_error",
+    "goal_reaching_accuracy",
     "hausdorff_distance",
     "jerk",
     "jerk_cost",
@@ -92,6 +94,7 @@ __all__ = [
     "rms_acceleration",
     "smoothness_score",
     "speed_profile",
+    "task_success_rate",
     "time_to_collision",
     "topk_trajectory_error",
 ]

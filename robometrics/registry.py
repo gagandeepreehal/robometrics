@@ -9,7 +9,7 @@ from typing import Any, Optional
 
 import numpy as np
 
-from robometrics import comfort, physics, prediction, safety, trajectory
+from robometrics import comfort, physics, prediction, safety, task, trajectory
 
 MetricFn = Callable[..., Any]
 CompatibilityFn = Callable[[Mapping[str, Any]], bool]
@@ -419,6 +419,26 @@ def create_default_registry() -> MetricRegistry:
         reference="RoboMetrics internal heuristic",
         is_novel=True,
         compatibility=_trajectory_input("traj"),
+    )
+
+    reg.register(
+        name="task_success_rate",
+        fn=task.task_success_rate,
+        category="task",
+        unit="ratio",
+        required_inputs=("outcomes",),
+        reference="Standard binary task evaluation used in robotics benchmarks",
+    )
+    reg.register(
+        name="goal_reaching_accuracy",
+        fn=task.goal_reaching_accuracy,
+        category="task",
+        unit="ratio",
+        required_inputs=("positions", "goals", "tolerance"),
+        default_kwargs={"tolerance": 1.0},
+        reference=(
+            "Anderson et al., Habitat: A Platform for Embodied AI Research, ICCV 2019"
+        ),
     )
 
     return reg

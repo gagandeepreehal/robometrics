@@ -40,6 +40,32 @@ def as_prediction_set(data: ArrayLike, *, name: str = "predictions") -> FloatArr
     return arr
 
 
+def as_1d_array(data: ArrayLike, *, name: str) -> FloatArray:
+    """Return a finite non-empty 1D numeric array."""
+    arr = np.asarray(data, dtype=np.float64)
+    if arr.ndim != 1:
+        raise ValueError(f"{name} must be a 1D array")
+    if arr.shape[0] == 0:
+        raise ValueError(f"{name} must contain at least one value")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain only finite values")
+    return arr
+
+
+def as_points(data: ArrayLike, *, name: str) -> FloatArray:
+    """Return a finite non-empty NxD point array."""
+    arr = np.asarray(data, dtype=np.float64)
+    if arr.ndim != 2:
+        raise ValueError(f"{name} must be a NxD array")
+    if arr.shape[0] == 0:
+        raise ValueError(f"{name} must contain at least one point")
+    if arr.shape[1] == 0:
+        raise ValueError(f"{name} must contain at least one coordinate")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain only finite values")
+    return arr
+
+
 def require_same_shape(
     left: FloatArray,
     right: FloatArray,
