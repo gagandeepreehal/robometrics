@@ -500,4 +500,5 @@ def _metric_metadata(metric: MetricDefinition, existing: Mapping[str, Any]) -> d
     metadata.setdefault("description", metric.description)
     metadata.setdefault("reference", metric.reference)
     metadata.setdefault("is_novel", metric.is_novel)
+    metadata.setdefault("higher_is_better", metric.higher_is_better)
     return metadata

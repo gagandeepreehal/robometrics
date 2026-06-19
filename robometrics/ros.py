@@ -11,7 +11,6 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
-
 _ROS_HINT = "Install ROS 2 Humble or later and source the workspace to enable this adapter."
 
 

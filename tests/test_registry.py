@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import types
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import suppress
 
 import pytest
 
@@ -22,6 +23,18 @@ def test_default_registry_lists_built_in_metrics() -> None:
 
 def test_default_registry_metrics_have_references() -> None:
     assert all(metric.reference for metric in registry.list_metrics())
+
+
+def test_default_registry_records_metric_directionality() -> None:
+    assert registry.get("task_success_rate").higher_is_better is True
+    assert registry.get("time_to_collision").higher_is_better is True
+    assert registry.get("min_distance_to_actors").higher_is_better is True
+    assert registry.get("soft_ttc").higher_is_better is True
+    assert registry.get("workspace_coverage").higher_is_better is True
+    assert registry.get("contact_richness").higher_is_better is True
+    assert registry.get("force_limit_compliance").higher_is_better is True
+    assert registry.get("offroad_rate").higher_is_better is False
+    assert registry.get("joint_limit_violation_rate").higher_is_better is False
 
 
 def test_registry_get_supports_aliases() -> None:
@@ -60,6 +73,7 @@ def test_custom_registry_registers_metric_metadata() -> None:
 
     assert custom.get("example") == registered
     assert registered.description == "Example metric."
+    assert registered.higher_is_better is False
 
 
 def test_custom_registry_registers_metrics_from_threads() -> None:
@@ -93,12 +107,18 @@ def test_register_many_registers_multiple_metrics() -> None:
 
     registered = custom.register_many(
         [
-            {"name": "first_metric", "fn": first, "category": "custom"},
+            {
+                "name": "first_metric",
+                "fn": first,
+                "category": "custom",
+                "higher_is_better": True,
+            },
             {"name": "second_metric", "fn": second, "category": "custom", "unit": "score"},
         ]
     )
 
     assert [metric.name for metric in registered] == ["first_metric", "second_metric"]
+    assert custom.get("first_metric").higher_is_better is True
     assert custom.get("second_metric").unit == "score"
 
 
@@ -150,10 +170,38 @@ def test_load_pack_registers_in_memory_module() -> None:
         assert registry.get("test_pack_metric").reference == "Test Pack, 2026"
     finally:
         sys.modules.pop(module_name, None)
-        try:
+        with suppress(UnknownMetricError):
             registry.unregister("test_pack_metric")
-        except UnknownMetricError:
-            pass
+
+
+def test_load_pack_can_register_into_custom_registry() -> None:
+    module_name = "robometrics_custom_registry_pack"
+    module = types.ModuleType(module_name)
+    custom = MetricRegistry()
+
+    def metric() -> float:
+        return 1.0
+
+    module.METRIC_PACK = [
+        {
+            "name": "isolated_pack_metric",
+            "fn": metric,
+            "category": "custom",
+            "higher_is_better": True,
+            "reference": "Test Pack, 2026",
+        }
+    ]
+    sys.modules[module_name] = module
+
+    try:
+        registered = load_pack(module_name, registry=custom)
+
+        assert [metric.name for metric in registered] == ["isolated_pack_metric"]
+        assert custom.get("isolated_pack_metric").higher_is_better is True
+        with pytest.raises(UnknownMetricError):
+            registry.get("isolated_pack_metric")
+    finally:
+        sys.modules.pop(module_name, None)
 
 
 def test_load_pack_missing_metric_pack_raises_value_error() -> None:

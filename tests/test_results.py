@@ -250,6 +250,55 @@ def test_comparison_a_wins_all_metrics() -> None:
     }
 
 
+def test_comparison_uses_registry_direction_metadata_when_present() -> None:
+    result_a = EvaluationResult(
+        results=[
+            MetricResult(
+                name="custom_reward",
+                value=0.5,
+                metadata={"higher_is_better": True},
+            )
+        ]
+    )
+    result_b = EvaluationResult(
+        results=[
+            MetricResult(
+                name="custom_reward",
+                value=0.7,
+                metadata={"higher_is_better": True},
+            )
+        ]
+    )
+
+    comparison = result_a.compare(result_b)
+
+    assert comparison.comparisons[0].winner == "b"
+    assert comparison.comparisons[0].higher_is_better is True
+
+
+def test_comparison_treats_safety_and_violation_rates_as_lower_is_better() -> None:
+    result_a = EvaluationResult(
+        results=[
+            MetricResult(name="offroad_rate", value=0.1),
+            MetricResult(name="joint_limit_violation_rate", value=0.1),
+        ]
+    )
+    result_b = EvaluationResult(
+        results=[
+            MetricResult(name="offroad_rate", value=0.5),
+            MetricResult(name="joint_limit_violation_rate", value=0.5),
+        ]
+    )
+
+    comparison = result_a.compare(result_b)
+
+    assert {item.name: item.winner for item in comparison.comparisons} == {
+        "offroad_rate": "a",
+        "joint_limit_violation_rate": "a",
+    }
+    assert not any(item.higher_is_better for item in comparison.comparisons)
+
+
 def test_comparison_markdown_contains_metric_names() -> None:
     result_a = EvaluationResult(
         results=[

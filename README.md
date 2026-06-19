@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/gagandeepreehal/robometrics/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gagandeepreehal/robometrics/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
+![Coverage](https://img.shields.io/badge/coverage-90%25%20minimum-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![PyPI](https://img.shields.io/pypi/v/robometrics.svg)](https://pypi.org/project/robometrics/)
 
@@ -69,11 +70,18 @@ print("Path length (m):", path_length(ground_truth))
 Runnable examples:
 
 ```bash
+python examples/basic_metrics.py
+python examples/evaluator_quickstart.py
+python examples/thresholds.py
+python examples/export_results.py
 python examples/trajectory_metrics.py
 python examples/prediction_metrics.py
+python examples/driving_metrics.py
 python examples/safety_metrics.py
 python examples/comfort_metrics.py
 python examples/load_from_csv.py
+python examples/evaluator_usage.py
+python examples/manipulation_metrics.py
 ```
 
 ## Input Shapes
@@ -280,7 +288,7 @@ The evaluator and registry are intentionally small helpers for local scripts.
 Use them when named metric selection or threshold reporting is useful:
 
 ```python
-from robometrics import Evaluator, registry
+from robometrics import EvaluationResult, Evaluator, registry
 
 print(registry.list_metrics())
 
@@ -292,7 +300,7 @@ result = Evaluator().evaluate(
 )
 
 print(result.to_json())
-reloaded = result.from_json(result.to_json())
+reloaded = EvaluationResult.from_json(result.to_json())
 ```
 
 Unknown metric names raise `UnknownMetricError` before evaluation starts.
@@ -321,11 +329,18 @@ Before opening a pull request:
 ruff check .
 mypy robometrics
 pytest --cov=robometrics --cov-report=term-missing
+python examples/basic_metrics.py
+python examples/evaluator_quickstart.py
+python examples/thresholds.py
+python examples/export_results.py
 python examples/trajectory_metrics.py
 python examples/prediction_metrics.py
+python examples/driving_metrics.py
 python examples/safety_metrics.py
 python examples/comfort_metrics.py
 python examples/load_from_csv.py
+python examples/evaluator_usage.py
+python examples/manipulation_metrics.py
 ```
 
 ## License

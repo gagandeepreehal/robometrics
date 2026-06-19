@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 from collections.abc import Sequence
 from pathlib import Path
@@ -25,6 +26,7 @@ class MetricPayload(TypedDict):
     aliases: list[str]
     reference: str
     is_novel: bool
+    higher_is_better: bool
     compatibility: bool
     description: str
 
@@ -96,8 +98,14 @@ def _build_parser() -> argparse.ArgumentParser:
         help="output format",
     )
 
-    history_parser = subparsers.add_parser("history", help="summarize evaluation history files")
-    history_parser.add_argument("directory", help="directory containing *_eval.json files")
+    history_parser = subparsers.add_parser(
+        "history",
+        help="summarize *_eval.json or *.eval.json evaluation history files",
+    )
+    history_parser.add_argument(
+        "directory",
+        help="directory containing *_eval.json or *.eval.json files",
+    )
     history_parser.add_argument("--metric", help="print values and trend for one metric")
     history_parser.add_argument(
         "--format",
@@ -121,8 +129,8 @@ def _list_metrics(*, category: Optional[str], output_format: str, novel_only: bo
         print(json.dumps(rows, sort_keys=True))
         return 0
 
-    print("| Name | Category | Unit | Reference | Novel |")
-    print("| --- | --- | --- | --- | --- |")
+    print("| Name | Category | Unit | Direction | Reference | Novel |")
+    print("| --- | --- | --- | --- | --- | --- |")
     for row in rows:
         print(
             "| "
@@ -131,6 +139,7 @@ def _list_metrics(*, category: Optional[str], output_format: str, novel_only: bo
                     row["name"],
                     row["category"],
                     row["unit"] or "-",
+                    "higher" if row["higher_is_better"] else "lower",
                     row["reference"] or "-",
                     str(row["is_novel"]),
                 ]
@@ -151,6 +160,8 @@ def _describe_metric(metric_name: str, *, output_format: str) -> int:
     print(f"Unit:        {payload['unit'] or '-'}")
     print(f"Reference:   {payload['reference'] or '-'}")
     print(f"Novel:       {payload['is_novel']}")
+    direction = "higher is better" if payload["higher_is_better"] else "lower is better"
+    print(f"Direction:   {direction}")
     print(f"Description: {payload['description'] or '-'}")
     print(f"Aliases:     {', '.join(payload['aliases']) or '-'}")
     print(f"Required inputs: {', '.join(payload['required_inputs']) or '-'}")
@@ -224,6 +235,7 @@ def _metric_payload(metric: MetricDefinition) -> MetricPayload:
         "aliases": list(metric.aliases),
         "reference": metric.reference,
         "is_novel": metric.is_novel,
+        "higher_is_better": metric.higher_is_better,
         "compatibility": metric.compatibility is not None,
         "description": metric.description,
     }
@@ -246,7 +258,24 @@ def _compare_exit_code(
         for item in comparison.comparisons
         if item.name in thresholded_names
     }
-    return 0 if all(winner == "b" for winner in winners.values()) else 1
+    comparisons = {
+        item.name: item
+        for item in comparison.comparisons
+        if item.name in thresholded_names
+    }
+    for name, winner in winners.items():
+        item = comparisons[name]
+        if winner == "b":
+            continue
+        if (
+            winner == "tie"
+            and math.isfinite(item.value_a)
+            and math.isfinite(item.value_b)
+            and math.isclose(item.value_a, item.value_b, rel_tol=1e-12, abs_tol=1e-12)
+        ):
+            continue
+        return 1
+    return 0
 
 
 def _load_history(directory: Path) -> EvaluationHistory:
@@ -276,17 +305,17 @@ def _callable_name(value: object) -> str:
 
 
 def _format_value(value: float) -> str:
-    if value != value:
+    if math.isnan(value):
         return "nan"
-    if value == float("inf"):
+    if math.isinf(value) and value > 0.0:
         return "inf"
-    if value == float("-inf"):
+    if math.isinf(value) and value < 0.0:
         return "-inf"
     return f"{value:.6g}"
 
 
 def _json_number(value: float) -> Optional[float]:
-    return float(value) if value == value and value not in {float("inf"), float("-inf")} else None
+    return float(value) if math.isfinite(value) else None
 
 
 if __name__ == "__main__":

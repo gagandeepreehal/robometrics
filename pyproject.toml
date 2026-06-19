@@ -33,6 +33,7 @@ dependencies = [
 
 [project.optional-dependencies]
 io = ["pandas>=1.5"]
+docs = ["mkdocs>=1.6"]
 dev = [
   "coverage[toml]>=7",
   "mypy>=1.10,<1.18",
@@ -44,6 +45,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/gagandeepreehal/robometrics"
+Documentation = "https://gagandeepreehal.github.io/robometrics/"
 Source = "https://github.com/gagandeepreehal/robometrics"
 Issues = "https://github.com/gagandeepreehal/robometrics/issues"
 Changelog = "https://github.com/gagandeepreehal/robometrics/blob/main/CHANGELOG.md"
@@ -89,3 +91,4 @@ source = ["robometrics"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
+fail_under = 90

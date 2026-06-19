@@ -87,7 +87,7 @@ payload = result.to_json()
 markdown = result.to_markdown()
 frame = result.to_dataframe()
 csv_text = result.to_csv()
-reloaded = result.from_json(result.to_json())
+reloaded = EvaluationResult.from_json(result.to_json())
 ```
 
 `to_dataframe()` and `to_csv()` require pandas. Install `robometrics[io]` to use

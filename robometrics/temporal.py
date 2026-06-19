@@ -1,6 +1,7 @@
 """Temporal evaluation metrics."""
 
 from __future__ import annotations
+
 from numpy.typing import ArrayLike
 
 from robometrics.geometry import as_1d_array

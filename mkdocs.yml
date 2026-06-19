@@ -1,0 +1,38 @@
+site_name: RoboMetrics
+site_description: Lightweight robotics metrics for Python.
+site_url: https://gagandeepreehal.github.io/robometrics/
+repo_url: https://github.com/gagandeepreehal/robometrics
+repo_name: gagandeepreehal/robometrics
+
+theme:
+  name: mkdocs
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Evaluation: evaluation.md
+  - API: api.md
+  - Metrics:
+      - Overview: metrics.md
+      - Trajectory: metrics/trajectory.md
+      - Prediction: metrics/prediction.md
+      - Driving: metrics/driving.md
+      - Safety: metrics/safety.md
+      - Comfort: metrics/comfort.md
+      - Physics: metrics/physics.md
+      - Task: metrics/task.md
+      - Manipulation: metrics/manipulation.md
+      - Calibration: metrics/calibration.md
+      - Coverage: metrics/coverage.md
+      - Diversity: metrics/diversity.md
+      - Temporal: metrics/temporal.md
+  - Guides:
+      - Comparing Policies: guides/comparing_policies.md
+      - CI Integration: guides/ci_integration.md
+      - Writing A Pack: guides/writing_a_pack.md
+      - ROS Adapter: guides/ros_adapter.md
+  - Performance: performance.md
+  - Roadmap: roadmap.md
+  - Contributing: contributing.md
+  - Release Checklist: release_checklist.md
+  - Publishing: publishing.md

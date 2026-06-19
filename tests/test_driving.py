@@ -19,6 +19,7 @@ def test_prediction_nll_single_mode_matching_ground_truth_is_near_zero() -> None
     predictions = gt[None, :, :]
 
     assert prediction_nll(predictions, [0.0], gt) == pytest.approx(0.0)
+    assert prediction_nll(predictions, [0.0], ground_truth=gt) == pytest.approx(0.0)
 
 
 def test_offroad_rate_inside_and_outside_polygon() -> None:

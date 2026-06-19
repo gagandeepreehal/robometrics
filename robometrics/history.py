@@ -166,7 +166,7 @@ class EvaluationHistory:
         return json.dumps(self.to_dict(), allow_nan=False, sort_keys=True)
 
     @classmethod
-    def from_json(cls, payload: str) -> "EvaluationHistory":
+    def from_json(cls, payload: str) -> EvaluationHistory:
         """Reconstruct from JSON produced by to_json()."""
         data = json.loads(payload)
         if not isinstance(data, dict):

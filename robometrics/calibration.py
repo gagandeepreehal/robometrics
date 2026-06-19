@@ -18,7 +18,7 @@ def calibration_error(
     outcome_arr = as_1d_array(outcomes, name="outcomes")
     if confidence_arr.shape != outcome_arr.shape:
         raise ValueError("confidences and outcomes must have the same shape")
-    if not np.all((0.0 <= confidence_arr) & (confidence_arr <= 1.0)):
+    if not np.all((confidence_arr >= 0.0) & (confidence_arr <= 1.0)):
         raise ValueError("confidences must be in [0, 1]")
     if not np.all((outcome_arr == 0.0) | (outcome_arr == 1.0)):
         raise ValueError("outcomes must contain only boolean or 0/1 values")

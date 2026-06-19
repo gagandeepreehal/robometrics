@@ -200,14 +200,15 @@ class EvaluationResult:
             return None
         return all(statuses)
 
-    def compare(self, other: "EvaluationResult") -> "ComparisonResult":
+    def compare(self, other: EvaluationResult) -> ComparisonResult:
         """Compare two evaluation results metric by metric.
 
         Returns a ComparisonResult with per-metric deltas, percent changes,
         and a winner flag ("a", "b", or "tie") per metric.
-        Lower is better for all metrics unless the metric name ends with
-        "_score", "_rate", "_accuracy", "_diversity", or "_smoothness",
-        in which case higher is better.
+        Directionality is read from metric metadata when available. Results
+        created by ``Evaluator`` include this metadata from the registry.
+        Name-based inference is retained only for manually constructed legacy
+        results that do not carry direction metadata.
         """
         self_by_name = {metric.name: metric for metric in self.results}
         other_by_name = {metric.name: metric for metric in other.results}
@@ -216,15 +217,17 @@ class EvaluationResult:
 
         comparisons = []
         for name in names:
-            value_a = self_by_name.get(name, MetricResult(name=name, value=float("nan"))).value
-            value_b = other_by_name.get(name, MetricResult(name=name, value=float("nan"))).value
+            metric_a = self_by_name.get(name)
+            metric_b = other_by_name.get(name)
+            value_a = metric_a.value if metric_a is not None else float("nan")
+            value_b = metric_b.value if metric_b is not None else float("nan")
             delta = float(value_b - value_a)
             percent_change = (
                 float(delta / abs(value_a) * 100.0)
                 if np.isfinite(value_a) and value_a != 0.0
                 else float("nan")
             )
-            higher_is_better = _higher_is_better(name)
+            higher_is_better = _higher_is_better(name, metric_a, metric_b)
             comparisons.append(
                 MetricComparison(
                     name=name,
@@ -413,11 +416,23 @@ _LOWER_IS_BETTER_OVERRIDES = {
     "miss_rate",
     "lane_departure_rate",
     "near_miss_rate",
+    "offroad_rate",
     "physics_violation_rate",
+    "joint_limit_violation_rate",
 }
 
 
-def _higher_is_better(name: str) -> bool:
+def _higher_is_better(
+    name: str,
+    metric_a: Optional[MetricResult] = None,
+    metric_b: Optional[MetricResult] = None,
+) -> bool:
+    for metric in (metric_b, metric_a):
+        if metric is None:
+            continue
+        value = metric.metadata.get("higher_is_better")
+        if isinstance(value, bool):
+            return value
     if name in _LOWER_IS_BETTER_OVERRIDES:
         return False
     suffixes = (

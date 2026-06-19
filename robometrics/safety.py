@@ -12,7 +12,7 @@ from robometrics.geometry import (
     FloatArray,
     as_actor_trajectories,
     as_trajectory,
-    obb_overlap,
+    obb_overlap_batch,
     points_in_polygon,
     validate_nonnegative,
     validate_positive,
@@ -99,17 +99,14 @@ def collision_rate_obb(
         covered_steps[:overlap] = True
         dims = actor_dim_values[actor_index]
         yaws = actor_yaw_values[actor_index]
-        for timestep in range(overlap):
-            if collision_steps[timestep]:
-                continue
-            collision_steps[timestep] = obb_overlap(
-                center_a=ego[timestep],
-                half_extents_a=ego_dim_values[timestep] / 2.0,
-                yaw_a=float(ego_yaw_values[timestep]),
-                center_b=actor[timestep],
-                half_extents_b=dims[timestep] / 2.0,
-                yaw_b=float(yaws[timestep]),
-            )
+        collision_steps[:overlap] |= obb_overlap_batch(
+            centers_a=ego[:overlap],
+            half_extents_a=ego_dim_values[:overlap] / 2.0,
+            yaws_a=ego_yaw_values[:overlap],
+            centers_b=actor[:overlap],
+            half_extents_b=dims[:overlap] / 2.0,
+            yaws_b=yaws[:overlap],
+        )
 
     if not np.any(covered_steps):
         return 0.0

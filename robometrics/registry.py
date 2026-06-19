@@ -47,6 +47,7 @@ class MetricDefinition:
     aliases: tuple[str, ...] = ()
     reference: str = ""
     is_novel: bool = False
+    higher_is_better: bool = False
     compatibility: Optional[CompatibilityFn] = field(default=None, repr=False, compare=False)
 
     def is_compatible(self, inputs: Mapping[str, Any]) -> bool:
@@ -79,6 +80,7 @@ class MetricRegistry:
         aliases: Iterable[str] = (),
         reference: str = "",
         is_novel: bool = False,
+        higher_is_better: Optional[bool] = None,
         compatibility: Optional[CompatibilityFn] = None,
     ) -> MetricDefinition:
         """Register a metric function and return its definition."""
@@ -98,6 +100,11 @@ class MetricRegistry:
                 aliases=tuple(aliases),
                 reference=reference,
                 is_novel=bool(is_novel),
+                higher_is_better=(
+                    _default_higher_is_better(normalized_name)
+                    if higher_is_better is None
+                    else bool(higher_is_better)
+                ),
                 compatibility=compatibility,
             )
             self._metrics[normalized_name] = metric
@@ -118,7 +125,7 @@ class MetricRegistry:
 
         Each dict must contain at minimum: name, fn, category.
         Optional keys: unit, description, required_inputs, default_kwargs,
-        aliases, compatibility, reference, is_novel.
+        aliases, compatibility, reference, is_novel, higher_is_better.
         Returns a list of created MetricDefinition objects.
         """
         created = []
@@ -140,6 +147,7 @@ class MetricRegistry:
                     compatibility=definition.get("compatibility"),
                     reference=definition.get("reference", ""),
                     is_novel=definition.get("is_novel", False),
+                    higher_is_better=definition.get("higher_is_better"),
                 )
             )
         return created
@@ -453,6 +461,7 @@ def create_default_registry() -> MetricRegistry:
         unit="seconds",
         required_inputs=("ego_state", "actor_state"),
         reference="Hayward, Time-to-collision, 1972",
+        higher_is_better=True,
     )
     reg.register(
         name="min_distance_to_actors",
@@ -461,6 +470,7 @@ def create_default_registry() -> MetricRegistry:
         unit="meters",
         required_inputs=("ego_traj", "actor_trajs"),
         reference="Standard minimum Euclidean separation metric",
+        higher_is_better=True,
         compatibility=_trajectory_input("ego_traj"),
     )
     reg.register(
@@ -479,6 +489,7 @@ def create_default_registry() -> MetricRegistry:
         unit="ratio",
         required_inputs=("ego_traj", "drivable_polygons"),
         reference="Caesar et al., nuScenes, CVPR 2020",
+        higher_is_better=False,
         compatibility=_trajectory_input("ego_traj"),
     )
     reg.register(
@@ -489,6 +500,7 @@ def create_default_registry() -> MetricRegistry:
         required_inputs=("ego_traj", "actor_trajs", "dt"),
         default_kwargs={"ego_radius": 0.0, "actor_radius": 0.0},
         reference="Weng et al., nuScenes-Forecast, ECCV 2022",
+        higher_is_better=True,
         compatibility=_trajectory_input("ego_traj"),
     )
 
@@ -557,6 +569,7 @@ def create_default_registry() -> MetricRegistry:
         required_inputs=("points",),
         default_kwargs={"cell_size": 1.0},
         reference="Standard grid-cell workspace coverage metric",
+        higher_is_better=True,
     )
     reg.register(
         name="calibration_error",
@@ -611,6 +624,7 @@ def create_default_registry() -> MetricRegistry:
         required_inputs=("contact_forces",),
         default_kwargs={"threshold": 0.1},
         reference="Handa et al., DexPilot, ICRA 2020",
+        higher_is_better=True,
     )
     reg.register(
         name="force_limit_compliance",
@@ -619,6 +633,7 @@ def create_default_registry() -> MetricRegistry:
         unit="score",
         required_inputs=("forces", "max_force"),
         reference="ISO/TS 15066 collaborative robot safety",
+        higher_is_better=True,
     )
     reg.register(
         name="joint_limit_violation_rate",
@@ -627,6 +642,7 @@ def create_default_registry() -> MetricRegistry:
         unit="ratio",
         required_inputs=("joint_angles", "lower_limits", "upper_limits"),
         reference="Siciliano et al., Robotics, Springer 2009",
+        higher_is_better=False,
     )
     reg.register(
         name="end_effector_tracking_error",
@@ -641,7 +657,10 @@ def create_default_registry() -> MetricRegistry:
     return reg
 
 
-def load_pack(module_name: str) -> list[MetricDefinition]:
+def load_pack(
+    module_name: str,
+    registry: Optional[MetricRegistry] = None,
+) -> list[MetricDefinition]:
     """Import a metric pack module and register its metrics.
 
     The module must expose a module-level list named `METRIC_PACK` where
@@ -661,15 +680,46 @@ def load_pack(module_name: str) -> list[MetricDefinition]:
 
     Raises ImportError if the module cannot be imported.
     Raises ValueError if the module does not expose METRIC_PACK.
+    Pass ``registry=custom_registry`` to load the pack into an isolated
+    ``MetricRegistry`` used by a custom ``Evaluator``. By default, packs are
+    registered in the global registry.
+
     Returns the list of registered MetricDefinition objects.
     """
     module = importlib.import_module(module_name)
     if not hasattr(module, "METRIC_PACK"):
         raise ValueError(f"{module_name} does not expose METRIC_PACK")
-    pack = getattr(module, "METRIC_PACK")
+    pack = module.METRIC_PACK
     if not isinstance(pack, list):
         raise ValueError(f"{module_name}.METRIC_PACK must be a list")
-    return registry.register_many(pack)
+    target_registry = globals()["registry"] if registry is None else registry
+    return target_registry.register_many(pack)
+
+
+_LOWER_IS_BETTER_RATE_NAMES = {
+    "collision_rate",
+    "lane_departure_rate",
+    "miss_rate",
+    "near_miss_rate",
+    "offroad_rate",
+    "physics_violation_rate",
+    "joint_limit_violation_rate",
+}
+
+
+def _default_higher_is_better(name: str) -> bool:
+    if name in _LOWER_IS_BETTER_RATE_NAMES:
+        return False
+    suffixes = (
+        "_score",
+        "_rate",
+        "_accuracy",
+        "_diversity",
+        "_smoothness",
+        "success_rate",
+        "feasibility",
+    )
+    return any(name.endswith(suffix) or name == suffix for suffix in suffixes)
 
 
 def _normalize_name(name: str) -> str:

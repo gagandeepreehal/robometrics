@@ -11,6 +11,7 @@ from robometrics import (
     min_distance_to_actors,
     time_to_collision,
 )
+from robometrics.geometry import point_in_polygon, points_in_polygon
 from robometrics.schemas import AgentState
 
 
@@ -101,6 +102,23 @@ def test_lane_departure_rejects_collinear_polygon() -> None:
 
     with pytest.raises(ValueError, match="non-zero polygon area"):
         lane_departure_rate(ego, lane)
+
+
+def test_points_in_polygon_matches_scalar_helper_for_boundary_and_interior() -> None:
+    points = np.array(
+        [
+            [0.0, 0.0],
+            [2.0, 0.0],
+            [3.0, 0.0],
+            [-1.0, -1.0],
+        ]
+    )
+    polygon = np.array([[-1.0, -1.0], [2.0, -1.0], [2.0, 1.0], [-1.0, 1.0]])
+
+    vectorized = points_in_polygon(points, polygon)
+    scalar = np.array([point_in_polygon(point, polygon) for point in points])
+
+    assert np.array_equal(vectorized, scalar)
 
 
 def test_safety_rejects_invalid_values() -> None:

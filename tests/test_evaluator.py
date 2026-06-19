@@ -77,6 +77,21 @@ def test_evaluator_runs_prediction_metrics_with_metric_kwargs() -> None:
     assert values["topk_trajectory_error"] == pytest.approx(0.1)
 
 
+def test_evaluator_runs_prediction_nll_with_registered_gt_input() -> None:
+    gt = np.array([[0.0, 0.0], [1.0, 0.0]])
+    predictions = gt[None, :, :]
+
+    result = Evaluator().evaluate(
+        prediction=predictions,
+        ground_truth=gt,
+        log_weights=np.array([0.0]),
+        metrics=["prediction_nll"],
+    )
+
+    assert result.results[0].value == pytest.approx(0.0)
+    assert "error" not in result.results[0].metadata
+
+
 def test_evaluator_stores_metric_failures() -> None:
     pred = np.array([[0.0, 0.0], [1.0, 0.0]])
     gt = np.array([[0.0, 0.0], [1.0, 0.0]])

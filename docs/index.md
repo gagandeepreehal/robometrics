@@ -47,4 +47,6 @@ print(result.to_markdown())
 - `docs/guides/ci_integration.md` shows how to wire `robometrics compare` into GitHub Actions.
 - `docs/guides/writing_a_pack.md` shows third-party metric pack registration.
 - `docs/guides/ros_adapter.md` shows ROS message conversion when ROS is installed and sourced.
+- `docs/performance.md` tracks geometry-kernel performance expectations.
+- `docs/roadmap.md` states the alpha stability contract and launch roadmap.
 - `docs/api.md` lists the public symbols exported from `robometrics.__all__`.

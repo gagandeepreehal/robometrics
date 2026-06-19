@@ -1,6 +1,6 @@
 # CI Integration
 
-Continuous integration is a good fit for guardrail metrics: collision rate, lane departure rate, offroad rate, miss rate, final displacement error, and any task metric with a clear acceptance threshold. The recommended pattern is to keep a baseline JSON artifact in the repository or download it from a stable artifact store, run the candidate evaluation in CI, then call `robometrics compare baseline.json new.json`. The command prints a comparison and exits with status code 0 only when the candidate result B wins on all thresholded metrics. That makes the shell step fail naturally when a thresholded safety metric regresses.
+Continuous integration is a good fit for guardrail metrics: collision rate, lane departure rate, offroad rate, miss rate, final displacement error, and any task metric with a clear acceptance threshold. The recommended pattern is to keep a baseline JSON artifact in the repository or download it from a stable artifact store, run the candidate evaluation in CI, then call `robometrics compare baseline.json new.json`. The command prints a comparison and exits with status code 0 when candidate result B wins or exactly ties every thresholded metric. A thresholded metric that regresses, is missing from B, or has a non-finite value makes the shell step fail naturally.
 
 Use stable evaluation data in CI. If the dataset is too large, run a small deterministic scenario suite as a smoke gate and reserve full leaderboard or nightly runs for heavier workflows. Store the exact metric list and thresholds in code, not in free-form job comments. When you add `bootstrap_ci` in dataset evaluation, remember that CI still compares point estimates; the interval is metadata for human review unless you encode a separate acceptance rule.
 
@@ -40,3 +40,7 @@ Path("new.json").write_text(result.to_json(), encoding="utf-8")
 ```
 
 For safety-focused repositories, include `collision_rate`, `collision_rate_obb`, `lane_departure_rate`, or `offroad_rate` when the required inputs are available. Keep the baseline file reviewed and intentional; changing it should be treated like changing a test expectation.
+
+`robometrics history <directory>` only reads files named `*_eval.json` or
+`*.eval.json`. Use names such as `checkpoint_100.eval.json` when you want a
+directory of evaluation results to appear in the history summary.

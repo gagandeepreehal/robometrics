@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from math import inf
+from typing import Optional
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -26,7 +27,9 @@ from robometrics.safety import _solve_ttc_quadratic
 def prediction_nll(
     predictions: ArrayLike,
     log_weights: ArrayLike,
-    ground_truth: ArrayLike,
+    gt: Optional[ArrayLike] = None,
+    *,
+    ground_truth: Optional[ArrayLike] = None,
 ) -> float:
     """Return mean negative log-likelihood for a Gaussian mixture prediction.
 
@@ -42,13 +45,20 @@ def prediction_nll(
     Inputs:
         predictions: KxTx2 or KxTx3 array of K predicted trajectories.
         log_weights: K-length array of log mixture weights (need not be normalized).
-        ground_truth: Tx2 or Tx3 ground-truth trajectory.
+        gt: Tx2 or Tx3 ground-truth trajectory. ``ground_truth`` is accepted
+            as a keyword alias for direct calls.
 
     Output:
         A scalar NLL where lower is better. Returns inf if predictions is empty.
     """
+    if gt is None and ground_truth is None:
+        raise ValueError("prediction_nll requires gt or ground_truth")
+    if gt is not None and ground_truth is not None:
+        raise ValueError("provide either gt or ground_truth, not both")
+    target = gt if gt is not None else ground_truth
+    assert target is not None
     pred_arr = as_prediction_set(predictions)
-    gt_arr = as_trajectory(ground_truth, name="ground_truth")
+    gt_arr = as_trajectory(target, name="ground_truth")
     require_same_time_and_dim(pred_arr, gt_arr, ground_truth_name="ground_truth")
     weights = _as_log_weights(log_weights, expected_modes=pred_arr.shape[0])
 

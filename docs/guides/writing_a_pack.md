@@ -1,6 +1,6 @@
 # Writing A Pack
 
-Metric packs let teams keep domain-specific metrics outside the core RoboMetrics package while still registering them through the same evaluator and CLI discovery surfaces. A pack is a normal importable Python module with a top-level `METRIC_PACK` list. Each entry describes one metric using the registry contract: name, callable, category, unit, required inputs, optional aliases, optional default keyword arguments, reference, and whether the metric is novel. `load_pack()` imports the module and registers every definition in the global registry.
+Metric packs let teams keep domain-specific metrics outside the core RoboMetrics package while still registering them through the same evaluator and CLI discovery surfaces. A pack is a normal importable Python module with a top-level `METRIC_PACK` list. Each entry describes one metric using the registry contract: name, callable, category, unit, required inputs, optional aliases, optional default keyword arguments, reference, whether the metric is novel, and whether higher values are better. `load_pack()` imports the module and registers every definition in the global registry unless you pass a custom registry.
 
 Keep pack metrics small and deterministic. They should accept NumPy-like arrays or simple Python values, validate their inputs, and return a scalar float or a `MetricResult`. Use `required_inputs` to tell `Evaluator` what keyword inputs must be present. If a metric needs several optional parameters, put stable defaults in `default_kwargs` so CLI and evaluator behavior stays reproducible. Always include a reference string, even when the metric is internal; that metadata appears in list and describe output.
 
@@ -28,6 +28,7 @@ METRIC_PACK = [
         "required_inputs": ("prediction", "ground_truth"),
         "reference": "Team internal longitudinal endpoint error",
         "is_novel": True,
+        "higher_is_better": False,
     }
 ]
 ```
@@ -45,6 +46,17 @@ result = Evaluator().evaluate(
     metrics=["final_x_error"],
 )
 print(result.to_markdown())
+```
+
+For isolated evaluator instances, load the pack into the same custom registry
+you pass to `Evaluator`:
+
+```python
+from robometrics import Evaluator, MetricRegistry, load_pack
+
+custom_registry = MetricRegistry()
+load_pack("my_robot_metrics", registry=custom_registry)
+result = Evaluator(metric_registry=custom_registry).evaluate(...)
 ```
 
 During development, unregister test metrics or run pack tests in a fresh process so global registry state does not leak between tests. For published packs, document the expected inputs and units beside the module.

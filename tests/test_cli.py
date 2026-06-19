@@ -37,6 +37,7 @@ def test_cli_lists_metrics_as_json(capsys) -> None:
     assert ade["is_novel"] is False
     assert "default_kwargs" in ade
     assert "fn" in ade
+    assert ade["higher_is_better"] is False
 
 
 def test_cli_list_metrics_category_shows_only_requested_category(capsys) -> None:
@@ -44,7 +45,7 @@ def test_cli_list_metrics_category_shows_only_requested_category(capsys) -> None
 
     captured = capsys.readouterr()
 
-    assert "| Name | Category | Unit | Reference | Novel |" in captured.out
+    assert "| Name | Category | Unit | Direction | Reference | Novel |" in captured.out
     assert "ade" in captured.out
     assert "hausdorff_distance" in captured.out
     assert "smoothness_score" not in captured.out
@@ -72,6 +73,7 @@ def test_cli_describes_metric(capsys) -> None:
     captured = capsys.readouterr()
 
     assert "Reference:   Alahi" in captured.out
+    assert "Direction:   lower is better" in captured.out
     assert "Required inputs: pred, gt" in captured.out
 
 
@@ -142,6 +144,82 @@ def test_cli_compare_prints_output_and_exits_zero_when_b_wins_thresholded_metric
     assert cli.main(["compare", str(a_path), str(b_path), "--format", "text"]) == 0
 
     assert "ade" in capsys.readouterr().out
+
+
+def test_cli_compare_outputs_json_and_markdown(tmp_path, capsys) -> None:
+    result_a = EvaluationResult(results=[MetricResult(name="ade", value=2.0)])
+    result_b = EvaluationResult(results=[MetricResult(name="ade", value=1.0)])
+    a_path = tmp_path / "a.json"
+    b_path = tmp_path / "b.json"
+    a_path.write_text(result_a.to_json(), encoding="utf-8")
+    b_path.write_text(result_b.to_json(), encoding="utf-8")
+
+    assert cli.main(["compare", str(a_path), str(b_path), "--format", "json"]) == 0
+    json_payload = json.loads(capsys.readouterr().out)
+    assert json_payload["winner_count"] == {"a": 0, "b": 1, "tie": 0}
+
+    assert cli.main(["compare", str(a_path), str(b_path), "--format", "markdown"]) == 0
+    assert "| Metric | A | B | Delta | Winner |" in capsys.readouterr().out
+
+
+def test_cli_compare_exits_zero_when_thresholded_metrics_tie(tmp_path, capsys) -> None:
+    result = EvaluationResult(
+        results=[MetricResult(name="ade", value=1.0, threshold=3.0, passed=True)]
+    )
+    a_path = tmp_path / "a.json"
+    b_path = tmp_path / "b.json"
+    a_path.write_text(result.to_json(), encoding="utf-8")
+    b_path.write_text(result.to_json(), encoding="utf-8")
+
+    assert cli.main(["compare", str(a_path), str(b_path), "--format", "text"]) == 0
+
+    assert "Winner=tie" in capsys.readouterr().out
+
+
+def test_cli_compare_fails_when_thresholded_metric_is_missing_from_candidate(tmp_path) -> None:
+    result_a = EvaluationResult(
+        results=[MetricResult(name="ade", value=1.0, threshold=3.0, passed=True)]
+    )
+    result_b = EvaluationResult(results=[])
+    a_path = tmp_path / "a.json"
+    b_path = tmp_path / "b.json"
+    a_path.write_text(result_a.to_json(), encoding="utf-8")
+    b_path.write_text(result_b.to_json(), encoding="utf-8")
+
+    assert cli.main(["compare", str(a_path), str(b_path), "--format", "text"]) == 1
+
+
+def test_cli_history_outputs_json_and_metric_tables(tmp_path, capsys) -> None:
+    first = EvaluationResult(results=[MetricResult(name="ade", value=2.0)])
+    second = EvaluationResult(results=[MetricResult(name="ade", value=1.0)])
+    no_step = tmp_path / "baseline_eval.json"
+    step_file = tmp_path / "checkpoint_10.eval.json"
+    no_step.write_text(first.to_json(), encoding="utf-8")
+    step_file.write_text(second.to_json(), encoding="utf-8")
+
+    assert cli.main(["history", str(tmp_path), "--format", "json"]) == 0
+    history_payload = json.loads(capsys.readouterr().out)
+    assert history_payload["checkpoints"][0]["step"] == 0
+    assert history_payload["checkpoints"][1]["step"] == 10
+
+    assert cli.main(["history", str(tmp_path), "--metric", "ade"]) == 0
+    metric_table = capsys.readouterr().out
+    assert "| Step | ade |" in metric_table
+    assert "Trend:" in metric_table
+
+    assert cli.main(["history", str(tmp_path), "--metric", "ade", "--format", "json"]) == 0
+    metric_payload = json.loads(capsys.readouterr().out)
+    assert metric_payload["metric"] == "ade"
+    assert metric_payload["values"] == {"0": 2.0, "10": 1.0}
+
+
+def test_cli_value_format_helpers_handle_non_finite_values() -> None:
+    assert cli._format_value(float("nan")) == "nan"
+    assert cli._format_value(float("inf")) == "inf"
+    assert cli._format_value(float("-inf")) == "-inf"
+    assert cli._json_number(float("nan")) is None
+    assert cli._json_number(float("inf")) is None
+    assert cli._json_number(1.5) == 1.5
 
 
 def test_cli_history_builds_table_from_eval_files(tmp_path, capsys) -> None:
