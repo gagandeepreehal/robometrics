@@ -13,8 +13,10 @@ def test_import_robometrics_exposes_version() -> None:
 def test_public_api_exports_core_objects() -> None:
     expected = {
         "ade",
+        "CheckpointEntry",
         "ComparisonResult",
         "Evaluator",
+        "EvaluationHistory",
         "EvaluationResult",
         "fde",
         "MetricComparison",

@@ -24,6 +24,7 @@ from robometrics.driving import (
     soft_ttc,
 )
 from robometrics.evaluator import EvaluationInputError, Evaluator
+from robometrics.history import CheckpointEntry, EvaluationHistory
 from robometrics.io import TrajectoryIOError
 from robometrics.manipulation import (
     contact_richness,
@@ -75,8 +76,10 @@ fde = final_displacement_error
 
 __all__ = [
     "AgentState",
+    "CheckpointEntry",
     "ComparisonResult",
     "EvaluationInputError",
+    "EvaluationHistory",
     "EvaluationResult",
     "Evaluator",
     "MetricDefinition",
