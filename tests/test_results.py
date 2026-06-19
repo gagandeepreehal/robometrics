@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-import pandas as pd
+import numpy as np
 import pytest
 
 import robometrics.cli as cli
@@ -95,12 +95,14 @@ def test_evaluation_result_summary_and_exports() -> None:
     assert "| Metric | Value | Unit | Passed | Threshold |" in markdown
     assert "ADE" in markdown
 
+    pd = pytest.importorskip("pandas")
     frame = result.to_dataframe()
     assert isinstance(frame, pd.DataFrame)
     assert list(frame["name"]) == ["ade", "fde"]
 
 
 def test_evaluation_result_exports_csv(tmp_path) -> None:
+    pytest.importorskip("pandas")
     result = EvaluationResult(results=[MetricResult(name="ade", value=0.42, unit="meters")])
     path = tmp_path / "results.csv"
 
@@ -196,7 +198,7 @@ def test_evaluation_result_empty_and_nonfinite_formatting() -> None:
             MetricResult(name="fde", value=float("inf")),
             MetricResult(name="min_ade", value=float("-inf")),
         ],
-        metadata={"array": pd.Series([1]).to_numpy(), "scalar": pd.Series([2]).to_numpy()[0]},
+        metadata={"array": np.array([1]), "scalar": np.float64(2)},
     )
     markdown = result.to_markdown()
     payload = result.to_dict()

@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 import numpy as np
-import pandas as pd
 from numpy.typing import ArrayLike
 
 from robometrics.geometry import FloatArray, as_trajectory
@@ -56,6 +55,7 @@ def load_csv(
     csv_path = Path(path)
     if not csv_path.exists():
         raise TrajectoryIOError(f"trajectory file does not exist: {csv_path}")
+    pd = _require_pandas("load_csv()")
     try:
         frame = pd.read_csv(csv_path)
     except (OSError, pd.errors.ParserError) as exc:
@@ -170,3 +170,14 @@ def _json_trajectory_records(payload: Any) -> Any:
         if "points" in payload:
             return payload["points"]
     return payload
+
+
+def _require_pandas(function_name: str) -> Any:
+    try:
+        import pandas as pd
+    except ImportError as exc:
+        raise ImportError(
+            f"pandas is required for {function_name}. "
+            "Install it with: pip install robometrics[io]"
+        ) from exc
+    return pd

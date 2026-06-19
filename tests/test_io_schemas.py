@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from robometrics.io import (
@@ -52,6 +51,7 @@ def test_load_numpy_error_paths(tmp_path) -> None:
 
 
 def test_load_csv_and_json(tmp_path) -> None:
+    pd = pytest.importorskip("pandas")
     traj = np.array([[0.0, 0.0], [0.2, 0.0]])
     csv_path = tmp_path / "traj.csv"
     json_path = tmp_path / "traj.json"
@@ -110,6 +110,7 @@ def test_load_trajectory_rejects_unknown_extension(tmp_path) -> None:
 
 
 def test_load_trajectory_dir_loads_supported_files(tmp_path) -> None:
+    pd = pytest.importorskip("pandas")
     traj = np.array([[0.0, 0.0], [1.0, 0.0]])
     np.save(tmp_path / "a.npy", traj)
     pd.DataFrame({"x": [0.0, 1.0], "y": [0.0, 0.0]}).to_csv(tmp_path / "b.csv", index=False)
@@ -149,6 +150,7 @@ def test_loaders_raise_trajectory_io_error_for_file_failures(tmp_path) -> None:
 
 
 def test_load_csv_missing_columns_stays_validation_error(tmp_path) -> None:
+    pd = pytest.importorskip("pandas")
     csv_path = tmp_path / "missing_xy.csv"
     pd.DataFrame({"x": [0.0]}).to_csv(csv_path, index=False)
 
@@ -157,6 +159,7 @@ def test_load_csv_missing_columns_stays_validation_error(tmp_path) -> None:
 
 
 def test_load_csv_wraps_read_errors(tmp_path, monkeypatch) -> None:
+    pd = pytest.importorskip("pandas")
     csv_path = tmp_path / "traj.csv"
     csv_path.write_text("x,y\n0,0\n", encoding="utf-8")
 

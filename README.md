@@ -22,6 +22,7 @@ codebases.
 
 ```bash
 pip install robometrics
+pip install "robometrics[io]"  # CSV loading and pandas exports
 ```
 
 RoboMetrics is primarily a Python library. The installed CLI is intentionally
@@ -116,7 +117,8 @@ for common CI summaries. Threshold-style physics helpers return
 and metadata.
 
 `EvaluationResult` is a small container for local batches of metric results and
-can export and reload dictionaries, strict JSON, CSV, Markdown tables, and pandas DataFrames.
+can export and reload dictionaries, strict JSON, Markdown tables, CSV, and
+pandas DataFrames. Install `robometrics[io]` for CSV and pandas-backed exports.
 Non-finite metric values are serialized as `null` in JSON with metadata that
 records whether the original value was `nan`, `inf`, or `-inf`.
 

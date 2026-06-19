@@ -360,7 +360,7 @@ class EvaluationResult:
 
     def to_dataframe(self) -> Any:
         """Return a pandas DataFrame with one row per metric result."""
-        import pandas as pd
+        pd = _require_pandas("to_dataframe()")
 
         rows = []
         for metric in self.results:
@@ -379,6 +379,7 @@ class EvaluationResult:
 
     def to_csv(self, path: Optional[Union[str, Path]] = None) -> str:
         """Return CSV text, optionally writing it to ``path``."""
+        _require_pandas("to_csv()")
         csv_text = str(self.to_dataframe().to_csv(index=False))
         if path is not None:
             Path(path).write_text(csv_text, encoding="utf-8")
@@ -394,6 +395,17 @@ def _display_name(name: str) -> str:
         "miss_rate": "Miss Rate",
     }
     return special.get(name, name.replace("_", " ").title())
+
+
+def _require_pandas(function_name: str) -> Any:
+    try:
+        import pandas as pd
+    except ImportError as exc:
+        raise ImportError(
+            f"pandas is required for {function_name}. "
+            "Install it with: pip install robometrics[io]"
+        ) from exc
+    return pd
 
 
 _LOWER_IS_BETTER_OVERRIDES = {

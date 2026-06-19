@@ -90,6 +90,9 @@ csv_text = result.to_csv()
 reloaded = result.from_json(result.to_json())
 ```
 
+`to_dataframe()` and `to_csv()` require pandas. Install `robometrics[io]` to use
+those export paths.
+
 `to_json()` emits standards-compliant JSON. Non-finite metric values such as `NaN` or `inf` are exported as `null`.
 Each affected metric includes `metadata["value_serialization"]` so strict JSON
 consumers can distinguish `nan`, `inf`, and `-inf` from ordinary null values.

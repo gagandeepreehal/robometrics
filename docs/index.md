@@ -1,6 +1,8 @@
 # RoboMetrics Documentation
 
-RoboMetrics provides lightweight robotics metrics for local Python codebases. It is pure Python and uses only NumPy, SciPy, and pandas at runtime.
+RoboMetrics provides lightweight robotics metrics for local Python codebases.
+It uses NumPy and SciPy at runtime, with pandas available through the optional
+`robometrics[io]` extra for CSV loading and DataFrame/CSV exports.
 
 Use it when you need local trajectory, prediction, safety, comfort, or physics metrics from NumPy arrays and simple CSV/JSON trajectory files.
 
