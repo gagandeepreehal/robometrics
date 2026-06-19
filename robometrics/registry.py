@@ -9,7 +9,17 @@ from typing import Any, Optional
 
 import numpy as np
 
-from robometrics import comfort, physics, prediction, safety, trajectory
+from robometrics import (
+    calibration,
+    comfort,
+    coverage,
+    diversity,
+    physics,
+    prediction,
+    safety,
+    temporal,
+    trajectory,
+)
 
 MetricFn = Callable[..., Any]
 CompatibilityFn = Callable[[Mapping[str, Any]], bool]
@@ -227,6 +237,49 @@ def create_default_registry() -> MetricRegistry:
     )
 
     reg.register(
+        name="temporal_drift",
+        fn=temporal.temporal_drift,
+        category="temporal",
+        unit="state_units/timestep",
+        required_inputs=("predicted", "reference"),
+        compatibility=_same_batch_time_shape("predicted", "reference"),
+    )
+    reg.register(
+        name="action_jerk",
+        fn=temporal.action_jerk,
+        category="temporal",
+        unit="action_units^2/s^4",
+        required_inputs=("actions",),
+        default_kwargs={"dt": 1.0},
+        compatibility=_batch_time_input("actions"),
+    )
+    reg.register(
+        name="control_smoothness",
+        fn=temporal.control_smoothness,
+        category="temporal",
+        unit="score",
+        required_inputs=("actions",),
+        default_kwargs={"dt": 1.0},
+        compatibility=_batch_time_input("actions"),
+    )
+    reg.register(
+        name="long_horizon_drift",
+        fn=temporal.long_horizon_drift,
+        category="temporal",
+        unit="state_units",
+        required_inputs=("predicted", "reference"),
+        compatibility=_same_batch_time_shape("predicted", "reference"),
+    )
+    reg.register(
+        name="compounding_error_index",
+        fn=temporal.compounding_error_index,
+        category="temporal",
+        unit="index",
+        required_inputs=("errors_or_predicted",),
+        compatibility=_error_curve_input("errors_or_predicted"),
+    )
+
+    reg.register(
         name="acceleration",
         fn=comfort.acceleration,
         category="comfort",
@@ -338,6 +391,54 @@ def create_default_registry() -> MetricRegistry:
         required_inputs=("ego_traj", "lane_boundary"),
         compatibility=_trajectory_input("ego_traj"),
     )
+    reg.register(
+        name="recovery_success_rate",
+        fn=safety.recovery_success_rate,
+        category="safety",
+        unit="ratio",
+        required_inputs=("opportunities", "successes"),
+    )
+    reg.register(
+        name="failure_severity",
+        fn=safety.failure_severity,
+        category="safety",
+        unit="severity",
+        required_inputs=("failures",),
+    )
+    reg.register(
+        name="near_miss_rate",
+        fn=safety.near_miss_rate,
+        category="safety",
+        unit="ratio",
+        required_inputs=("clearances",),
+        default_kwargs={"threshold": 1.0, "collision_mask": None},
+    )
+    reg.register(
+        name="intervention_free_time",
+        fn=safety.intervention_free_time,
+        category="safety",
+        unit="seconds",
+        required_inputs=("timestamps", "interventions"),
+        default_kwargs={"mode": "longest"},
+    )
+
+    reg.register(
+        name="coverage_score",
+        fn=coverage.coverage_score,
+        category="coverage",
+        unit="score",
+        required_inputs=("samples", "bounds"),
+        default_kwargs={"bins": 10},
+    )
+
+    reg.register(
+        name="calibration_error",
+        fn=calibration.calibration_error,
+        category="calibration",
+        unit="error",
+        required_inputs=("confidences", "correctness"),
+        default_kwargs={"n_bins": 10},
+    )
 
     reg.register(
         name="speed_profile",
@@ -380,6 +481,38 @@ def create_default_registry() -> MetricRegistry:
         default_kwargs={"constraints": {}},
         compatibility=_trajectory_input("traj"),
     )
+    reg.register(
+        name="kinematic_feasibility",
+        fn=physics.kinematic_feasibility,
+        category="physics",
+        unit="score",
+        required_inputs=("positions",),
+        default_kwargs={"dt": 1.0},
+        compatibility=_sample_input("positions"),
+    )
+    reg.register(
+        name="dynamic_feasibility",
+        fn=physics.dynamic_feasibility,
+        category="physics",
+        unit="score",
+        required_inputs=("mass", "accelerations"),
+    )
+    reg.register(
+        name="physics_violation_rate",
+        fn=physics.physics_violation_rate,
+        category="physics",
+        unit="ratio",
+        required_inputs=("violations",),
+    )
+
+    reg.register(
+        name="behavioral_diversity",
+        fn=diversity.behavioral_diversity,
+        category="diversity",
+        unit="distance",
+        required_inputs=("behaviors",),
+        default_kwargs={"max_pairs": 10_000, "normalize": False},
+    )
 
     return reg
 
@@ -416,9 +549,54 @@ def _is_prediction_shape(shape: Optional[tuple[int, ...]]) -> bool:
     )
 
 
+def _is_batch_time_shape(shape: Optional[tuple[int, ...]]) -> bool:
+    if shape is None:
+        return False
+    if len(shape) == 2:
+        return shape[0] > 0 and shape[1] > 0
+    return len(shape) == 3 and shape[0] > 0 and shape[1] > 0 and shape[2] > 0
+
+
+def _is_error_curve_shape(shape: Optional[tuple[int, ...]]) -> bool:
+    if shape is None:
+        return False
+    if len(shape) == 1:
+        return shape[0] > 0
+    return len(shape) == 2 and shape[0] > 0 and shape[1] > 0
+
+
+def _is_sample_shape(shape: Optional[tuple[int, ...]]) -> bool:
+    if shape is None:
+        return False
+    if len(shape) == 1:
+        return shape[0] > 0
+    return len(shape) == 2 and shape[0] > 0 and shape[1] > 0
+
+
 def _trajectory_input(key: str) -> CompatibilityFn:
     def compatible(inputs: Mapping[str, Any]) -> bool:
         return _is_trajectory_shape(_shape(inputs[key]))
+
+    return compatible
+
+
+def _batch_time_input(key: str) -> CompatibilityFn:
+    def compatible(inputs: Mapping[str, Any]) -> bool:
+        return _is_batch_time_shape(_shape(inputs[key]))
+
+    return compatible
+
+
+def _error_curve_input(key: str) -> CompatibilityFn:
+    def compatible(inputs: Mapping[str, Any]) -> bool:
+        return _is_error_curve_shape(_shape(inputs[key]))
+
+    return compatible
+
+
+def _sample_input(key: str) -> CompatibilityFn:
+    def compatible(inputs: Mapping[str, Any]) -> bool:
+        return _is_sample_shape(_shape(inputs[key]))
 
     return compatible
 
@@ -443,6 +621,15 @@ def _same_dimensionality(left: str, right: str) -> CompatibilityFn:
             and right_shape is not None
             and left_shape[1] == right_shape[1]
         )
+
+    return compatible
+
+
+def _same_batch_time_shape(left: str, right: str) -> CompatibilityFn:
+    def compatible(inputs: Mapping[str, Any]) -> bool:
+        left_shape = _shape(inputs[left])
+        right_shape = _shape(inputs[right])
+        return _is_batch_time_shape(left_shape) and left_shape == right_shape
 
     return compatible
 

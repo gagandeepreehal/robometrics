@@ -8,8 +8,8 @@
 Lightweight robotics metrics for Python.
 
 RoboMetrics is a small local Python library for computing robotics trajectory,
-prediction, safety, comfort, and physics metrics from NumPy arrays and simple
-CSV/JSON trajectory files.
+prediction, temporal drift, safety, comfort, coverage, calibration, physics,
+and diversity metrics from NumPy arrays and simple CSV/JSON trajectory files.
 
 ## Why This Exists
 
@@ -72,6 +72,7 @@ python examples/trajectory_metrics.py
 python examples/prediction_metrics.py
 python examples/safety_metrics.py
 python examples/comfort_metrics.py
+python examples/new_metrics_example.py
 python examples/load_from_csv.py
 ```
 
@@ -83,6 +84,9 @@ Trajectory-like inputs are NumPy-compatible arrays with finite numeric values:
 - Multimodal predictions: `KxTx2` or `KxTx3`
 - Ground-truth trajectory for prediction metrics: `Tx2` or `Tx3`
 - Actor trajectories for safety metrics: a list of `Nx2` or `Nx3` arrays
+- General time-series metrics: `TxD` or `BxTxD`
+- Coverage samples and behavior embeddings: `NxD`
+- Batched behavior trajectories or actions: `NxTxD`
 
 `N` or `T` is the number of timesteps, `K` is the number of prediction modes,
 and columns are position coordinates in meters. `Nx3` inputs are supported by
@@ -126,9 +130,13 @@ The registry keeps a pragmatic taxonomy:
 
 - `trajectory`: geometric path and path-comparison metrics.
 - `prediction`: multimodal forecast metrics such as minADE, minFDE, miss indicator, and top-k error.
+- `temporal`: rollout drift, control-sequence smoothness, and compounding-error metrics.
 - `comfort`: kinematic profiles and smoothness values commonly used for ride or control quality.
 - `safety`: collision, distance-to-actor, lane, and TTC metrics.
+- `coverage`: grid coverage over state or action samples.
+- `calibration`: expected calibration error for confidence predictions.
 - `physics`: thresholded dynamic feasibility checks and limit-result helpers.
+- `diversity`: behavior diversity over embeddings, trajectories, or action sequences.
 
 Some physical quantities appear in more than one category by design. For
 example, `acceleration()` returns a comfort/control profile, while
@@ -297,6 +305,7 @@ python examples/trajectory_metrics.py
 python examples/prediction_metrics.py
 python examples/safety_metrics.py
 python examples/comfort_metrics.py
+python examples/new_metrics_example.py
 python examples/load_from_csv.py
 ```
 

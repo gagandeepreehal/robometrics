@@ -221,7 +221,7 @@ def _build_inputs(
     values = {key: value for key, value in inputs.items() if value is not None}
     if prediction is not None:
         values["prediction"] = prediction
-        for alias in ("pred", "predictions", "traj", "trajectory", "ego_traj"):
+        for alias in ("pred", "predicted", "predictions", "traj", "trajectory", "ego_traj"):
             values.setdefault(alias, prediction)
     if ground_truth is not None:
         values["ground_truth"] = ground_truth
