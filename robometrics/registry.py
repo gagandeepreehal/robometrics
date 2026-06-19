@@ -10,7 +10,20 @@ from typing import Any, Optional
 
 import numpy as np
 
-from robometrics import comfort, driving, manipulation, physics, prediction, safety, task, trajectory
+from robometrics import (
+    calibration,
+    comfort,
+    coverage,
+    diversity,
+    driving,
+    manipulation,
+    physics,
+    prediction,
+    safety,
+    task,
+    temporal,
+    trajectory,
+)
 
 MetricFn = Callable[..., Any]
 CompatibilityFn = Callable[[Mapping[str, Any]], bool]
@@ -509,6 +522,42 @@ def create_default_registry() -> MetricRegistry:
         reference="RoboMetrics internal heuristic",
         is_novel=True,
         compatibility=_trajectory_input("traj"),
+    )
+
+    reg.register(
+        name="compounding_error_index",
+        fn=temporal.compounding_error_index,
+        category="temporal",
+        unit="ratio",
+        required_inputs=("errors",),
+        reference="RoboMetrics internal heuristic",
+        is_novel=True,
+    )
+    reg.register(
+        name="workspace_coverage",
+        fn=coverage.workspace_coverage,
+        category="coverage",
+        unit="cells",
+        required_inputs=("points",),
+        default_kwargs={"cell_size": 1.0},
+        reference="Standard grid-cell workspace coverage metric",
+    )
+    reg.register(
+        name="calibration_error",
+        fn=calibration.calibration_error,
+        category="calibration",
+        unit="ratio",
+        required_inputs=("confidences", "outcomes"),
+        default_kwargs={"n_bins": 10},
+        reference="Naeini et al., ECE, AAAI 2015",
+    )
+    reg.register(
+        name="trajectory_diversity",
+        fn=diversity.trajectory_diversity,
+        category="diversity",
+        unit="meters",
+        required_inputs=("predictions",),
+        reference="Standard pairwise trajectory diversity metric",
     )
 
     reg.register(

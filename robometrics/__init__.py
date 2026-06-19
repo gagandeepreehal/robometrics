@@ -1,6 +1,7 @@
 """RoboMetrics: lightweight robotics metrics for Python."""
 
 from robometrics._version import __version__
+from robometrics.calibration import calibration_error
 from robometrics.comfort import (
     acceleration,
     acceleration_magnitude,
@@ -13,6 +14,8 @@ from robometrics.comfort import (
     rms_acceleration,
     smoothness_score,
 )
+from robometrics.coverage import workspace_coverage
+from robometrics.diversity import trajectory_diversity
 from robometrics.driving import (
     displacement_at_k,
     offroad_rate,
@@ -52,6 +55,7 @@ from robometrics.safety import (
 )
 from robometrics.schemas import AgentState, Trajectory
 from robometrics.task import goal_reaching_accuracy, task_success_rate
+from robometrics.temporal import compounding_error_index
 from robometrics.trajectory import (
     average_displacement_error,
     curvature,
@@ -86,7 +90,9 @@ __all__ = [
     "acceleration_limits_violated",
     "ade",
     "average_displacement_error",
+    "calibration_error",
     "collision_rate",
+    "compounding_error_index",
     "contact_richness",
     "curvature",
     "curvature_profile",
@@ -128,4 +134,6 @@ __all__ = [
     "task_success_rate",
     "time_to_collision",
     "topk_trajectory_error",
+    "trajectory_diversity",
+    "workspace_coverage",
 ]

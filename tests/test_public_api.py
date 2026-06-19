@@ -26,7 +26,9 @@ def test_public_api_exports_core_objects() -> None:
         "acceleration_magnitude",
         "acceleration_limits_violated",
         "average_displacement_error",
+        "calibration_error",
         "collision_rate",
+        "compounding_error_index",
         "contact_richness",
         "curvature",
         "curvature_profile",
@@ -59,6 +61,8 @@ def test_public_api_exports_core_objects() -> None:
         "speed_profile",
         "soft_ttc",
         "task_success_rate",
+        "trajectory_diversity",
+        "workspace_coverage",
     }
 
     assert expected.issubset(set(robometrics.__all__))
