@@ -21,6 +21,13 @@ def test_collision_rate_counts_time_aligned_collisions() -> None:
     assert collision_rate(ego, actors, ego_radius=0.5, actor_radius=0.5) == pytest.approx(1.0 / 3.0)
 
 
+def test_collision_rate_uses_3d_distances() -> None:
+    ego = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+    actors = np.array([[[0.0, 0.0, 2.0], [1.0, 0.0, 0.4]]])
+
+    assert collision_rate(ego, actors, ego_radius=0.5, actor_radius=0.5) == pytest.approx(0.5)
+
+
 def test_collision_rate_no_actors_or_no_collision() -> None:
     ego = np.array([[0.0, 0.0], [1.0, 0.0]])
     far_actor = np.array([[[10.0, 0.0], [11.0, 0.0]]])
@@ -51,6 +58,13 @@ def test_min_distance_to_actors() -> None:
 
     assert min_distance_to_actors(ego, actors) == pytest.approx(0.5)
     assert min_distance_to_actors(ego, []) == inf
+
+
+def test_min_distance_to_actors_uses_3d_distances() -> None:
+    ego = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+    actors = [np.array([[0.0, 0.0, 3.0], [1.0, 0.0, 4.0]])]
+
+    assert min_distance_to_actors(ego, actors) == pytest.approx(3.0)
 
 
 def test_lane_departure_rate_uses_polygon_boundary() -> None:

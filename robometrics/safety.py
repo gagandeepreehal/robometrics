@@ -9,11 +9,11 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from robometrics.geometry import (
+    FloatArray,
     as_actor_trajectories,
     as_trajectory,
     points_in_polygon,
     validate_nonnegative,
-    xy,
 )
 from robometrics.schemas import AgentState
 
@@ -40,7 +40,10 @@ def collision_rate(
         if overlap == 0:
             continue
         covered_steps[:overlap] = True
-        distances = np.linalg.norm(xy(ego[:overlap]) - xy(actor[:overlap]), axis=1)
+        distances = np.linalg.norm(
+            _positions(ego[:overlap]) - _positions(actor[:overlap]),
+            axis=1,
+        )
         collision_steps[:overlap] |= distances <= threshold
     if not np.any(covered_steps):
         return 0.0
@@ -55,6 +58,8 @@ def time_to_collision(
 
     States must provide x, y, vx, and vy. Radius is optional and defaults to 0.
     A non-colliding or diverging pair returns math.inf.
+    This metric is 2D only. For 3D TTC, supply a 3D AgentState and
+    extend this function in a subclass.
     """
     ego = _coerce_agent_state(ego_state)
     actor = _coerce_agent_state(actor_state)
@@ -83,7 +88,7 @@ def time_to_collision(
 
 
 def min_distance_to_actors(ego_traj: ArrayLike, actor_trajs: object) -> float:
-    """Return minimum time-aligned XY distance from ego to any actor."""
+    """Return minimum time-aligned Euclidean distance from ego to any actor."""
     ego = as_trajectory(ego_traj, name="ego_traj")
     actors = as_actor_trajectories(actor_trajs)
     if not actors:
@@ -94,9 +99,16 @@ def min_distance_to_actors(ego_traj: ArrayLike, actor_trajs: object) -> float:
         overlap = min(ego.shape[0], actor.shape[0])
         if overlap == 0:
             continue
-        distances = np.linalg.norm(xy(ego[:overlap]) - xy(actor[:overlap]), axis=1)
+        distances = np.linalg.norm(
+            _positions(ego[:overlap]) - _positions(actor[:overlap]),
+            axis=1,
+        )
         min_distance = min(min_distance, float(np.min(distances)))
     return min_distance
+
+
+def _positions(arr: FloatArray) -> FloatArray:
+    return arr
 
 
 def lane_departure_rate(ego_traj: ArrayLike, lane_boundary: ArrayLike) -> float:
