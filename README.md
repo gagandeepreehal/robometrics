@@ -1,9 +1,9 @@
 # RoboMetrics
 
-[![CI](https://github.com/robometrics/robometrics/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/robometrics/robometrics/actions/workflows/ci.yml)
+[![CI](https://github.com/gagandeepreehal/robometrics/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gagandeepreehal/robometrics/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![PyPI](https://img.shields.io/badge/PyPI-not%20released-lightgrey)
+[![PyPI](https://img.shields.io/pypi/v/robometrics.svg)](https://pypi.org/project/robometrics/)
 
 Lightweight robotics metrics for Python.
 
