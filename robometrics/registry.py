@@ -431,6 +431,22 @@ def create_default_registry() -> MetricRegistry:
         compatibility=_trajectory_input("ego_traj"),
     )
     reg.register(
+        name="collision_rate_obb",
+        fn=safety.collision_rate_obb,
+        category="safety",
+        unit="ratio",
+        required_inputs=(
+            "ego_traj",
+            "ego_dims",
+            "ego_yaws",
+            "actor_trajs",
+            "actor_dims",
+            "actor_yaws",
+        ),
+        reference="Gottschalk et al., OBBTree, SIGGRAPH 1996",
+        compatibility=_trajectory_input("ego_traj"),
+    )
+    reg.register(
         name="time_to_collision",
         fn=safety.time_to_collision,
         category="safety",

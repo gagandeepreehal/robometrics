@@ -50,6 +50,7 @@ from robometrics.registry import (
 from robometrics.results import ComparisonResult, EvaluationResult, MetricComparison, MetricResult
 from robometrics.safety import (
     collision_rate,
+    collision_rate_obb,
     lane_departure_rate,
     min_distance_to_actors,
     time_to_collision,
@@ -94,6 +95,7 @@ __all__ = [
     "average_displacement_error",
     "calibration_error",
     "collision_rate",
+    "collision_rate_obb",
     "compounding_error_index",
     "contact_richness",
     "curvature",

@@ -28,6 +28,7 @@ def test_public_api_exports_core_objects() -> None:
         "average_displacement_error",
         "calibration_error",
         "collision_rate",
+        "collision_rate_obb",
         "compounding_error_index",
         "contact_richness",
         "curvature",

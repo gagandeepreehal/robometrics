@@ -12,6 +12,7 @@ from robometrics.geometry import (
     FloatArray,
     as_actor_trajectories,
     as_trajectory,
+    obb_overlap,
     points_in_polygon,
     validate_nonnegative,
 )
@@ -45,6 +46,70 @@ def collision_rate(
             axis=1,
         )
         collision_steps[:overlap] |= distances <= threshold
+    if not np.any(covered_steps):
+        return 0.0
+    return float(np.mean(collision_steps[covered_steps]))
+
+
+def collision_rate_obb(
+    ego_traj: ArrayLike,
+    ego_dims: ArrayLike,
+    ego_yaws: ArrayLike,
+    actor_trajs: object,
+    actor_dims: ArrayLike,
+    actor_yaws: object,
+) -> float:
+    """Return fraction of actor-covered ego timesteps with OBB collision.
+
+    Formula:
+        For each timestep t covered by at least one actor, check if ego OBB
+        overlaps with any actor OBB using the Separating Axis Theorem.
+        Return mean(collision_mask[covered_steps]).
+
+    Reference: Standard OBB collision check; Gottschalk et al.,
+               OBBTree, SIGGRAPH 1996.
+
+    Inputs:
+        ego_traj: Nx2 ego center positions (XY only).
+        ego_dims: (2,) array [length, width] in meters, or Nx2 per-timestep.
+        ego_yaws: N-length array of ego heading angles in radians.
+        actor_trajs: list of Mx2 actor center position arrays.
+        actor_dims: list of (2,) or Mx2 arrays per actor, [length, width].
+        actor_yaws: list of M-length yaw arrays, one per actor.
+
+    Output:
+        A rate in [0, 1] where 0.0 means no OBB collisions.
+    """
+    ego = _as_xy_trajectory(ego_traj, name="ego_traj", allow_empty=False)
+    ego_yaw_values = _as_yaw_array(ego_yaws, name="ego_yaws", length=ego.shape[0])
+    ego_dim_values = _as_dims_array(ego_dims, name="ego_dims", length=ego.shape[0])
+    actors = _as_actor_xy_list(actor_trajs)
+    actor_dim_values = _as_actor_dims_list(actor_dims, actors)
+    actor_yaw_values = _as_actor_yaws_list(actor_yaws, actors)
+    if not actors:
+        return 0.0
+
+    covered_steps = np.zeros(ego.shape[0], dtype=np.bool_)
+    collision_steps = np.zeros(ego.shape[0], dtype=np.bool_)
+    for actor_index, actor in enumerate(actors):
+        overlap = min(ego.shape[0], actor.shape[0])
+        if overlap == 0:
+            continue
+        covered_steps[:overlap] = True
+        dims = actor_dim_values[actor_index]
+        yaws = actor_yaw_values[actor_index]
+        for timestep in range(overlap):
+            if collision_steps[timestep]:
+                continue
+            collision_steps[timestep] = obb_overlap(
+                center_a=ego[timestep],
+                half_extents_a=ego_dim_values[timestep] / 2.0,
+                yaw_a=float(ego_yaw_values[timestep]),
+                center_b=actor[timestep],
+                half_extents_b=dims[timestep] / 2.0,
+                yaw_b=float(yaws[timestep]),
+            )
+
     if not np.any(covered_steps):
         return 0.0
     return float(np.mean(collision_steps[covered_steps]))
@@ -144,3 +209,69 @@ def _coerce_agent_state(state: Union[AgentState, ArrayLike, dict[str, Any]]) -> 
         vy=float(arr[3]),
         radius=radius,
     )
+
+
+def _as_xy_trajectory(data: ArrayLike, *, name: str, allow_empty: bool) -> FloatArray:
+    arr = np.asarray(data, dtype=np.float64)
+    if arr.ndim != 2 or arr.shape[1] != 2:
+        raise ValueError(f"{name} must be an Nx2 array")
+    if arr.shape[0] == 0 and not allow_empty:
+        raise ValueError(f"{name} must contain at least one point")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain only finite values")
+    return arr
+
+
+def _as_yaw_array(data: object, *, name: str, length: int) -> FloatArray:
+    arr = np.asarray(data, dtype=np.float64)
+    if arr.ndim != 1 or arr.shape[0] != length:
+        raise ValueError(f"{name} must be a length-{length} 1D array")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain only finite values")
+    return arr
+
+
+def _as_dims_array(data: object, *, name: str, length: int) -> FloatArray:
+    arr = np.asarray(data, dtype=np.float64)
+    if arr.shape == (2,):
+        dims = np.broadcast_to(arr, (length, 2)).astype(np.float64, copy=True)
+    elif arr.ndim == 2 and arr.shape == (length, 2):
+        dims = arr
+    else:
+        raise ValueError(f"{name} must have shape (2,) or ({length}, 2)")
+    if not np.all(np.isfinite(dims)):
+        raise ValueError(f"{name} must contain only finite values")
+    if np.any(dims <= 0.0):
+        raise ValueError(f"{name} must contain positive length and width values")
+    return dims
+
+
+def _as_actor_xy_list(actor_trajs: object) -> list[FloatArray]:
+    if not isinstance(actor_trajs, list):
+        raise ValueError("actor_trajs must be a list")
+    return [
+        _as_xy_trajectory(actor, name=f"actor_trajs[{index}]", allow_empty=True)
+        for index, actor in enumerate(actor_trajs)
+    ]
+
+
+def _as_actor_dims_list(actor_dims: object, actors: list[FloatArray]) -> list[FloatArray]:
+    if not isinstance(actor_dims, list):
+        raise ValueError("actor_dims must be a list with one entry per actor")
+    if len(actor_dims) != len(actors):
+        raise ValueError("actor_dims must have the same length as actor_trajs")
+    return [
+        _as_dims_array(dims, name=f"actor_dims[{index}]", length=actor.shape[0])
+        for index, (dims, actor) in enumerate(zip(actor_dims, actors))
+    ]
+
+
+def _as_actor_yaws_list(actor_yaws: object, actors: list[FloatArray]) -> list[FloatArray]:
+    if not isinstance(actor_yaws, list):
+        raise ValueError("actor_yaws must be a list with one entry per actor")
+    if len(actor_yaws) != len(actors):
+        raise ValueError("actor_yaws must have the same length as actor_trajs")
+    return [
+        _as_yaw_array(yaws, name=f"actor_yaws[{index}]", length=actor.shape[0])
+        for index, (yaws, actor) in enumerate(zip(actor_yaws, actors))
+    ]
