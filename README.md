@@ -1,25 +1,22 @@
 # RoboMetrics
 
-[![CI](https://github.com/robometrics/robometrics/actions/workflows/ci.yml/badge.svg)](https://github.com/robometrics/robometrics/actions/workflows/ci.yml)
+[![CI](https://github.com/robometrics/robometrics/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/robometrics/robometrics/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PyPI](https://img.shields.io/badge/PyPI-not%20released-lightgrey)
 
-Evaluation metrics for Physical AI.
+Lightweight robotics metrics for Python.
 
-RoboMetrics is a lightweight Python package for evaluating trajectories, predictions, comfort, safety, and physical consistency in robotics and autonomy workflows. It is local-first: no simulator, ROS, GPU, cloud service, database, or dashboard is required.
+RoboMetrics is a small local Python library for computing robotics trajectory,
+prediction, safety, comfort, and physics metrics from NumPy arrays and simple
+CSV/JSON trajectory files.
 
 ## Why This Exists
 
-Physical AI projects often start with scattered metric functions and ad hoc evaluation scripts. RoboMetrics provides a small common layer for:
-
-- reusable metric functions,
-- a registry of named metrics,
-- an `Evaluator` for running multiple metrics together,
-- structured results with thresholds,
-- JSON, Markdown, and pandas DataFrame exports.
-
-RoboMetrics is a public alpha candidate. It is not production-proven or an industry standard.
+Robotics projects often grow scattered metric functions across notebooks,
+experiments, and scripts. RoboMetrics keeps common metrics in one typed,
+dependency-light package that can be imported directly inside local robotics
+codebases.
 
 ## Installation
 
@@ -43,134 +40,175 @@ mypy robometrics
 ```python
 import numpy as np
 
-from robometrics import Evaluator, average_displacement_error
+from robometrics import ade, fde, path_length
 
-pred = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
-gt = np.array([[0.0, 0.0], [1.1, 0.0], [2.2, 0.0]])
+prediction = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+ground_truth = np.array([[0.0, 0.0], [1.1, 0.0], [2.2, 0.0]])
 
-ade = average_displacement_error(pred, gt)
-
-result = Evaluator().evaluate(
-    prediction=pred,
-    ground_truth=gt,
-    metrics=["ade", "fde"],
-    thresholds={"ade": 0.5, "fde": 1.0},
-)
-
-print("ADE:", ade)
-print(result.summary())
-print(result.to_markdown())
+print("ADE (m):", ade(prediction, ground_truth))
+print("FDE (m):", fde(prediction, ground_truth))
+print("Path length (m):", path_length(ground_truth))
 ```
 
 Runnable examples:
 
 ```bash
-python examples/basic_metrics.py
-python examples/evaluator_quickstart.py
-python examples/thresholds.py
-python examples/export_results.py
+python examples/trajectory_metrics.py
+python examples/prediction_metrics.py
+python examples/safety_metrics.py
+python examples/comfort_metrics.py
+python examples/load_from_csv.py
 ```
 
-## Core Concepts
+## Input Shapes
 
-- **Metric functions** are plain Python functions such as `average_displacement_error(pred, gt)`.
-- **Registry** maps stable names such as `ade` and `fde` to metric functions and metadata.
-- **Evaluator** runs named metrics or categories against supplied inputs.
-- **MetricResult** stores one metric value, unit, threshold, pass/fail status, and metadata.
-- **EvaluationResult** stores a collection of metric results and supports summaries and exports.
+Trajectory-like inputs are NumPy-compatible arrays with finite numeric values:
 
-## Supported Metric Categories
+- Single trajectory: `Nx2` or `Nx3`
+- Multimodal predictions: `KxTx2` or `KxTx3`
+- Ground-truth trajectory for prediction metrics: `Tx2` or `Tx3`
+- Actor trajectories for safety metrics: a list of `Nx2` or `Nx3` arrays
 
-- **Trajectory:** ADE, FDE, Hausdorff distance, path length, curvature, lateral error, longitudinal error.
-- **Prediction:** minADE, minFDE, miss rate, top-k trajectory error.
-- **Comfort/control:** acceleration, jerk, jerk cost, max acceleration, max deceleration, smoothness score.
-- **Safety:** collision rate, time to collision, minimum distance to actors, lane departure rate.
-- **Physical consistency:** speed profile, acceleration/jerk/curvature limit checks, dynamic feasibility score.
+`N` or `T` is the number of timesteps, `K` is the number of prediction modes,
+and columns are position coordinates in meters. `Nx3` inputs are supported by
+metrics that operate on positions; distance-based metrics use all available
+coordinate dimensions unless documented otherwise.
 
-Most metrics return a `float`. Thresholded physical consistency checks return `MetricResult`.
+Empty arrays, NaN/inf values, bad ranks, mismatched trajectory lengths, invalid
+`dt`, and incompatible dimensions raise `ValueError` with a targeted message.
 
-## Evaluator Example
+## Units
+
+- Position and distance inputs: meters
+- Time step `dt`: seconds
+- Speed: meters per second
+- Acceleration: meters per second squared
+- Jerk: meters per second cubed
+- Curvature: inverse meters
+- Rates and scores: unitless floats
+
+## Return Types
+
+Most public metric functions return `float` or `numpy.ndarray`. Threshold-style
+physics helpers return `MetricResult`, which stores a value, unit, optional
+threshold, pass/fail status, and metadata.
+
+`EvaluationResult` is a small container for local batches of metric results and
+can export dictionaries, strict JSON, Markdown tables, and pandas DataFrames.
+Non-finite metric values are serialized as `null` in JSON.
+
+## Metric Examples
+
+### Trajectory
 
 ```python
-from robometrics import Evaluator
+import numpy as np
 
-result = Evaluator().evaluate(
-    prediction=pred,
-    ground_truth=gt,
-    metrics=["ade", "fde"],
+from robometrics import curvature, path_length
+
+trajectory = np.array([[0.0, 0.0], [1.0, 0.2], [2.0, 0.5]])
+
+print(path_length(trajectory))  # meters
+print(curvature(trajectory))    # 1/meters
+```
+
+### Prediction
+
+```python
+import numpy as np
+
+from robometrics import min_ade, min_fde, miss_rate
+
+predictions = np.array(
+    [
+        [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]],
+        [[0.0, 0.0], [1.1, 0.0], [2.1, 0.0]],
+    ]
 )
+ground_truth = np.array([[0.0, 0.0], [1.0, 0.1], [2.0, 0.2]])
+
+print(min_ade(predictions, ground_truth))
+print(min_fde(predictions, ground_truth))
+print(miss_rate(predictions, ground_truth, threshold=0.5))
 ```
 
-Use `metrics="all"` to run every compatible registered metric, or select groups:
+### Safety
 
 ```python
-result = Evaluator().evaluate(
-    prediction=pred,
-    ground_truth=gt,
-    categories=["trajectory"],
-)
+import numpy as np
+
+from robometrics import collision_rate, min_distance_to_actors
+
+ego = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+actors = [np.array([[0.0, 2.0], [1.0, 1.0], [2.0, 0.4]])]
+
+print(min_distance_to_actors(ego, actors))                 # meters
+print(collision_rate(ego, actors, ego_radius=0.3, actor_radius=0.3))
 ```
 
-Known metric execution failures are returned as failed metric results with `metadata["error"]`. Unknown metric names raise `UnknownMetricError` before evaluation starts.
-
-## Registry Example
+### Comfort
 
 ```python
-from robometrics import registry
+import numpy as np
+
+from robometrics import acceleration, jerk, jerk_cost
+
+trajectory = np.array([[0.0, 0.0], [1.0, 0.1], [2.0, 0.4], [3.0, 0.9]])
+dt = 0.5
+
+print(acceleration(trajectory, dt=dt))  # m/s^2
+print(jerk(trajectory, dt=dt))          # m/s^3
+print(jerk_cost(trajectory, dt=dt))
+```
+
+### Physics
+
+```python
+import numpy as np
+
+from robometrics import acceleration_limits_violated, dynamic_feasibility_score
+
+trajectory = np.array([[0.0, 0.0], [1.0, 0.1], [2.0, 0.3], [3.0, 0.6]])
+
+print(acceleration_limits_violated(trajectory, dt=0.5, max_accel=5.0))
+print(dynamic_feasibility_score(trajectory, dt=0.5))
+```
+
+## CSV And JSON
+
+```python
+from robometrics.io import load_trajectory_csv, load_trajectory_json
+
+csv_traj = load_trajectory_csv("trajectory.csv")
+json_traj = load_trajectory_json("trajectory.json")
+```
+
+CSV files must include `x` and `y` columns, and may include `z`. JSON files may
+contain either a raw list of points or an object with a `points` field.
+
+## Lightweight Evaluator And Registry
+
+The evaluator and registry are intentionally small helpers for local scripts.
+Use them when named metric selection or threshold reporting is useful:
+
+```python
+from robometrics import Evaluator, registry
 
 print(registry.list_metrics())
-print(registry.get("ade"))
-print(registry.get("average_displacement_error"))
-```
 
-Registered aliases include:
-
-- `average_displacement_error` -> `ade`
-- `final_displacement_error` -> `fde`
-- `minade` -> `min_ade`
-- `minfde` -> `min_fde`
-
-## Threshold Example
-
-```python
 result = Evaluator().evaluate(
-    prediction=pred,
-    ground_truth=gt,
+    prediction=prediction,
+    ground_truth=ground_truth,
     metrics=["ade", "fde"],
     thresholds={"ade": 0.5, "fde": 1.0},
 )
 
-for metric in result.results:
-    print(metric.name, metric.value, metric.threshold, metric.passed)
+print(result.to_json())
 ```
 
-## Export Example
-
-```python
-payload = result.to_dict()
-json_text = result.to_json()
-markdown = result.to_markdown()
-frame = result.to_dataframe()
-```
-
-`to_json()` emits standards-compliant JSON. Non-finite metric values such as `NaN` and `inf` are exported as `null`.
-
-## Input Format
-
-Trajectory metrics accept finite, non-empty `Nx2` or `Nx3` NumPy-compatible arrays. Prediction metrics accept `KxTx2` or `KxTx3` predictions and `Tx2` or `Tx3` ground truth. Invalid shapes, empty inputs, mismatched lengths, and non-finite values raise `ValueError`.
-
-Single-point trajectories are accepted by metrics with well-defined degenerate outputs. `Nx3` trajectories are supported wherever `Nx2` trajectories are accepted. `min_distance_to_actors(ego_traj, [])` returns `math.inf`.
-
-File read and parse failures raise `TrajectoryIOError`. Shape, missing-column, and invalid-value validation issues raise `ValueError`.
-
-## Roadmap
-
-- Expand metric coverage with focused, well-tested additions.
-- Add benchmark profile helpers around the existing evaluator objects.
-- Improve documentation examples and API reference coverage.
-- Keep the package local-first and dependency-light.
-
-Not planned for this initial release: dashboards, web apps, databases, cloud services, simulators, ROS integrations, or leaderboard infrastructure.
+Unknown metric names raise `UnknownMetricError` before evaluation starts.
+Metric execution failures are returned as failed `MetricResult` entries with
+`metadata["error"]`.
 
 ## Contributing
 
@@ -182,10 +220,11 @@ Before opening a pull request:
 ruff check .
 mypy robometrics
 pytest --cov=robometrics --cov-report=term-missing
-python examples/basic_metrics.py
-python examples/evaluator_quickstart.py
-python examples/thresholds.py
-python examples/export_results.py
+python examples/trajectory_metrics.py
+python examples/prediction_metrics.py
+python examples/safety_metrics.py
+python examples/comfort_metrics.py
+python examples/load_from_csv.py
 ```
 
 ## License

@@ -3,26 +3,38 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 
-class MetricResult(BaseModel):
-    """Result for one metric execution."""
+@dataclass
+class MetricResult:
+    """Result for one metric execution.
+
+    Args:
+        name: Stable metric name.
+        value: Numeric metric value in ``unit``.
+        unit: Unit label, for example ``"m"``, ``"m/s^2"``, or ``""`` for unitless values.
+        passed: Optional threshold pass/fail status.
+        threshold: Optional threshold used to compute ``passed``.
+        metadata: Extra JSON-compatible context such as category or error details.
+    """
 
     name: str
     value: float
     unit: str = ""
     passed: bool | None = None
     threshold: float | None = None
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    @field_validator("unit", mode="before")
-    @classmethod
-    def _normalize_unit(cls, unit: str | None) -> str:
-        return "" if unit is None else unit
+    def __post_init__(self) -> None:
+        self.name = str(self.name)
+        self.value = float(self.value)
+        self.unit = "" if self.unit is None else str(self.unit)
+        self.threshold = None if self.threshold is None else float(self.threshold)
+        self.metadata = dict(self.metadata)
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-compatible dictionary."""
@@ -40,16 +52,31 @@ class MetricResult(BaseModel):
         return json.dumps(self.to_dict(), allow_nan=False, sort_keys=True)
 
 
-class EvaluationResult(BaseModel):
-    """Collection of metric results from one evaluation run."""
+@dataclass(init=False)
+class EvaluationResult:
+    """Collection of metric results from one local evaluation run.
 
-    model_config = ConfigDict(arbitrary_types_allowed=True, populate_by_name=True)
+    Args:
+        results: Metric results to store.
+        metrics: Backward-compatible alias for ``results``.
+        metadata: Extra JSON-compatible run metadata.
+    """
 
-    results: list[MetricResult] = Field(
-        default_factory=list,
-        validation_alias=AliasChoices("results", "metrics"),
-    )
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    results: list[MetricResult]
+    metadata: dict[str, Any]
+
+    def __init__(
+        self,
+        results: list[MetricResult] | None = None,
+        metadata: dict[str, Any] | None = None,
+        *,
+        metrics: list[MetricResult] | None = None,
+    ) -> None:
+        if results is not None and metrics is not None:
+            raise ValueError("provide either results or metrics, not both")
+        selected = results if results is not None else metrics
+        self.results = list(selected or [])
+        self.metadata = dict(metadata or {})
 
     @property
     def metrics(self) -> list[MetricResult]:

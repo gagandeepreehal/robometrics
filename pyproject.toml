@@ -5,13 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "robometrics"
 version = "0.1.0"
-description = "Evaluation metrics for Physical AI."
+description = "Lightweight robotics metrics for Python."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{ name = "RoboMetrics contributors" }]
 maintainers = [{ name = "RoboMetrics contributors" }]
-keywords = ["robotics", "autonomy", "metrics", "evaluation", "physical-ai"]
+keywords = ["robotics", "metrics", "trajectories", "prediction", "safety", "numpy"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -22,14 +22,13 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering",
   "Typing :: Typed",
 ]
 dependencies = [
   "numpy>=1.23",
   "scipy>=1.10",
   "pandas>=1.5",
-  "pydantic>=2,<3",
 ]
 
 [project.optional-dependencies]

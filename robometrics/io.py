@@ -64,6 +64,17 @@ def load_csv(
     return as_trajectory(frame[columns].to_numpy(dtype=np.float64), name="trajectory")
 
 
+def load_trajectory_csv(
+    path: str | Path,
+    *,
+    x_col: str = "x",
+    y_col: str = "y",
+    z_col: str | None = None,
+) -> FloatArray:
+    """Load a finite ``Nx2`` or ``Nx3`` trajectory from a CSV file."""
+    return load_csv(path, x_col=x_col, y_col=y_col, z_col=z_col)
+
+
 def load_json(path: str | Path) -> FloatArray:
     """Load a trajectory from JSON.
 
@@ -99,6 +110,11 @@ def load_json(path: str | Path) -> FloatArray:
             point.append(float(record["z"]))
         points.append(point)
     return as_trajectory(points, name="trajectory")
+
+
+def load_trajectory_json(path: str | Path) -> FloatArray:
+    """Load a finite ``Nx2`` or ``Nx3`` trajectory from a JSON file."""
+    return load_json(path)
 
 
 def load_trajectory(path: str | Path) -> FloatArray:

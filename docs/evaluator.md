@@ -1,6 +1,6 @@
 # Evaluator
 
-This page is a discoverable entry point for the evaluation-object API. The full guide is also available in [Evaluation API](evaluation.md).
+This page is a discoverable entry point for the lightweight evaluator. The full guide is also available in [Evaluator](evaluation.md).
 The same examples are available as a runnable script in `examples/evaluator_usage.py`.
 
 ## Single-Trajectory Metrics

@@ -1,6 +1,6 @@
-# Evaluation API
+# Evaluator
 
-RoboMetrics evaluation objects provide a local Python API for running metrics together. They do not require dashboards, services, databases, ROS, simulators, or cloud infrastructure.
+RoboMetrics includes a small local evaluator for running named metrics together. It is optional; direct metric functions remain the main API.
 
 ## Evaluator
 
@@ -110,6 +110,6 @@ registry.get("ade")
 registry.get("average_displacement_error")
 ```
 
-Custom registries can be passed into `Evaluator(metric_registry=...)` for benchmark profiles or local project-specific metric sets.
+Custom registries can be passed into `Evaluator(metric_registry=...)` for local project-specific metric sets.
 
 For a complete runnable script that separates single-trajectory and multimodal prediction workflows, see `examples/evaluator_usage.py`.

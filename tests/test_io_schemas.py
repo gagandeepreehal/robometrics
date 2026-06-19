@@ -12,6 +12,8 @@ from robometrics.io import (
     load_json,
     load_numpy,
     load_trajectory,
+    load_trajectory_csv,
+    load_trajectory_json,
     trajectory_to_json_records,
 )
 from robometrics.schemas import EvaluationResult, MetricResult, Trajectory
@@ -51,6 +53,8 @@ def test_load_csv_and_json(tmp_path) -> None:
     assert np.allclose(load_csv(csv_path), traj)
     assert np.allclose(load_json(json_path), traj)
     assert np.allclose(load_trajectory(json_path), traj)
+    assert np.allclose(load_trajectory_csv(csv_path), traj)
+    assert np.allclose(load_trajectory_json(json_path), traj)
 
 
 def test_loaders_raise_trajectory_io_error_for_file_failures(tmp_path) -> None:

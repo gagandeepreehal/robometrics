@@ -67,3 +67,15 @@ def test_safety_rejects_invalid_values() -> None:
         collision_rate(np.array([[0.0, 0.0]]), [], ego_radius=-1.0, actor_radius=1.0)
     with pytest.raises(ValueError):
         lane_departure_rate(np.array([[0.0, 0.0]]), np.array([[0.0, 0.0], [1.0, 0.0]]))
+
+
+def test_safety_rejects_bad_actor_trajectory_shape() -> None:
+    ego = np.array([[0.0, 0.0], [1.0, 0.0]])
+
+    with pytest.raises(ValueError, match="actor_trajs"):
+        collision_rate(
+            ego,
+            [np.array([[0.0, 0.0], [1.0, 0.0]]), np.array([0.0, 0.0])],
+            ego_radius=0.5,
+            actor_radius=0.5,
+        )

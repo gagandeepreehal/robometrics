@@ -1,4 +1,4 @@
-"""RoboMetrics: lightweight metrics for Physical AI systems."""
+"""RoboMetrics: lightweight robotics metrics for Python."""
 
 from robometrics.comfort import (
     acceleration,
@@ -37,6 +37,9 @@ from robometrics.trajectory import (
     path_length,
 )
 
+ade = average_displacement_error
+fde = final_displacement_error
+
 __all__ = [
     "AgentState",
     "EvaluationInputError",
@@ -50,11 +53,13 @@ __all__ = [
     "UnknownMetricError",
     "acceleration",
     "acceleration_limits_violated",
+    "ade",
     "average_displacement_error",
     "collision_rate",
     "curvature",
     "curvature_limits_violated",
     "dynamic_feasibility_score",
+    "fde",
     "final_displacement_error",
     "hausdorff_distance",
     "jerk",

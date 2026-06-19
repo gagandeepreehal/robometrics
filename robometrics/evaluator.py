@@ -1,4 +1,4 @@
-"""Unified metric evaluation API."""
+"""Lightweight local evaluator for named metric functions."""
 
 from __future__ import annotations
 

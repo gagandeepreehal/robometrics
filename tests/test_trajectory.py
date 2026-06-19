@@ -4,8 +4,10 @@ import numpy as np
 import pytest
 
 from robometrics import (
+    ade,
     average_displacement_error,
     curvature,
+    fde,
     final_displacement_error,
     hausdorff_distance,
     lateral_error,
@@ -20,6 +22,16 @@ def test_average_and_final_displacement_error() -> None:
 
     assert average_displacement_error(pred, gt) == pytest.approx((0.0 + 0.1 + 0.1) / 3.0)
     assert final_displacement_error(pred, gt) == pytest.approx(0.1)
+    assert ade(pred, gt) == average_displacement_error(pred, gt)
+    assert fde(pred, gt) == final_displacement_error(pred, gt)
+
+
+def test_displacement_errors_support_3d_trajectories() -> None:
+    pred = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+    gt = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 1.0]])
+
+    assert average_displacement_error(pred, gt) == pytest.approx(0.5)
+    assert final_displacement_error(pred, gt) == pytest.approx(1.0)
 
 
 def test_hausdorff_supports_different_lengths() -> None:

@@ -1,14 +1,14 @@
 # RoboMetrics Documentation
 
-RoboMetrics provides standalone metrics for Physical AI systems. It is pure Python and uses only NumPy, SciPy, pandas, Pydantic, and pytest for the initial development surface.
+RoboMetrics provides lightweight robotics metrics for local Python codebases. It is pure Python and uses only NumPy, SciPy, and pandas at runtime.
 
-Use it when you need evaluation utilities that can run inside an existing robotics, autonomy, drones, or manipulation codebase without simulator, ROS, GPU, cloud, dashboard, or web app dependencies.
+Use it when you need local trajectory, prediction, safety, comfort, or physics metrics from NumPy arrays and simple CSV/JSON trajectory files.
 
 ## Sections
 
 - [Quickstart](quickstart.md)
 - [Metrics](metrics.md)
-- [Evaluation API](evaluation.md)
+- [Evaluator](evaluation.md)
 - [Evaluator](evaluator.md)
 - [Contributing](contributing.md)
 - [Publishing](publishing.md)
