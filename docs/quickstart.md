@@ -29,5 +29,7 @@ All trajectory inputs should be finite, non-empty `Nx2` or `Nx3` arrays. Predict
 Single-point trajectories are accepted by metrics with well-defined degenerate outputs, and `Nx3` trajectories are accepted wherever trajectory metrics accept `Nx2`.
 
 Use `metrics="all"` to run every compatible registered metric, or select groups with `categories=["trajectory"]`.
+Use `python -m robometrics --help` or `robometrics list-metrics` to inspect an
+installed package from the shell.
 
 File IO helpers raise `TrajectoryIOError` for missing or malformed files, and `ValueError` for invalid trajectory contents.

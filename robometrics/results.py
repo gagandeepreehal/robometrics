@@ -38,13 +38,22 @@ class MetricResult:
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-compatible dictionary."""
+        metadata = dict(self.metadata)
+        if not np.isfinite(self.value):
+            metadata.setdefault(
+                "value_serialization",
+                {
+                    "original": _non_finite_label(self.value),
+                    "json_value": None,
+                },
+            )
         return {
             "name": self.name,
             "value": _json_safe(self.value),
             "unit": self.unit,
             "passed": self.passed,
             "threshold": _json_safe(self.threshold),
-            "metadata": _json_safe(self.metadata),
+            "metadata": _json_safe(metadata),
         }
 
     def to_json(self) -> str:
@@ -108,7 +117,7 @@ class EvaluationResult:
                 if category
             }
         )
-        aggregate: dict[str, Optional[Union[float, int]]] = {"count": int(values.size)}
+        aggregate: dict[str, Optional[Union[float, int, str]]] = {"count": int(values.size)}
         if values.size:
             aggregate.update(
                 {
@@ -121,6 +130,14 @@ class EvaluationResult:
             )
         else:
             aggregate.update({"mean": None, "min": None, "max": None, "median": None, "std": None})
+        finite_units = {
+            metric.unit
+            for metric in self.results
+            if np.isfinite(metric.value)
+        }
+        if len(finite_units) > 1:
+            aggregate["warning"] = "aggregate mixes metric units; use per_unit summaries"
+        aggregate["unit_count"] = len(finite_units)
 
         return {
             "metric_count": len(self.results),
@@ -130,6 +147,7 @@ class EvaluationResult:
             "failed_count": sum(metric.passed is False for metric in self.results),
             "error_count": sum("error" in metric.metadata for metric in self.results),
             "aggregate": aggregate,
+            "per_unit": _summaries_by_unit(self.results),
         }
 
     def to_dict(self) -> dict[str, Any]:
@@ -221,3 +239,39 @@ def _json_safe(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_json_safe(item) for item in value]
     return value
+
+
+def _non_finite_label(value: float) -> str:
+    if np.isnan(value):
+        return "nan"
+    if np.isposinf(value):
+        return "inf"
+    if np.isneginf(value):
+        return "-inf"
+    return str(value)
+
+
+def _summaries_by_unit(
+    results: list[MetricResult],
+) -> dict[str, dict[str, Optional[Union[float, int]]]]:
+    summaries: dict[str, dict[str, Optional[Union[float, int]]]] = {}
+    units = sorted({metric.unit for metric in results if np.isfinite(metric.value)})
+    for unit in units:
+        values = np.asarray(
+            [
+                metric.value
+                for metric in results
+                if metric.unit == unit and np.isfinite(metric.value)
+            ],
+            dtype=np.float64,
+        )
+        label = unit or "unitless"
+        summaries[label] = {
+            "count": int(values.size),
+            "mean": float(np.mean(values)) if values.size else None,
+            "min": float(np.min(values)) if values.size else None,
+            "max": float(np.max(values)) if values.size else None,
+            "median": float(np.median(values)) if values.size else None,
+            "std": float(np.std(values)) if values.size else None,
+        }
+    return summaries

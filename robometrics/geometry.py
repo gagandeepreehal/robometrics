@@ -125,6 +125,8 @@ def point_in_polygon(point: FloatArray, polygon: FloatArray, *, tolerance: float
     poly = xy(polygon)
     if poly.shape[0] < 3:
         raise ValueError("lane_boundary must contain at least three polygon vertices")
+    if _polygon_area(poly) <= tolerance:
+        raise ValueError("lane_boundary must have non-zero polygon area")
 
     inside = False
     count = poly.shape[0]
@@ -144,7 +146,20 @@ def point_in_polygon(point: FloatArray, polygon: FloatArray, *, tolerance: float
 
 def points_in_polygon(points: FloatArray, polygon: FloatArray) -> NDArray[np.bool_]:
     """Return an inside-mask for points against a polygon."""
+    poly = xy(polygon)
+    if _polygon_area(poly) <= 1e-9:
+        raise ValueError("lane_boundary must have non-zero polygon area")
     return np.asarray([point_in_polygon(point, polygon) for point in xy(points)], dtype=np.bool_)
+
+
+def _polygon_area(poly: FloatArray) -> float:
+    x_values = poly[:, 0]
+    y_values = poly[:, 1]
+    double_area = np.dot(x_values, np.roll(y_values, -1)) - np.dot(
+        y_values,
+        np.roll(x_values, -1),
+    )
+    return 0.5 * float(abs(double_area))
 
 
 def _point_on_segment(

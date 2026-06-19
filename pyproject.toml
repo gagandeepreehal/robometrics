@@ -43,11 +43,13 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/robometrics/robometrics"
-Documentation = "https://github.com/robometrics/robometrics/tree/main/docs"
-Source = "https://github.com/robometrics/robometrics"
-Issues = "https://github.com/robometrics/robometrics/issues"
-Changelog = "https://github.com/robometrics/robometrics/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/gagandeepreehal/robometrics"
+Source = "https://github.com/gagandeepreehal/robometrics"
+Issues = "https://github.com/gagandeepreehal/robometrics/issues"
+Changelog = "https://github.com/gagandeepreehal/robometrics/blob/main/CHANGELOG.md"
+
+[project.scripts]
+robometrics = "robometrics.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["robometrics*"]

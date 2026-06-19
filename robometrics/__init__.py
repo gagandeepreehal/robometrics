@@ -1,5 +1,6 @@
 """RoboMetrics: lightweight robotics metrics for Python."""
 
+from robometrics._version import __version__
 from robometrics.comfort import (
     acceleration,
     jerk,
@@ -51,6 +52,7 @@ __all__ = [
     "Trajectory",
     "TrajectoryIOError",
     "UnknownMetricError",
+    "__version__",
     "acceleration",
     "acceleration_limits_violated",
     "ade",
@@ -81,5 +83,3 @@ __all__ = [
     "time_to_collision",
     "topk_trajectory_error",
 ]
-
-__version__ = "0.1.1"

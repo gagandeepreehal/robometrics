@@ -7,6 +7,7 @@ from typing import Any, Optional, Union
 
 import numpy as np
 
+from robometrics._version import __version__
 from robometrics.registry import MetricDefinition, MetricRegistry, registry
 from robometrics.results import EvaluationResult, MetricResult
 
@@ -37,7 +38,9 @@ class Evaluator:
         ``prediction`` and ``ground_truth`` are mapped onto the common argument
         names used by built-in metric functions. Additional metric-specific
         inputs, such as ``dt`` or ``actor_trajs``, can be supplied as keyword
-        arguments.
+        arguments. Metrics that return arrays are reduced to scalar results:
+        vector arrays use mean row-wise norm, and other arrays use the mean.
+        The raw array and reduction name are stored in each result's metadata.
         """
         _validate_common_array(prediction, name="prediction", allowed_ndims=(2, 3))
         _validate_common_array(ground_truth, name="ground_truth", allowed_ndims=(2,))
@@ -80,11 +83,12 @@ class Evaluator:
             results.append(result)
 
         if not results and selected:
-            raise EvaluationInputError("no compatible metrics found for the provided inputs")
+            raise EvaluationInputError(_no_compatible_metrics_message(selected, input_values))
 
         return EvaluationResult(
             results=results,
             metadata={
+                "robometrics_version": __version__,
                 "selected_metrics": [metric.name for metric in selected],
                 "skipped_metrics": skipped_metrics,
                 "categories": _category_list(categories),
@@ -280,6 +284,29 @@ def _error_result(
         passed=False,
         metadata=metadata,
     )
+
+
+def _no_compatible_metrics_message(
+    selected: Sequence[MetricDefinition],
+    inputs: Mapping[str, Any],
+) -> str:
+    missing_by_metric = {
+        metric.name: [
+            key
+            for key in metric.required_inputs
+            if key not in inputs or inputs[key] is None
+        ]
+        for metric in selected
+    }
+    missing_inputs = sorted({key for keys in missing_by_metric.values() for key in keys})
+    if missing_inputs:
+        details = "; ".join(
+            f"{name} missing {', '.join(keys)}"
+            for name, keys in missing_by_metric.items()
+            if keys
+        )
+        return "missing required inputs: " + ", ".join(missing_inputs) + f" ({details})"
+    return "no compatible metrics found for the provided inputs"
 
 
 def _category_list(categories: Optional[Union[str, Sequence[str]]]) -> list[str]:

@@ -29,6 +29,13 @@ def test_collision_rate_no_actors_or_no_collision() -> None:
     assert collision_rate(ego, far_actor, ego_radius=0.5, actor_radius=0.5) == 0.0
 
 
+def test_collision_rate_uses_actor_covered_timesteps_as_denominator() -> None:
+    ego = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [3.0, 0.0], [4.0, 0.0]])
+    actor = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+
+    assert collision_rate(ego, actor, ego_radius=0.5, actor_radius=0.5) == 1.0
+
+
 def test_time_to_collision_constant_velocity() -> None:
     ego = AgentState(x=0.0, y=0.0, vx=1.0, vy=0.0, radius=1.0)
     actor = AgentState(x=10.0, y=0.0, vx=0.0, vy=0.0, radius=1.0)
@@ -60,6 +67,14 @@ def test_lane_departure_accepts_closed_polygon() -> None:
     )
 
     assert lane_departure_rate(ego, lane) == pytest.approx(0.5)
+
+
+def test_lane_departure_rejects_collinear_polygon() -> None:
+    ego = np.array([[0.0, 0.0], [1.0, 0.0]])
+    lane = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+
+    with pytest.raises(ValueError, match="non-zero polygon area"):
+        lane_departure_rate(ego, lane)
 
 
 def test_safety_rejects_invalid_values() -> None:

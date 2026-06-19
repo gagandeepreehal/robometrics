@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
@@ -19,6 +20,8 @@ class Trajectory:
 
     ``points`` must be a finite, non-empty ``Nx2`` or ``Nx3`` sequence in meters.
     ``timestamps`` must be finite seconds and match the point count when provided.
+    Inputs are normalized to plain Python ``list`` values so the schema can be
+    serialized without custom NumPy handling.
     """
 
     points: list[list[float]]
@@ -51,6 +54,18 @@ class Trajectory:
     def array(self) -> NDArray[np.float64]:
         """Return trajectory points as a NumPy array."""
         return np.asarray(self.points, dtype=np.float64)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-compatible dictionary."""
+        return {
+            "points": self.points,
+            "timestamps": self.timestamps,
+            "metadata": self.metadata,
+        }
+
+    def to_json(self) -> str:
+        """Return a JSON string representation."""
+        return json.dumps(self.to_dict(), allow_nan=False, sort_keys=True)
 
 
 @dataclass

@@ -41,6 +41,14 @@ def test_hausdorff_supports_different_lengths() -> None:
     assert hausdorff_distance(first, second) == pytest.approx(2.0)
 
 
+def test_hausdorff_uses_all_3d_coordinate_dimensions() -> None:
+    pred = np.array([[0.0, 0.0, 100.0], [1.0, 0.0, 200.0]])
+    gt = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+
+    assert hausdorff_distance(pred, gt) == pytest.approx(200.0)
+    assert hausdorff_distance(pred[:, :2], gt[:, :2]) == 0.0
+
+
 def test_path_length_and_curvature_edge_cases() -> None:
     single = np.array([[1.0, 2.0]])
     stationary = np.array([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]])

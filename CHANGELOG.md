@@ -4,7 +4,7 @@ All notable changes to RoboMetrics will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows semantic versioning once public releases begin.
 
-## [0.1.1] - Unreleased
+## [0.1.1] - 2026-06-19
 
 ### Added
 

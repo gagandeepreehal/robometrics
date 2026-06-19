@@ -26,14 +26,17 @@ def min_fde(predictions: ArrayLike, gt: ArrayLike) -> float:
 
 
 def miss_rate(predictions: ArrayLike, gt: ArrayLike, threshold: float) -> float:
-    """Return 1.0 when every mode misses the final point threshold, otherwise 0.0."""
+    """Return a per-sample miss indicator as 0.0 or 1.0.
+
+    Average this value across a dataset to compute a conventional miss rate.
+    """
     if not np.isfinite(threshold) or threshold < 0.0:
         raise ValueError("threshold must be a non-negative finite value")
     return float(min_fde(predictions, gt) > threshold)
 
 
 def topk_trajectory_error(predictions: ArrayLike, gt: ArrayLike, k: int) -> float:
-    """Return the best ADE among the first k ranked predicted trajectories."""
+    """Return best ADE among the first k predictions, assumed confidence-ranked."""
     pred_arr = as_prediction_set(predictions)
     if k <= 0:
         raise ValueError("k must be positive")

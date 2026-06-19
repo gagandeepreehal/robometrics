@@ -85,7 +85,14 @@ def dynamic_feasibility_score(
     dt: float,
     constraints: Mapping[str, float],
 ) -> float:
-    """Return a 0..1 feasibility score against optional dynamic limits."""
+    """Return a conservative 0..1 feasibility score against dynamic limits.
+
+    Each configured limit contributes a relative violation
+    ``max(0, observed / limit - 1)``. The score is
+    ``1 / (1 + worst_violation)`` so adding satisfied constraints cannot hide
+    an existing violation. A zero limit is accepted; any positive observation
+    against a zero limit produces a score of 0.0.
+    """
     unknown_constraints = sorted(set(constraints) - _DYNAMIC_FEASIBILITY_CONSTRAINTS)
     if unknown_constraints:
         allowed = ", ".join(sorted(_DYNAMIC_FEASIBILITY_CONSTRAINTS))
@@ -99,19 +106,28 @@ def dynamic_feasibility_score(
 
     penalties: list[float] = []
     if "max_speed" in constraints:
-        limit = validate_positive(float(constraints["max_speed"]), name="constraints['max_speed']")
+        limit = validate_nonnegative(
+            float(constraints["max_speed"]),
+            name="constraints['max_speed']",
+        )
         observed = float(np.max(speed_profile(traj, dt)))
         penalties.append(_relative_violation(observed, limit))
     if "max_accel" in constraints:
-        limit = validate_positive(float(constraints["max_accel"]), name="constraints['max_accel']")
+        limit = validate_nonnegative(
+            float(constraints["max_accel"]),
+            name="constraints['max_accel']",
+        )
         observed = float(np.max(vector_norms(acceleration(traj, dt))))
         penalties.append(_relative_violation(observed, limit))
     if "max_jerk" in constraints:
-        limit = validate_positive(float(constraints["max_jerk"]), name="constraints['max_jerk']")
+        limit = validate_nonnegative(
+            float(constraints["max_jerk"]),
+            name="constraints['max_jerk']",
+        )
         observed = float(np.max(vector_norms(jerk(traj, dt))))
         penalties.append(_relative_violation(observed, limit))
     if "max_curvature" in constraints:
-        limit = validate_positive(
+        limit = validate_nonnegative(
             float(constraints["max_curvature"]),
             name="constraints['max_curvature']",
         )
@@ -122,8 +138,10 @@ def dynamic_feasibility_score(
         as_trajectory(traj, name="traj")
         validate_positive(float(dt), name="dt")
         return 1.0
-    return float(1.0 / (1.0 + np.mean(penalties)))
+    return float(1.0 / (1.0 + max(penalties)))
 
 
 def _relative_violation(observed: float, limit: float) -> float:
+    if limit == 0.0:
+        return 0.0 if observed == 0.0 else float("inf")
     return max(0.0, observed / limit - 1.0)

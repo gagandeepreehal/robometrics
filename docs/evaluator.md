@@ -62,3 +62,10 @@ print(prediction_result.to_json())
 ## Error Behavior
 
 Unknown metric names raise `UnknownMetricError` before evaluation starts. If a known metric cannot run with the supplied inputs, evaluation continues and that metric is returned as a failed `MetricResult` with `metadata["error"]`.
+For automatic category selection, if every selected metric is skipped because a
+required input is missing, the evaluator reports the missing input names instead
+of the generic "no compatible metrics" message.
+
+Array-valued metric functions are reduced to scalar evaluator results. Vector
+arrays use mean row-wise norm, scalar arrays use mean value, and the raw array
+plus reduction name are stored in metadata.

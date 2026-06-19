@@ -16,6 +16,9 @@ result = evaluator.evaluate(
 ```
 
 `prediction` and `ground_truth` are mapped to the argument names used by built-in metrics. Metric-specific inputs can be supplied as keyword arguments, such as `dt`, `actor_trajs`, `ego_radius`, `actor_radius`, `lane_boundary`, `constraints`, `k`, or `threshold`.
+If an automatically selected category has no runnable metrics because a
+required input is missing, the evaluator reports the missing input names, such
+as `dt` for comfort metrics.
 
 ## Metric Selection
 
@@ -86,6 +89,12 @@ frame = result.to_dataframe()
 ```
 
 `to_json()` emits standards-compliant JSON. Non-finite metric values such as `NaN` or `inf` are exported as `null`.
+Each affected metric includes `metadata["value_serialization"]` so strict JSON
+consumers can distinguish `nan`, `inf`, and `-inf` from ordinary null values.
+
+`summary()` includes per-unit summaries. The legacy aggregate is still present
+for convenience, but it includes a warning when it mixes units such as meters
+and `m^2/s^6`.
 
 Each row is a `MetricResult` with:
 
@@ -97,6 +106,11 @@ Each row is a `MetricResult` with:
 - `metadata`
 
 If a known metric fails during execution, evaluation continues and the returned `MetricResult` contains `metadata["error"]`. Unknown metric names fail before execution with `UnknownMetricError`, so no partial `EvaluationResult` is returned for misspelled metric names.
+
+Array-valued metrics are reduced to scalar `MetricResult.value` entries when
+run through the evaluator. Vector arrays such as acceleration and jerk use mean
+row-wise norm. Scalar arrays such as curvature use the mean. The original array
+and reduction strategy are stored in metadata.
 
 ## Registry
 

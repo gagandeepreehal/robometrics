@@ -22,6 +22,46 @@ def test_constant_velocity_has_zero_acceleration_and_jerk() -> None:
     assert smoothness_score(traj, dt=1.0) == 1.0
 
 
+def test_smoothness_score_does_not_change_with_dt_alone() -> None:
+    traj = np.array(
+        [
+            [0.0, 0.0],
+            [1.0, 0.01],
+            [2.0, -0.01],
+            [3.0, 0.02],
+            [4.0, -0.02],
+            [5.0, 0.0],
+        ]
+    )
+
+    assert smoothness_score(traj, dt=0.01) == pytest.approx(smoothness_score(traj, dt=1.0))
+
+
+def test_smoothness_score_short_trajectories_are_degenerate() -> None:
+    traj = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+
+    assert smoothness_score(traj, dt=0.1) == 1.0
+
+
+def test_smoothness_score_distinguishes_bad_from_catastrophic() -> None:
+    traj = np.array(
+        [
+            [0.0, 0.0],
+            [1.0, 0.0],
+            [0.0, 0.0],
+            [1.0, 0.0],
+            [0.0, 0.0],
+            [1.0, 0.0],
+        ]
+    )
+
+    bad = smoothness_score(traj * 10.0, dt=0.1)
+    catastrophic = smoothness_score(traj * 100.0, dt=0.1)
+
+    assert catastrophic < bad
+    assert bad - catastrophic > 0.01
+
+
 def test_quadratic_motion_has_constant_acceleration() -> None:
     t = np.arange(5, dtype=np.float64)
     traj = np.column_stack((t**2, np.zeros_like(t)))

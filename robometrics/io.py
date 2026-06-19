@@ -83,7 +83,8 @@ def load_json(path: PathLike) -> FloatArray:
 
     Supported format:
     {"trajectory": [{"t": 0.0, "x": 0.0, "y": 0.0}, ...]}
-    A top-level list of point objects is also accepted.
+    {"points": [[0.0, 0.0], ...]}
+    A top-level list of point objects or coordinate lists is also accepted.
     """
     json_path = Path(path)
     if not json_path.exists():
@@ -94,23 +95,24 @@ def load_json(path: PathLike) -> FloatArray:
         raise TrajectoryIOError(f"could not parse JSON trajectory file {json_path}: {exc}") from exc
     except OSError as exc:
         raise TrajectoryIOError(f"could not read JSON trajectory file {json_path}: {exc}") from exc
-    records = (
-        payload["trajectory"]
-        if isinstance(payload, dict) and "trajectory" in payload
-        else payload
-    )
+    records = _json_trajectory_records(payload)
     if not isinstance(records, list):
-        raise ValueError("JSON trajectory must be a list or contain a 'trajectory' list")
+        raise ValueError(
+            "JSON trajectory must be a list or contain a 'trajectory' or 'points' list"
+        )
 
     points: list[list[float]] = []
     for index, record in enumerate(records):
-        if not isinstance(record, dict):
-            raise ValueError(f"trajectory record {index} must be an object")
-        if "x" not in record or "y" not in record:
-            raise ValueError(f"trajectory record {index} must contain x and y")
-        point = [float(record["x"]), float(record["y"])]
-        if "z" in record:
-            point.append(float(record["z"]))
+        if isinstance(record, dict):
+            if "x" not in record or "y" not in record:
+                raise ValueError(f"trajectory record {index} must contain x and y")
+            point = [float(record["x"]), float(record["y"])]
+            if "z" in record:
+                point.append(float(record["z"]))
+        elif isinstance(record, list):
+            point = [float(value) for value in record]
+        else:
+            raise ValueError(f"trajectory record {index} must be an object or coordinate list")
         points.append(point)
     return as_trajectory(points, name="trajectory")
 
@@ -143,3 +145,12 @@ def trajectory_to_json_records(traj: ArrayLike) -> list[dict[str, Any]]:
             record["z"] = float(point[2])
         records.append(record)
     return records
+
+
+def _json_trajectory_records(payload: Any) -> Any:
+    if isinstance(payload, dict):
+        if "trajectory" in payload:
+            return payload["trajectory"]
+        if "points" in payload:
+            return payload["points"]
+    return payload

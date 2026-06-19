@@ -49,6 +49,32 @@ def test_dynamic_feasibility_score() -> None:
     assert dynamic_feasibility_score(smooth, 1.0, {}) == 1.0
 
 
+def test_dynamic_feasibility_score_uses_worst_violation() -> None:
+    traj = np.array([[0.0, 0.0], [2.0, 0.0], [4.0, 0.0]])
+    speed_only = dynamic_feasibility_score(traj, 1.0, {"max_speed": 1.0})
+    with_safe_constraints = dynamic_feasibility_score(
+        traj,
+        1.0,
+        {
+            "max_speed": 1.0,
+            "max_accel": 10.0,
+            "max_jerk": 10.0,
+            "max_curvature": 10.0,
+        },
+    )
+
+    assert speed_only == pytest.approx(0.5)
+    assert with_safe_constraints == pytest.approx(speed_only)
+
+
+def test_dynamic_feasibility_score_accepts_zero_limits() -> None:
+    stationary = np.array([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]])
+    moving = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+
+    assert dynamic_feasibility_score(stationary, 1.0, {"max_speed": 0.0}) == 1.0
+    assert dynamic_feasibility_score(moving, 1.0, {"max_speed": 0.0}) == 0.0
+
+
 def test_dynamic_feasibility_score_rejects_unknown_constraints() -> None:
     smooth = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
 

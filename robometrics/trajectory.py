@@ -33,7 +33,7 @@ def final_displacement_error(pred: ArrayLike, gt: ArrayLike) -> float:
 
 
 def hausdorff_distance(pred: ArrayLike, gt: ArrayLike) -> float:
-    """Return the symmetric Hausdorff distance between two trajectories."""
+    """Return symmetric Hausdorff distance using all coordinate dimensions."""
     pred_arr = as_trajectory(pred, name="pred")
     gt_arr = as_trajectory(gt, name="gt")
     if pred_arr.shape[1] != gt_arr.shape[1]:
@@ -52,7 +52,7 @@ def path_length(traj: ArrayLike) -> float:
 
 
 def curvature(traj: ArrayLike) -> FloatArray:
-    """Return approximate planar curvature at each trajectory point."""
+    """Return approximate planar XY curvature at each trajectory point."""
     traj_arr = as_trajectory(traj, name="traj")
     points = xy(traj_arr)
     if points.shape[0] < 3:
@@ -74,7 +74,7 @@ def curvature(traj: ArrayLike) -> FloatArray:
 
 
 def lateral_error(pred: ArrayLike, ref: ArrayLike) -> float:
-    """Return mean absolute lateral deviation from a reference trajectory."""
+    """Return mean absolute planar XY lateral deviation from a reference trajectory."""
     pred_arr = as_trajectory(pred, name="pred")
     ref_arr = as_trajectory(ref, name="ref")
     require_same_shape(pred_arr, ref_arr, "pred", "ref")
@@ -87,7 +87,7 @@ def lateral_error(pred: ArrayLike, ref: ArrayLike) -> float:
 
 
 def longitudinal_error(pred: ArrayLike, ref: ArrayLike) -> float:
-    """Return mean absolute longitudinal deviation along a reference trajectory."""
+    """Return mean absolute planar XY longitudinal deviation along a reference trajectory."""
     pred_arr = as_trajectory(pred, name="pred")
     ref_arr = as_trajectory(ref, name="ref")
     require_same_shape(pred_arr, ref_arr, "pred", "ref")

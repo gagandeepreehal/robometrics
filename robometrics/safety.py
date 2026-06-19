@@ -24,7 +24,7 @@ def collision_rate(
     ego_radius: float,
     actor_radius: float,
 ) -> float:
-    """Return fraction of ego timesteps that collide with at least one actor."""
+    """Return fraction of actor-covered ego timesteps that collide with at least one actor."""
     ego = as_trajectory(ego_traj, name="ego_traj")
     actors = as_actor_trajectories(actor_trajs)
     ego_r = validate_nonnegative(float(ego_radius), name="ego_radius")
@@ -32,15 +32,19 @@ def collision_rate(
     if not actors:
         return 0.0
 
+    covered_steps = np.zeros(ego.shape[0], dtype=np.bool_)
     collision_steps = np.zeros(ego.shape[0], dtype=np.bool_)
     threshold = ego_r + actor_r
     for actor in actors:
         overlap = min(ego.shape[0], actor.shape[0])
         if overlap == 0:
             continue
+        covered_steps[:overlap] = True
         distances = np.linalg.norm(xy(ego[:overlap]) - xy(actor[:overlap]), axis=1)
         collision_steps[:overlap] |= distances <= threshold
-    return float(np.mean(collision_steps))
+    if not np.any(covered_steps):
+        return 0.0
+    return float(np.mean(collision_steps[covered_steps]))
 
 
 def time_to_collision(

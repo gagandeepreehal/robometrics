@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from robometrics import EvaluationInputError, Evaluator, UnknownMetricError
+from robometrics import EvaluationInputError, Evaluator, UnknownMetricError, __version__
 
 
 def test_evaluator_runs_named_metrics_with_thresholds() -> None:
@@ -21,6 +21,7 @@ def test_evaluator_runs_named_metrics_with_thresholds() -> None:
     assert result.results[0].value == pytest.approx((0.0 + 0.1 + 0.1) / 3.0)
     assert result.results[0].passed is True
     assert result.passed is True
+    assert result.metadata["robometrics_version"] == __version__
 
 
 def test_evaluator_supports_category_selection() -> None:
@@ -101,6 +102,13 @@ def test_evaluator_rejects_unknown_metric_and_category() -> None:
 def test_evaluator_requires_some_input() -> None:
     with pytest.raises(EvaluationInputError):
         Evaluator().evaluate(metrics=["ade"])
+
+
+def test_evaluator_reports_missing_required_inputs_for_category() -> None:
+    pred = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+
+    with pytest.raises(EvaluationInputError, match="missing required inputs: dt"):
+        Evaluator().evaluate(prediction=pred, categories=["comfort"])
 
 
 def test_evaluator_rejects_invalid_common_inputs() -> None:
