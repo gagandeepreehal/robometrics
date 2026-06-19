@@ -31,5 +31,7 @@ Single-point trajectories are accepted by metrics with well-defined degenerate o
 Use `metrics="all"` to run every compatible registered metric, or select groups with `categories=["trajectory"]`.
 Use `python -m robometrics --help` or `robometrics list-metrics` to inspect an
 installed package from the shell.
+If `robometrics` is not on `PATH` after a user-level pip install, keep using
+`python -m robometrics` or add the script directory reported by pip to `PATH`.
 
 File IO helpers raise `TrajectoryIOError` for missing or malformed files, and `ValueError` for invalid trajectory contents.

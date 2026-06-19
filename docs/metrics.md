@@ -16,6 +16,8 @@ Registered aliases:
 - `hausdorff_distance(pred, gt)`: symmetric Hausdorff distance using all coordinate dimensions.
 - `path_length(traj)`: total Euclidean path length.
 - `curvature(traj)`: approximate planar XY curvature at each point; returns an array.
+- `curvature_profile(traj)`: alias for `curvature(traj)`.
+- `mean_curvature(traj)`: mean planar XY curvature as a scalar.
 - `lateral_error(pred, ref)`: mean absolute planar XY perpendicular error from a reference path.
 - `longitudinal_error(pred, ref)`: mean absolute planar XY along-track error from a reference path.
 
@@ -34,10 +36,14 @@ safety geometry, and TTC are planar XY metrics.
 
 - `acceleration(traj, dt)`: approximate per-step acceleration vectors.
 - `jerk(traj, dt)`: approximate per-step jerk vectors.
+- `acceleration_magnitude(traj, dt)`: per-step acceleration magnitudes.
+- `jerk_magnitude(traj, dt)`: per-step jerk magnitudes.
 - `jerk_cost(traj, dt)`: mean squared jerk magnitude.
 - `max_acceleration(traj, dt)`: maximum acceleration magnitude.
+- `mean_acceleration(traj, dt)`: mean acceleration magnitude.
+- `rms_acceleration(traj, dt)`: root-mean-square acceleration magnitude.
 - `max_deceleration(traj, dt)`: maximum longitudinal deceleration magnitude.
-- `smoothness_score(traj, dt)`: bounded score where `1.0` is smoother. The formula is `1 / (1 + log1p(cost))`, where `cost` is mean squared third finite difference. Changing `dt` alone does not change the result, very rough trajectories remain distinguishable, and trajectories shorter than four points return `1.0` because third finite differences are not measurable.
+- `smoothness_score(traj)`: bounded shape score where `1.0` is smoother. The formula is `1 / (1 + log1p(cost))`, where `cost` is mean squared third finite difference normalized by mean squared step length. It is unitless, spatial-scale-invariant for geometrically similar paths, and separate from physical `jerk_cost(traj, dt)`. Trajectories shorter than four points return `1.0` because third finite differences are not measurable.
 
 ## Safety
 

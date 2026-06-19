@@ -5,10 +5,14 @@ import pytest
 
 from robometrics import (
     acceleration,
+    acceleration_magnitude,
     jerk,
     jerk_cost,
+    jerk_magnitude,
     max_acceleration,
     max_deceleration,
+    mean_acceleration,
+    rms_acceleration,
     smoothness_score,
 )
 
@@ -19,54 +23,61 @@ def test_constant_velocity_has_zero_acceleration_and_jerk() -> None:
     assert np.allclose(acceleration(traj, dt=1.0), np.zeros_like(traj))
     assert np.allclose(jerk(traj, dt=1.0), np.zeros_like(traj))
     assert jerk_cost(traj, dt=1.0) == 0.0
-    assert smoothness_score(traj, dt=1.0) == 1.0
+    assert smoothness_score(traj) == 1.0
 
 
-def test_smoothness_score_does_not_change_with_dt_alone() -> None:
-    traj = np.array(
-        [
-            [0.0, 0.0],
-            [1.0, 0.01],
-            [2.0, -0.01],
-            [3.0, 0.02],
-            [4.0, -0.02],
-            [5.0, 0.0],
-        ]
-    )
+def test_smoothness_score_is_spatial_scale_invariant() -> None:
+    theta = np.linspace(0.0, np.pi, 32)
+    meters = np.column_stack((5.0 * np.cos(theta), 5.0 * np.sin(theta)))
+    centimeters = meters * 100.0
 
-    assert smoothness_score(traj, dt=0.01) == pytest.approx(smoothness_score(traj, dt=1.0))
+    assert smoothness_score(centimeters) == pytest.approx(smoothness_score(meters))
 
 
 def test_smoothness_score_short_trajectories_are_degenerate() -> None:
     traj = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
 
-    assert smoothness_score(traj, dt=0.1) == 1.0
+    assert smoothness_score(traj) == 1.0
 
 
-def test_smoothness_score_distinguishes_bad_from_catastrophic() -> None:
-    traj = np.array(
+def test_smoothness_score_penalizes_rough_shape() -> None:
+    smooth = np.array(
         [
             [0.0, 0.0],
             [1.0, 0.0],
+            [2.0, 0.0],
+            [3.0, 0.0],
+            [4.0, 0.0],
+            [5.0, 0.0],
+        ]
+    )
+    jerky = np.array(
+        [
             [0.0, 0.0],
-            [1.0, 0.0],
-            [0.0, 0.0],
-            [1.0, 0.0],
+            [1.0, 1.0],
+            [2.0, -1.0],
+            [3.0, 1.0],
+            [4.0, -1.0],
+            [5.0, 1.0],
         ]
     )
 
-    bad = smoothness_score(traj * 10.0, dt=0.1)
-    catastrophic = smoothness_score(traj * 100.0, dt=0.1)
+    smooth_score = smoothness_score(smooth)
+    jerky_score = smoothness_score(jerky)
 
-    assert catastrophic < bad
-    assert bad - catastrophic > 0.01
+    assert jerky_score < smooth_score
+    assert smooth_score - jerky_score > 0.1
 
 
 def test_quadratic_motion_has_constant_acceleration() -> None:
     t = np.arange(5, dtype=np.float64)
     traj = np.column_stack((t**2, np.zeros_like(t)))
 
+    assert np.allclose(acceleration_magnitude(traj, dt=1.0), np.full(5, 2.0))
     assert max_acceleration(traj, dt=1.0) == pytest.approx(2.0)
+    assert mean_acceleration(traj, dt=1.0) == pytest.approx(2.0)
+    assert rms_acceleration(traj, dt=1.0) == pytest.approx(2.0)
+    assert np.allclose(jerk_magnitude(traj, dt=1.0), np.zeros(5))
     assert jerk_cost(traj, dt=1.0) == pytest.approx(0.0)
 
 

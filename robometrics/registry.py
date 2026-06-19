@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
+from threading import RLock
 from typing import Any, Optional
 
 import numpy as np
@@ -47,6 +48,7 @@ class MetricRegistry:
     def __init__(self) -> None:
         self._metrics: dict[str, MetricDefinition] = {}
         self._aliases: dict[str, str] = {}
+        self._lock = RLock()
 
     def register(
         self,
@@ -62,54 +64,58 @@ class MetricRegistry:
         compatibility: Optional[CompatibilityFn] = None,
     ) -> MetricDefinition:
         """Register a metric function and return its definition."""
-        normalized_name = _normalize_name(name)
-        if normalized_name in self._metrics or normalized_name in self._aliases:
-            raise ValueError(f"metric already registered: {name}")
+        with self._lock:
+            normalized_name = _normalize_name(name)
+            if normalized_name in self._metrics or normalized_name in self._aliases:
+                raise ValueError(f"metric already registered: {name}")
 
-        metric = MetricDefinition(
-            name=normalized_name,
-            fn=fn,
-            category=category,
-            unit=unit,
-            description=description or _first_doc_line(fn),
-            required_inputs=tuple(required_inputs),
-            default_kwargs=dict(default_kwargs or {}),
-            aliases=tuple(aliases),
-            compatibility=compatibility,
-        )
-        self._metrics[normalized_name] = metric
+            metric = MetricDefinition(
+                name=normalized_name,
+                fn=fn,
+                category=category,
+                unit=unit,
+                description=description or _first_doc_line(fn),
+                required_inputs=tuple(required_inputs),
+                default_kwargs=dict(default_kwargs or {}),
+                aliases=tuple(aliases),
+                compatibility=compatibility,
+            )
+            self._metrics[normalized_name] = metric
 
-        for alias in aliases:
-            normalized_alias = _normalize_name(alias)
-            if normalized_alias in self._metrics or normalized_alias in self._aliases:
-                raise ValueError(f"metric alias already registered: {alias}")
-            self._aliases[normalized_alias] = normalized_name
+            for alias in aliases:
+                normalized_alias = _normalize_name(alias)
+                if normalized_alias in self._metrics or normalized_alias in self._aliases:
+                    raise ValueError(f"metric alias already registered: {alias}")
+                self._aliases[normalized_alias] = normalized_name
 
-        return metric
+            return metric
 
     def get(self, name: str) -> MetricDefinition:
         """Return a metric definition by canonical name or alias."""
-        normalized_name = _normalize_name(name)
-        canonical = self._aliases.get(normalized_name, normalized_name)
-        try:
-            return self._metrics[canonical]
-        except KeyError as exc:
-            raise UnknownMetricError(f"unknown metric: {name}") from exc
+        with self._lock:
+            normalized_name = _normalize_name(name)
+            canonical = self._aliases.get(normalized_name, normalized_name)
+            try:
+                return self._metrics[canonical]
+            except KeyError as exc:
+                raise UnknownMetricError(f"unknown metric: {name}") from exc
 
     def list_metrics(self, *, category: Optional[str] = None) -> list[MetricDefinition]:
         """Return registered metrics, optionally filtered by category."""
-        if category is None:
-            return list(self._metrics.values())
-        normalized_category = category.lower()
-        return [
-            metric
-            for metric in self._metrics.values()
-            if metric.category.lower() == normalized_category
-        ]
+        with self._lock:
+            if category is None:
+                return list(self._metrics.values())
+            normalized_category = category.lower()
+            return [
+                metric
+                for metric in self._metrics.values()
+                if metric.category.lower() == normalized_category
+            ]
 
     def categories(self) -> list[str]:
         """Return registered metric categories."""
-        return sorted({metric.category for metric in self._metrics.values()})
+        with self._lock:
+            return sorted({metric.category for metric in self._metrics.values()})
 
 
 def create_default_registry() -> MetricRegistry:
@@ -153,6 +159,14 @@ def create_default_registry() -> MetricRegistry:
     reg.register(
         name="curvature",
         fn=trajectory.curvature,
+        category="trajectory",
+        unit="1/m",
+        required_inputs=("traj",),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="mean_curvature",
+        fn=trajectory.mean_curvature,
         category="trajectory",
         unit="1/m",
         required_inputs=("traj",),
@@ -237,8 +251,40 @@ def create_default_registry() -> MetricRegistry:
         compatibility=_trajectory_input("traj"),
     )
     reg.register(
+        name="acceleration_magnitude",
+        fn=comfort.acceleration_magnitude,
+        category="comfort",
+        unit="m/s^2",
+        required_inputs=("traj", "dt"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="jerk_magnitude",
+        fn=comfort.jerk_magnitude,
+        category="comfort",
+        unit="m/s^3",
+        required_inputs=("traj", "dt"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
         name="max_acceleration",
         fn=comfort.max_acceleration,
+        category="comfort",
+        unit="m/s^2",
+        required_inputs=("traj", "dt"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="mean_acceleration",
+        fn=comfort.mean_acceleration,
+        category="comfort",
+        unit="m/s^2",
+        required_inputs=("traj", "dt"),
+        compatibility=_trajectory_input("traj"),
+    )
+    reg.register(
+        name="rms_acceleration",
+        fn=comfort.rms_acceleration,
         category="comfort",
         unit="m/s^2",
         required_inputs=("traj", "dt"),
@@ -257,7 +303,7 @@ def create_default_registry() -> MetricRegistry:
         fn=comfort.smoothness_score,
         category="comfort",
         unit="score",
-        required_inputs=("traj", "dt"),
+        required_inputs=("traj",),
         compatibility=_trajectory_input("traj"),
     )
 

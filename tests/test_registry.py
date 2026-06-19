@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 
 from robometrics.registry import MetricRegistry, UnknownMetricError, registry
@@ -13,6 +15,7 @@ def test_default_registry_lists_built_in_metrics() -> None:
     assert "fde" in names
     assert "miss_rate" in names
     assert "dynamic_feasibility_score" in names
+    assert registry.get("smoothness_score").required_inputs == ("traj",)
 
 
 def test_registry_get_supports_aliases() -> None:
@@ -51,3 +54,23 @@ def test_custom_registry_registers_metric_metadata() -> None:
 
     assert custom.get("example") == registered
     assert registered.description == "Example metric."
+
+
+def test_custom_registry_registers_metrics_from_threads() -> None:
+    custom = MetricRegistry()
+
+    def register_metric(index: int) -> str:
+        def metric() -> float:
+            return float(index)
+
+        return custom.register(
+            name=f"example_{index}",
+            fn=metric,
+            category="custom",
+        ).name
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        names = list(executor.map(register_metric, range(8)))
+
+    assert names == [f"example_{index}" for index in range(8)]
+    assert {metric.name for metric in custom.list_metrics()} == set(names)

@@ -27,7 +27,7 @@ Use this checklist before publishing a public release.
 - [ ] Build source distribution and wheel.
 - [ ] Install from the built wheel in a fresh environment.
 - [ ] Verify `python -c "import robometrics; print(robometrics.__version__)"`.
-- [ ] Verify `python -m robometrics --help` and `robometrics list-metrics`.
+- [ ] Verify `python -m robometrics --help`, `robometrics list-metrics`, and `robometrics describe ade`.
 
 ## Publishing
 

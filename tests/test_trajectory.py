@@ -7,11 +7,13 @@ from robometrics import (
     ade,
     average_displacement_error,
     curvature,
+    curvature_profile,
     fde,
     final_displacement_error,
     hausdorff_distance,
     lateral_error,
     longitudinal_error,
+    mean_curvature,
     path_length,
 )
 
@@ -56,7 +58,9 @@ def test_path_length_and_curvature_edge_cases() -> None:
     assert path_length(single) == 0.0
     assert path_length(np.array([[0.0, 0.0], [3.0, 4.0]])) == 5.0
     assert np.allclose(curvature(single), np.array([0.0]))
+    assert np.allclose(curvature_profile(single), np.array([0.0]))
     assert np.allclose(curvature(stationary), np.zeros(3))
+    assert mean_curvature(stationary) == 0.0
 
 
 def test_lateral_and_longitudinal_error() -> None:

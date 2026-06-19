@@ -59,6 +59,22 @@ print(prediction_result.summary())
 print(prediction_result.to_json())
 ```
 
+## Dataset Aggregation
+
+Use `evaluate_dataset()` when each sample has one prediction and one
+ground-truth trajectory:
+
+```python
+dataset_result = Evaluator().evaluate_dataset(
+    predictions=[pred_a, pred_b],
+    ground_truths=[gt_a, gt_b],
+    metrics=["ade", "fde"],
+)
+```
+
+The result contains one aggregate metric row per metric, with per-sample values
+and min/max/std metadata.
+
 ## Error Behavior
 
 Unknown metric names raise `UnknownMetricError` before evaluation starts. If a known metric cannot run with the supplied inputs, evaluation continues and that metric is returned as a failed `MetricResult` with `metadata["error"]`.
@@ -69,3 +85,5 @@ of the generic "no compatible metrics" message.
 Array-valued metric functions are reduced to scalar evaluator results. Vector
 arrays use mean row-wise norm, scalar arrays use mean value, and the raw array
 plus reduction name are stored in metadata.
+
+Use `strict_passed` for CI gates that should consider only thresholded metrics.

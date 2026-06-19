@@ -34,16 +34,35 @@ def jerk(traj: ArrayLike, dt: float) -> FloatArray:
     return _gradient(accel, timestep)
 
 
+def acceleration_magnitude(traj: ArrayLike, dt: float) -> FloatArray:
+    """Return per-step acceleration magnitudes."""
+    return vector_norms(acceleration(traj, dt))
+
+
+def jerk_magnitude(traj: ArrayLike, dt: float) -> FloatArray:
+    """Return per-step jerk magnitudes."""
+    return vector_norms(jerk(traj, dt))
+
+
 def jerk_cost(traj: ArrayLike, dt: float) -> float:
     """Return mean squared jerk magnitude."""
-    jerk_values = jerk(traj, dt)
-    return float(np.mean(np.square(vector_norms(jerk_values))))
+    return float(np.mean(np.square(jerk_magnitude(traj, dt))))
 
 
 def max_acceleration(traj: ArrayLike, dt: float) -> float:
     """Return maximum acceleration magnitude."""
-    accel = acceleration(traj, dt)
-    return float(np.max(vector_norms(accel)))
+    return float(np.max(acceleration_magnitude(traj, dt)))
+
+
+def mean_acceleration(traj: ArrayLike, dt: float) -> float:
+    """Return mean acceleration magnitude."""
+    return float(np.mean(acceleration_magnitude(traj, dt)))
+
+
+def rms_acceleration(traj: ArrayLike, dt: float) -> float:
+    """Return root-mean-square acceleration magnitude."""
+    magnitudes = acceleration_magnitude(traj, dt)
+    return float(np.sqrt(np.mean(np.square(magnitudes))))
 
 
 def max_deceleration(traj: ArrayLike, dt: float) -> float:
@@ -67,14 +86,15 @@ def max_deceleration(traj: ArrayLike, dt: float) -> float:
     return float(np.max(deceleration))
 
 
-def smoothness_score(traj: ArrayLike, dt: float) -> float:
-    """Return ``1 / (1 + log1p(cost))`` for dimensionless third-difference cost.
+def smoothness_score(traj: ArrayLike) -> float:
+    """Return a scale-normalized third-difference smoothness score.
 
     The score is 1.0 for trajectories with no measurable third finite
     difference. At least four points are required to measure that difference,
-    so shorter trajectories return 1.0 after normal input validation.
+    so shorter trajectories return 1.0 after normal input validation. This is
+    a dimensionless shape score, not an inverse of physical ``jerk_cost()``.
     """
-    cost = _dimensionless_jerk_cost(traj, dt)
+    cost = _dimensionless_jerk_cost(traj)
     return float(1.0 / (1.0 + np.log1p(cost)))
 
 
@@ -84,11 +104,15 @@ def _gradient(values: FloatArray, dt: float) -> FloatArray:
     return np.asarray(gradient, dtype=np.float64)
 
 
-def _dimensionless_jerk_cost(traj: ArrayLike, dt: float) -> float:
+def _dimensionless_jerk_cost(traj: ArrayLike) -> float:
     traj_arr = as_trajectory(traj, name="traj")
-    validate_positive(float(dt), name="dt")
     if traj_arr.shape[0] < 4:
         return 0.0
 
+    step_differences = np.diff(traj_arr, axis=0)
     third_difference = np.diff(traj_arr, n=3, axis=0)
-    return float(np.mean(np.square(vector_norms(third_difference))))
+    numerator = float(np.mean(np.square(vector_norms(third_difference))))
+    step_scale = float(np.mean(np.square(vector_norms(step_differences))))
+    if step_scale <= 1e-12:
+        return 0.0 if numerator <= 1e-12 else float("inf")
+    return numerator / step_scale

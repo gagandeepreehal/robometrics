@@ -30,8 +30,14 @@ small and meant for package verification and metric discovery:
 ```bash
 python -m robometrics --help
 robometrics list-metrics
+robometrics list-metrics --format json
+robometrics describe ade
 robometrics version
 ```
+
+If a user-level pip install places `robometrics` outside `PATH`, use
+`python -m robometrics ...` or add the script directory reported by pip, such as
+`$HOME/Library/Python/3.9/bin` on macOS system Python, to `PATH`.
 
 For local development:
 
@@ -103,12 +109,14 @@ Empty arrays, NaN/inf values, bad ranks, mismatched trajectory lengths, invalid
 Most public metric functions return `float`; profile-style functions such as
 `curvature()`, `speed_profile()`, `acceleration()`, and `jerk()` return per-step
 NumPy arrays. For acceleration or jerk magnitudes, use
-`np.linalg.norm(result, axis=1)`. Threshold-style physics helpers return
+`acceleration_magnitude()` and `jerk_magnitude()`; scalar helpers such as
+`mean_curvature()`, `mean_acceleration()`, and `rms_acceleration()` are provided
+for common CI summaries. Threshold-style physics helpers return
 `MetricResult`, which stores a value, unit, optional threshold, pass/fail status,
 and metadata.
 
 `EvaluationResult` is a small container for local batches of metric results and
-can export dictionaries, strict JSON, Markdown tables, and pandas DataFrames.
+can export and reload dictionaries, strict JSON, CSV, Markdown tables, and pandas DataFrames.
 Non-finite metric values are serialized as `null` in JSON with metadata that
 records whether the original value was `nan`, `inf`, or `-inf`.
 
@@ -197,13 +205,14 @@ dt = 0.5
 print(acceleration(trajectory, dt=dt))  # m/s^2
 print(jerk(trajectory, dt=dt))          # m/s^3
 print(jerk_cost(trajectory, dt=dt))
-print(smoothness_score(trajectory, dt=dt))
+print(smoothness_score(trajectory))
 ```
 
 `smoothness_score()` uses `1 / (1 + log1p(cost))`, where `cost` is the mean
-squared third finite difference of the trajectory. The score is unitless,
-independent of changing `dt` alone, and returns `1.0` for trajectories with
-fewer than four points because third finite differences are not measurable.
+squared third finite difference normalized by mean squared step length. The
+score is unitless, invariant to coordinate scale, and separate from physical
+`jerk_cost(traj, dt)`. It returns `1.0` for trajectories with fewer than four
+points because third finite differences are not measurable.
 
 ### Physics
 
@@ -234,6 +243,8 @@ json_traj = load_trajectory_json("trajectory.json")
 
 CSV files must include `x` and `y` columns, and may include `z`. JSON files may
 contain either a raw list of points or an object with a `points` field.
+Use `load_trajectory_dir()` to load every supported trajectory file in a
+directory into a filename-keyed dictionary.
 
 ## Lightweight Evaluator And Registry
 
@@ -253,6 +264,7 @@ result = Evaluator().evaluate(
 )
 
 print(result.to_json())
+reloaded = result.from_json(result.to_json())
 ```
 
 Unknown metric names raise `UnknownMetricError` before evaluation starts.
@@ -262,8 +274,14 @@ Metric execution failures are returned as failed `MetricResult` entries with
 When array-valued metrics are run through the evaluator, vectors are reduced to
 mean row-wise norm and scalar arrays are reduced to their mean. The raw value
 and reduction name are stored in metric metadata. `EvaluationResult.summary()`
-includes per-unit summaries; if the legacy aggregate mixes units, it includes a
-warning.
+includes per-unit summaries when units mix; in that case the legacy aggregate
+includes a warning and leaves aggregate statistics as `None`. Use
+`result.strict_passed` for CI gates that should ignore metrics without
+thresholds while still failing on any thresholded metric failure.
+
+For dataset-level aggregation, pass matching prediction and ground-truth
+sequences to `Evaluator.evaluate_dataset(...)`. It returns one aggregate
+`MetricResult` per metric with per-sample values and count/min/max/std metadata.
 
 ## Contributing
 

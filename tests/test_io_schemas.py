@@ -13,6 +13,7 @@ from robometrics.io import (
     load_numpy,
     load_trajectory,
     load_trajectory_csv,
+    load_trajectory_dir,
     load_trajectory_json,
     trajectory_to_json_records,
 )
@@ -35,11 +36,27 @@ def test_load_numpy_from_array_and_file(tmp_path) -> None:
     assert np.allclose(load_trajectory(path), traj)
 
 
+def test_load_numpy_error_paths(tmp_path) -> None:
+    missing_path = tmp_path / "missing.npy"
+    empty_npz_path = tmp_path / "empty.npz"
+    bad_npy_path = tmp_path / "bad.npy"
+    np.savez(empty_npz_path)
+    bad_npy_path.write_text("not numpy", encoding="utf-8")
+
+    with pytest.raises(TrajectoryIOError, match="does not exist"):
+        load_numpy(missing_path)
+    with pytest.raises(ValueError, match="does not contain arrays"):
+        load_numpy(empty_npz_path)
+    with pytest.raises((TrajectoryIOError, ValueError)):
+        load_numpy(bad_npy_path)
+
+
 def test_load_csv_and_json(tmp_path) -> None:
     traj = np.array([[0.0, 0.0], [0.2, 0.0]])
     csv_path = tmp_path / "traj.csv"
     json_path = tmp_path / "traj.json"
     points_json_path = tmp_path / "points.json"
+    z_json_path = tmp_path / "points-z.json"
 
     pd.DataFrame({"t": [0.0, 0.1], "x": [0.0, 0.2], "y": [0.0, 0.0]}).to_csv(
         csv_path,
@@ -57,10 +74,12 @@ def test_load_csv_and_json(tmp_path) -> None:
         encoding="utf-8",
     )
     points_json_path.write_text(json.dumps({"points": traj.tolist()}), encoding="utf-8")
+    z_json_path.write_text(json.dumps([{"x": 0.0, "y": 0.0, "z": 1.0}]), encoding="utf-8")
 
     assert np.allclose(load_csv(csv_path), traj)
     assert np.allclose(load_json(json_path), traj)
     assert np.allclose(load_json(points_json_path), traj)
+    assert np.allclose(load_json(z_json_path), np.array([[0.0, 0.0, 1.0]]))
     assert np.allclose(load_trajectory(json_path), traj)
     assert np.allclose(load_trajectory_csv(csv_path), traj)
     assert np.allclose(load_trajectory_json(json_path), traj)
@@ -90,13 +109,40 @@ def test_load_trajectory_rejects_unknown_extension(tmp_path) -> None:
         load_trajectory(path)
 
 
+def test_load_trajectory_dir_loads_supported_files(tmp_path) -> None:
+    traj = np.array([[0.0, 0.0], [1.0, 0.0]])
+    np.save(tmp_path / "a.npy", traj)
+    pd.DataFrame({"x": [0.0, 1.0], "y": [0.0, 0.0]}).to_csv(tmp_path / "b.csv", index=False)
+    (tmp_path / "ignore.txt").write_text("ignored", encoding="utf-8")
+
+    loaded = load_trajectory_dir(tmp_path)
+
+    assert sorted(loaded) == ["a.npy", "b.csv"]
+    assert np.allclose(loaded["a.npy"], traj)
+    assert np.allclose(loaded["b.csv"], traj)
+
+
+def test_load_trajectory_dir_rejects_bad_paths(tmp_path) -> None:
+    missing = tmp_path / "missing"
+    file_path = tmp_path / "traj.npy"
+    np.save(file_path, np.array([[0.0, 0.0]]))
+
+    with pytest.raises(TrajectoryIOError, match="does not exist"):
+        load_trajectory_dir(missing)
+    with pytest.raises(TrajectoryIOError, match="not a directory"):
+        load_trajectory_dir(file_path)
+
+
 def test_loaders_raise_trajectory_io_error_for_file_failures(tmp_path) -> None:
     missing_path = tmp_path / "missing.json"
+    missing_csv_path = tmp_path / "missing.csv"
     malformed_json_path = tmp_path / "bad.json"
     malformed_json_path.write_text("{bad json", encoding="utf-8")
 
     with pytest.raises(TrajectoryIOError, match="trajectory file does not exist"):
         load_trajectory(missing_path)
+    with pytest.raises(TrajectoryIOError, match="trajectory file does not exist"):
+        load_csv(missing_csv_path)
 
     with pytest.raises(TrajectoryIOError, match="could not parse JSON trajectory file"):
         load_json(malformed_json_path)
@@ -107,6 +153,19 @@ def test_load_csv_missing_columns_stays_validation_error(tmp_path) -> None:
     pd.DataFrame({"x": [0.0]}).to_csv(csv_path, index=False)
 
     with pytest.raises(ValueError, match="CSV file is missing required columns"):
+        load_csv(csv_path)
+
+
+def test_load_csv_wraps_read_errors(tmp_path, monkeypatch) -> None:
+    csv_path = tmp_path / "traj.csv"
+    csv_path.write_text("x,y\n0,0\n", encoding="utf-8")
+
+    def fail_read_csv(path):
+        raise OSError("boom")
+
+    monkeypatch.setattr(pd, "read_csv", fail_read_csv)
+
+    with pytest.raises(TrajectoryIOError, match="could not read CSV trajectory file"):
         load_csv(csv_path)
 
 

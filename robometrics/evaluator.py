@@ -95,6 +95,42 @@ class Evaluator:
             },
         )
 
+    def evaluate_dataset(
+        self,
+        *,
+        predictions: Sequence[Any],
+        ground_truths: Sequence[Any],
+        metrics: Optional[Union[str, Sequence[str]]] = "all",
+        categories: Optional[Union[str, Sequence[str]]] = None,
+        thresholds: Optional[Mapping[str, float]] = None,
+        metric_kwargs: Optional[Mapping[str, Mapping[str, Any]]] = None,
+        **inputs: Any,
+    ) -> EvaluationResult:
+        """Evaluate matching prediction/ground-truth sequences and aggregate by metric."""
+        if len(predictions) != len(ground_truths):
+            raise EvaluationInputError("predictions and ground_truths must have the same length")
+        if len(predictions) == 0:
+            raise EvaluationInputError("dataset evaluation requires at least one sample")
+
+        sample_results = [
+            self.evaluate(
+                prediction=prediction,
+                ground_truth=ground_truth,
+                metrics=metrics,
+                categories=categories,
+                thresholds=thresholds,
+                metric_kwargs=metric_kwargs,
+                **inputs,
+            )
+            for prediction, ground_truth in zip(predictions, ground_truths)
+        ]
+        threshold_map = self._normalize_thresholds(thresholds)
+        return _aggregate_dataset_results(
+            sample_results,
+            thresholds=threshold_map,
+            categories=_category_list(categories),
+        )
+
     def _select_metrics(
         self,
         *,
@@ -319,3 +355,67 @@ def _category_list(categories: Optional[Union[str, Sequence[str]]]) -> list[str]
 
 def _normalize_name(name: str) -> str:
     return name.strip().lower().replace("-", "_").replace(" ", "_")
+
+
+def _aggregate_dataset_results(
+    sample_results: Sequence[EvaluationResult],
+    *,
+    thresholds: Mapping[str, float],
+    categories: list[str],
+) -> EvaluationResult:
+    metric_names: list[str] = []
+    for sample in sample_results:
+        for result in sample.results:
+            if result.name not in metric_names:
+                metric_names.append(result.name)
+
+    aggregate_results = []
+    for name in metric_names:
+        per_sample = [
+            sample.results[index]
+            for sample in sample_results
+            for index, result in enumerate(sample.results)
+            if result.name == name
+        ]
+        finite_values = np.asarray(
+            [result.value for result in per_sample if np.isfinite(result.value)],
+            dtype=np.float64,
+        )
+        first = per_sample[0]
+        value = float(np.mean(finite_values)) if finite_values.size else float("nan")
+        threshold = thresholds.get(name)
+        aggregate_results.append(
+            MetricResult(
+                name=name,
+                value=value,
+                unit=first.unit,
+                threshold=threshold,
+                passed=None if threshold is None else bool(value <= threshold),
+                metadata={
+                    "category": first.metadata.get("category"),
+                    "description": first.metadata.get("description"),
+                    "sample_count": len(sample_results),
+                    "finite_count": int(finite_values.size),
+                    "mean": value if finite_values.size else None,
+                    "std": float(np.std(finite_values)) if finite_values.size else None,
+                    "min": float(np.min(finite_values)) if finite_values.size else None,
+                    "max": float(np.max(finite_values)) if finite_values.size else None,
+                    "values": [result.value for result in per_sample],
+                    "errors": [
+                        result.metadata.get("error")
+                        for result in per_sample
+                        if "error" in result.metadata
+                    ],
+                },
+            )
+        )
+
+    return EvaluationResult(
+        results=aggregate_results,
+        metadata={
+            "robometrics_version": __version__,
+            "sample_count": len(sample_results),
+            "categories": categories,
+            "dataset": True,
+        },
+    )

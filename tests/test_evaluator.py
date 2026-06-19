@@ -104,11 +104,51 @@ def test_evaluator_requires_some_input() -> None:
         Evaluator().evaluate(metrics=["ade"])
 
 
-def test_evaluator_reports_missing_required_inputs_for_category() -> None:
+def test_evaluator_reports_missing_required_inputs_for_named_metric() -> None:
     pred = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
 
-    with pytest.raises(EvaluationInputError, match="missing required inputs: dt"):
-        Evaluator().evaluate(prediction=pred, categories=["comfort"])
+    result = Evaluator().evaluate(prediction=pred, categories=["comfort"])
+    assert {metric.name for metric in result.results} == {"smoothness_score"}
+
+    explicit = Evaluator().evaluate(prediction=pred, metrics=["acceleration"])
+    assert (
+        explicit.results[0].metadata["error"]
+        == "provided inputs are not compatible with this metric"
+    )
+
+
+def test_evaluator_evaluates_dataset() -> None:
+    predictions = [
+        np.array([[0.0, 0.0], [1.0, 0.0]]),
+        np.array([[0.0, 0.0], [1.2, 0.0]]),
+    ]
+    ground_truths = [
+        np.array([[0.0, 0.0], [1.0, 0.0]]),
+        np.array([[0.0, 0.0], [1.0, 0.0]]),
+    ]
+
+    result = Evaluator().evaluate_dataset(
+        predictions=predictions,
+        ground_truths=ground_truths,
+        metrics=["ade"],
+        thresholds={"ade": 0.2},
+    )
+
+    assert result.metadata["dataset"] is True
+    assert result.metadata["sample_count"] == 2
+    assert result.results[0].name == "ade"
+    assert result.results[0].value == pytest.approx(0.05)
+    assert result.results[0].metadata["sample_count"] == 2
+    assert result.strict_passed is True
+
+
+def test_evaluator_rejects_bad_dataset_inputs() -> None:
+    with pytest.raises(EvaluationInputError, match="same length"):
+        Evaluator().evaluate_dataset(
+            predictions=[np.array([[0.0, 0.0]])],
+            ground_truths=[],
+            metrics=["ade"],
+        )
 
 
 def test_evaluator_rejects_invalid_common_inputs() -> None:

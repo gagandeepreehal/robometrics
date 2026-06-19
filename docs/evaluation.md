@@ -86,15 +86,17 @@ summary = result.summary()
 payload = result.to_json()
 markdown = result.to_markdown()
 frame = result.to_dataframe()
+csv_text = result.to_csv()
+reloaded = result.from_json(result.to_json())
 ```
 
 `to_json()` emits standards-compliant JSON. Non-finite metric values such as `NaN` or `inf` are exported as `null`.
 Each affected metric includes `metadata["value_serialization"]` so strict JSON
 consumers can distinguish `nan`, `inf`, and `-inf` from ordinary null values.
 
-`summary()` includes per-unit summaries. The legacy aggregate is still present
-for convenience, but it includes a warning when it mixes units such as meters
-and `m^2/s^6`.
+`summary()` includes per-unit summaries when units are mixed. The legacy
+aggregate is still present for convenience, but aggregate statistics are `None`
+and include a warning when values mix units such as meters and `m^2/s^6`.
 
 Each row is a `MetricResult` with:
 
@@ -111,6 +113,28 @@ Array-valued metrics are reduced to scalar `MetricResult.value` entries when
 run through the evaluator. Vector arrays such as acceleration and jerk use mean
 row-wise norm. Scalar arrays such as curvature use the mean. The original array
 and reduction strategy are stored in metadata.
+
+Use `result.strict_passed` for CI gates that should ignore metrics without
+thresholds and fail if any thresholded metric fails. `result.passed` remains
+`None` unless every metric defines pass/fail status.
+
+## Dataset Evaluation
+
+`evaluate_dataset()` runs matching prediction and ground-truth sequences through
+the same metric selection path, then returns one aggregate `MetricResult` per
+metric:
+
+```python
+dataset_result = evaluator.evaluate_dataset(
+    predictions=[pred_a, pred_b],
+    ground_truths=[gt_a, gt_b],
+    metrics=["ade", "fde"],
+    thresholds={"ade": 0.5, "fde": 1.0},
+)
+```
+
+Each aggregate result stores the mean in `value` and sample count, finite count,
+min, max, standard deviation, raw values, and sample errors in metadata.
 
 ## Registry
 

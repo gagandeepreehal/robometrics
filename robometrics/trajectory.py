@@ -73,6 +73,14 @@ def curvature(traj: ArrayLike) -> FloatArray:
     return np.asarray(values, dtype=np.float64)
 
 
+curvature_profile = curvature
+
+
+def mean_curvature(traj: ArrayLike) -> float:
+    """Return mean planar XY curvature."""
+    return float(np.mean(curvature(traj)))
+
+
 def lateral_error(pred: ArrayLike, ref: ArrayLike) -> float:
     """Return mean absolute planar XY lateral deviation from a reference trajectory."""
     pred_arr = as_trajectory(pred, name="pred")

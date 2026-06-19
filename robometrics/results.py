@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Optional, Union
 
 import numpy as np
@@ -60,6 +61,31 @@ class MetricResult:
         """Return a JSON string representation."""
         return json.dumps(self.to_dict(), allow_nan=False, sort_keys=True)
 
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> MetricResult:
+        """Create a result from a dictionary produced by ``to_dict()``."""
+        metadata = dict(payload.get("metadata") or {})
+        return cls(
+            name=str(payload["name"]),
+            value=_restore_json_number(payload.get("value"), metadata),
+            unit=str(payload.get("unit") or ""),
+            passed=payload.get("passed"),
+            threshold=(
+                None
+                if payload.get("threshold") is None
+                else _restore_json_number(payload.get("threshold"), {})
+            ),
+            metadata=metadata,
+        )
+
+    @classmethod
+    def from_json(cls, payload: str) -> MetricResult:
+        """Create a result from a JSON string produced by ``to_json()``."""
+        data = json.loads(payload)
+        if not isinstance(data, dict):
+            raise ValueError("MetricResult JSON must decode to an object")
+        return cls.from_dict(data)
+
 
 @dataclass(init=False)
 class EvaluationResult:
@@ -104,6 +130,14 @@ class EvaluationResult:
             return None
         return all(statuses)
 
+    @property
+    def strict_passed(self) -> Optional[bool]:
+        """Return pass status considering only metrics with thresholds."""
+        statuses = [metric.passed for metric in self.results if metric.passed is not None]
+        if not statuses:
+            return None
+        return all(statuses)
+
     def summary(self) -> dict[str, Any]:
         """Return metric counts, categories, pass status, and aggregate statistics."""
         values = np.asarray(
@@ -117,8 +151,14 @@ class EvaluationResult:
                 if category
             }
         )
+        finite_units = {
+            metric.unit
+            for metric in self.results
+            if np.isfinite(metric.value)
+        }
+        mixed_units = len(finite_units) > 1
         aggregate: dict[str, Optional[Union[float, int, str]]] = {"count": int(values.size)}
-        if values.size:
+        if values.size and not mixed_units:
             aggregate.update(
                 {
                     "mean": float(np.mean(values)),
@@ -130,25 +170,23 @@ class EvaluationResult:
             )
         else:
             aggregate.update({"mean": None, "min": None, "max": None, "median": None, "std": None})
-        finite_units = {
-            metric.unit
-            for metric in self.results
-            if np.isfinite(metric.value)
-        }
-        if len(finite_units) > 1:
+        if mixed_units:
             aggregate["warning"] = "aggregate mixes metric units; use per_unit summaries"
         aggregate["unit_count"] = len(finite_units)
 
-        return {
+        summary = {
             "metric_count": len(self.results),
             "categories": categories,
             "passed": self.passed,
+            "strict_passed": self.strict_passed,
             "passed_count": sum(metric.passed is True for metric in self.results),
             "failed_count": sum(metric.passed is False for metric in self.results),
             "error_count": sum("error" in metric.metadata for metric in self.results),
             "aggregate": aggregate,
-            "per_unit": _summaries_by_unit(self.results),
         }
+        if mixed_units:
+            summary["per_unit"] = _summaries_by_unit(self.results)
+        return summary
 
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-compatible dictionary."""
@@ -161,6 +199,33 @@ class EvaluationResult:
     def to_json(self) -> str:
         """Return a JSON string representation."""
         return json.dumps(self.to_dict(), allow_nan=False, sort_keys=True)
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> EvaluationResult:
+        """Create an evaluation result from a dictionary produced by ``to_dict()``."""
+        raw_results = payload.get("results")
+        if not isinstance(raw_results, list):
+            raise ValueError("EvaluationResult payload must contain a results list")
+        metadata = payload.get("metadata")
+        if metadata is not None and not isinstance(metadata, dict):
+            raise ValueError("EvaluationResult metadata must be an object")
+        results = []
+        for result in raw_results:
+            if not isinstance(result, dict):
+                raise ValueError("EvaluationResult results must contain objects")
+            results.append(MetricResult.from_dict(result))
+        return cls(
+            results=results,
+            metadata=metadata,
+        )
+
+    @classmethod
+    def from_json(cls, payload: str) -> EvaluationResult:
+        """Create an evaluation result from a JSON string produced by ``to_json()``."""
+        data = json.loads(payload)
+        if not isinstance(data, dict):
+            raise ValueError("EvaluationResult JSON must decode to an object")
+        return cls.from_dict(data)
 
     def to_markdown(self) -> str:
         """Return a GitHub-flavored Markdown table."""
@@ -205,6 +270,13 @@ class EvaluationResult:
             )
         return pd.DataFrame(rows)
 
+    def to_csv(self, path: Optional[Union[str, Path]] = None) -> str:
+        """Return CSV text, optionally writing it to ``path``."""
+        csv_text = str(self.to_dataframe().to_csv(index=False))
+        if path is not None:
+            Path(path).write_text(csv_text, encoding="utf-8")
+        return csv_text
+
 
 def _display_name(name: str) -> str:
     special = {
@@ -239,6 +311,21 @@ def _json_safe(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_json_safe(item) for item in value]
     return value
+
+
+def _restore_json_number(value: Any, metadata: dict[str, Any]) -> float:
+    if value is not None:
+        return float(value)
+    serialization = metadata.get("value_serialization")
+    if isinstance(serialization, dict):
+        original = serialization.get("original")
+        if original == "nan":
+            return float("nan")
+        if original == "inf":
+            return float("inf")
+        if original == "-inf":
+            return float("-inf")
+    return float("nan")
 
 
 def _non_finite_label(value: float) -> str:

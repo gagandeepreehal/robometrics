@@ -135,6 +135,22 @@ def load_trajectory(path: PathLike) -> FloatArray:
     raise ValueError(f"unsupported trajectory file extension: {suffix}")
 
 
+def load_trajectory_dir(path: PathLike, *, pattern: str = "*") -> dict[str, FloatArray]:
+    """Load every supported trajectory file in a directory."""
+    directory = Path(path)
+    if not directory.exists():
+        raise TrajectoryIOError(f"trajectory directory does not exist: {directory}")
+    if not directory.is_dir():
+        raise TrajectoryIOError(f"trajectory path is not a directory: {directory}")
+
+    trajectories: dict[str, FloatArray] = {}
+    for file_path in sorted(directory.glob(pattern)):
+        if file_path.suffix.lower() not in {".npy", ".npz", ".csv", ".json"}:
+            continue
+        trajectories[file_path.name] = load_trajectory(file_path)
+    return trajectories
+
+
 def trajectory_to_json_records(traj: ArrayLike) -> list[dict[str, Any]]:
     """Convert a trajectory array to JSON-compatible point records."""
     arr = as_trajectory(traj, name="traj")
