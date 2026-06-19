@@ -13,6 +13,12 @@ from robometrics.comfort import (
     rms_acceleration,
     smoothness_score,
 )
+from robometrics.driving import (
+    displacement_at_k,
+    offroad_rate,
+    prediction_nll,
+    soft_ttc,
+)
 from robometrics.evaluator import EvaluationInputError, Evaluator
 from robometrics.io import TrajectoryIOError
 from robometrics.physics import (
@@ -71,6 +77,7 @@ __all__ = [
     "curvature",
     "curvature_profile",
     "curvature_limits_violated",
+    "displacement_at_k",
     "dynamic_feasibility_score",
     "fde",
     "final_displacement_error",
@@ -91,10 +98,13 @@ __all__ = [
     "min_distance_to_actors",
     "min_fde",
     "miss_rate",
+    "offroad_rate",
     "path_length",
+    "prediction_nll",
     "registry",
     "rms_acceleration",
     "smoothness_score",
+    "soft_ttc",
     "speed_profile",
     "task_success_rate",
     "time_to_collision",

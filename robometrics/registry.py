@@ -9,7 +9,7 @@ from typing import Any, Optional
 
 import numpy as np
 
-from robometrics import comfort, physics, prediction, safety, task, trajectory
+from robometrics import comfort, driving, physics, prediction, safety, task, trajectory
 
 MetricFn = Callable[..., Any]
 CompatibilityFn = Callable[[Mapping[str, Any]], bool]
@@ -243,6 +243,25 @@ def create_default_registry() -> MetricRegistry:
         reference="Thiede & Brahma, Analyzing Failures of CVAE, 2019",
         compatibility=_prediction_matches_ground_truth("predictions", "gt"),
     )
+    reg.register(
+        name="prediction_nll",
+        fn=driving.prediction_nll,
+        category="prediction",
+        unit="nats",
+        required_inputs=("predictions", "log_weights", "gt"),
+        reference="Thiede & Brahma, NeurIPS Workshop 2019",
+        compatibility=_prediction_matches_ground_truth("predictions", "gt"),
+    )
+    reg.register(
+        name="displacement_at_k",
+        fn=driving.displacement_at_k,
+        category="prediction",
+        unit="meters",
+        required_inputs=("predictions", "gt"),
+        default_kwargs={"k": 6},
+        reference="Chang et al., Argoverse, CVPR 2019",
+        compatibility=_prediction_matches_ground_truth("predictions", "gt"),
+    )
 
     reg.register(
         name="acceleration",
@@ -370,6 +389,25 @@ def create_default_registry() -> MetricRegistry:
         unit="ratio",
         required_inputs=("ego_traj", "lane_boundary"),
         reference="Standard lane boundary containment metric",
+        compatibility=_trajectory_input("ego_traj"),
+    )
+    reg.register(
+        name="offroad_rate",
+        fn=driving.offroad_rate,
+        category="safety",
+        unit="ratio",
+        required_inputs=("ego_traj", "drivable_polygons"),
+        reference="Caesar et al., nuScenes, CVPR 2020",
+        compatibility=_trajectory_input("ego_traj"),
+    )
+    reg.register(
+        name="soft_ttc",
+        fn=driving.soft_ttc,
+        category="safety",
+        unit="seconds",
+        required_inputs=("ego_traj", "actor_trajs", "dt"),
+        default_kwargs={"ego_radius": 0.0, "actor_radius": 0.0},
+        reference="Weng et al., nuScenes-Forecast, ECCV 2022",
         compatibility=_trajectory_input("ego_traj"),
     )
 

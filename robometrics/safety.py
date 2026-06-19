@@ -68,6 +68,14 @@ def time_to_collision(
     relative_velocity = np.array([actor.vx - ego.vx, actor.vy - ego.vy], dtype=np.float64)
     radius = ego.radius + actor.radius
 
+    return _solve_ttc_quadratic(relative_position, relative_velocity, radius)
+
+
+def _solve_ttc_quadratic(
+    relative_position: FloatArray,
+    relative_velocity: FloatArray,
+    radius: float,
+) -> float:
     c = float(np.dot(relative_position, relative_position) - radius * radius)
     if c <= 0.0:
         return 0.0

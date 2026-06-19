@@ -30,6 +30,7 @@ def test_public_api_exports_core_objects() -> None:
         "curvature",
         "curvature_profile",
         "dynamic_feasibility_score",
+        "displacement_at_k",
         "final_displacement_error",
         "goal_reaching_accuracy",
         "jerk",
@@ -44,10 +45,13 @@ def test_public_api_exports_core_objects() -> None:
         "min_distance_to_actors",
         "min_fde",
         "miss_rate",
+        "offroad_rate",
         "path_length",
+        "prediction_nll",
         "registry",
         "rms_acceleration",
         "speed_profile",
+        "soft_ttc",
         "task_success_rate",
     }
 
