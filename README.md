@@ -102,6 +102,8 @@ constant-velocity TTC are planar XY metrics.
 
 Empty arrays, NaN/inf values, bad ranks, mismatched trajectory lengths, invalid
 `dt`, and incompatible dimensions raise `ValueError` with a targeted message.
+The `Evaluator` also accepts `Trajectory` schema objects and converts them with
+`.array()` before dispatching metric functions.
 
 ## Units
 
@@ -132,6 +134,8 @@ records whether the original value was `nan`, `inf`, or `-inf`.
 
 `speed_profile()` returns one speed estimate per input point; endpoint speeds
 are finite-difference gradient estimates, not `N-1` interval speeds.
+`curvature()` assumes uniformly spaced samples; resample irregular timestamped
+paths before using curvature or curvature-derived metrics.
 
 ## Metric Categories
 

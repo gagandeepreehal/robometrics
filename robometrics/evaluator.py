@@ -10,6 +10,7 @@ import numpy as np
 from robometrics._version import __version__
 from robometrics.registry import MetricDefinition, MetricRegistry, registry
 from robometrics.results import EvaluationResult, MetricResult
+from robometrics.schemas import Trajectory
 
 
 class EvaluationInputError(ValueError):
@@ -106,10 +107,15 @@ class Evaluator:
         metric_kwargs: Optional[Mapping[str, Mapping[str, Any]]] = None,
         bootstrap_ci: Optional[int] = None,
         ci_alpha: float = 0.05,
+        bootstrap_seed: Optional[int] = 0,
         **inputs: Any,
     ) -> EvaluationResult:
         """Evaluate matching prediction/ground-truth sequences and aggregate by metric."""
-        _validate_confidence_interval_config(bootstrap_ci=bootstrap_ci, ci_alpha=ci_alpha)
+        _validate_confidence_interval_config(
+            bootstrap_ci=bootstrap_ci,
+            ci_alpha=ci_alpha,
+            bootstrap_seed=bootstrap_seed,
+        )
         if len(predictions) != len(ground_truths):
             raise EvaluationInputError("predictions and ground_truths must have the same length")
         if len(predictions) == 0:
@@ -134,6 +140,7 @@ class Evaluator:
             categories=_category_list(categories),
             bootstrap_ci=bootstrap_ci,
             ci_alpha=ci_alpha,
+            bootstrap_seed=bootstrap_seed,
         )
 
     def _select_metrics(
@@ -223,16 +230,35 @@ def _build_inputs(
     ground_truth: Optional[Any],
     inputs: Mapping[str, Any],
 ) -> dict[str, Any]:
-    values = {key: value for key, value in inputs.items() if value is not None}
+    values = {
+        key: _coerce_input_value(value)
+        for key, value in inputs.items()
+        if value is not None
+    }
     if prediction is not None:
-        values["prediction"] = prediction
+        prediction_value = _coerce_input_value(prediction)
+        values["prediction"] = prediction_value
         for alias in ("pred", "predictions", "traj", "trajectory", "ego_traj"):
-            values.setdefault(alias, prediction)
+            values.setdefault(alias, prediction_value)
     if ground_truth is not None:
-        values["ground_truth"] = ground_truth
+        ground_truth_value = _coerce_input_value(ground_truth)
+        values["ground_truth"] = ground_truth_value
         for alias in ("gt", "ref", "reference"):
-            values.setdefault(alias, ground_truth)
+            values.setdefault(alias, ground_truth_value)
     return values
+
+
+def _coerce_input_value(value: Any) -> Any:
+    if isinstance(value, Trajectory):
+        return value.array()
+    if isinstance(value, list) and any(isinstance(item, Trajectory) for item in value):
+        return [
+            item.array() if isinstance(item, Trajectory) else item
+            for item in value
+        ]
+    if isinstance(value, tuple) and any(isinstance(item, Trajectory) for item in value):
+        return tuple(item.array() if isinstance(item, Trajectory) else item for item in value)
+    return value
 
 
 def _validate_common_array(
@@ -244,7 +270,7 @@ def _validate_common_array(
     if value is None:
         return
     try:
-        arr = np.asarray(value, dtype=np.float64)
+        arr = np.asarray(_coerce_input_value(value), dtype=np.float64)
     except (TypeError, ValueError) as exc:
         raise EvaluationInputError(f"{name} must be a numeric array-like value") from exc
 
@@ -366,6 +392,7 @@ def _aggregate_dataset_results(
     categories: list[str],
     bootstrap_ci: Optional[int] = None,
     ci_alpha: float = 0.05,
+    bootstrap_seed: Optional[int] = 0,
 ) -> EvaluationResult:
     metric_names: list[str] = []
     for sample in sample_results:
@@ -405,7 +432,7 @@ def _aggregate_dataset_results(
         aggregate_results.append(metric)
 
     if bootstrap_ci is not None:
-        rng = np.random.default_rng(0)
+        rng = np.random.default_rng(bootstrap_seed)
         for metric in aggregate_results:
             _add_bootstrap_confidence_interval(
                 metric,
@@ -413,6 +440,7 @@ def _aggregate_dataset_results(
                 ci_alpha=ci_alpha,
                 rng=rng,
             )
+            metric.metadata["bootstrap_seed"] = bootstrap_seed
 
     return EvaluationResult(
         results=aggregate_results,
@@ -421,6 +449,7 @@ def _aggregate_dataset_results(
             "sample_count": len(sample_results),
             "categories": categories,
             "dataset": True,
+            "bootstrap_seed": bootstrap_seed if bootstrap_ci is not None else None,
         },
     )
 
@@ -429,6 +458,7 @@ def _validate_confidence_interval_config(
     *,
     bootstrap_ci: Optional[int],
     ci_alpha: float,
+    bootstrap_seed: Optional[int],
 ) -> None:
     if not 0.0 < float(ci_alpha) < 0.5:
         raise EvaluationInputError("ci_alpha must be in the open interval (0, 0.5)")
@@ -438,6 +468,11 @@ def _validate_confidence_interval_config(
         raise EvaluationInputError(
             "bootstrap_ci must be at least 100 for reliable confidence intervals"
         )
+    if (
+        bootstrap_seed is not None
+        and (not isinstance(bootstrap_seed, int) or isinstance(bootstrap_seed, bool))
+    ):
+        raise EvaluationInputError("bootstrap_seed must be an integer or None")
 
 
 def _add_bootstrap_confidence_interval(

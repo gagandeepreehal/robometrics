@@ -52,7 +52,9 @@ Reference: Standard differential geometry curvature formula
 Unit: 1/m
 Direction: lower is smoother
 
-Curvature returns a sampled profile for diagnosing sharp turns along a planar path.
+Curvature returns a sampled profile for diagnosing sharp turns along a planar
+path. Samples are treated as uniformly spaced; resample timestamped or
+irregular trajectories before using curvature-based metrics.
 
 mean_curvature(traj) -> float
 Formula: mean finite curvature over trajectory samples.

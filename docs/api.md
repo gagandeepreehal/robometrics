@@ -10,7 +10,7 @@ This page lists every public symbol exported by `robometrics.__all__`.
 | `EvaluationInputError` | `robometrics.evaluator` | Raised when an evaluation request cannot be constructed. |
 | `EvaluationHistory` | `robometrics.history` | Track EvaluationResult objects across training checkpoints. |
 | `EvaluationResult` | `robometrics.results` | Collection of metric results from one local evaluation run. |
-| `Evaluator` | `robometrics.evaluator` | Evaluate registered RoboMetrics metrics against local Python inputs. |
+| `Evaluator` | `robometrics.evaluator` | Evaluate registered RoboMetrics metrics against local Python inputs, including `Trajectory` schema objects. |
 | `MetricDefinition` | `robometrics.registry` | Registered metric metadata and execution contract. |
 | `MetricComparison` | `robometrics.results` | Comparison of one metric across two evaluation results. |
 | `MetricAccumulator` | `robometrics.accumulator` | Stateful per-metric accumulator for streaming evaluation. |
@@ -30,8 +30,8 @@ This page lists every public symbol exported by `robometrics.__all__`.
 | `collision_rate_obb` | `robometrics.safety` | Return fraction of actor-covered ego timesteps with OBB collision. |
 | `compounding_error_index` | `robometrics.temporal` | Return final-to-initial error growth for a temporal error sequence. |
 | `contact_richness` | `robometrics.manipulation` | Return fraction of timesteps with meaningful contact force magnitude. |
-| `curvature` | `robometrics.trajectory` | Return approximate planar XY curvature at each trajectory point. |
-| `curvature_profile` | `robometrics.trajectory` | Return approximate planar XY curvature at each trajectory point. |
+| `curvature` | `robometrics.trajectory` | Return approximate planar XY curvature assuming uniformly spaced samples. |
+| `curvature_profile` | `robometrics.trajectory` | Return approximate planar XY curvature assuming uniformly spaced samples. |
 | `curvature_limits_violated` | `robometrics.physics` | Return a MetricResult describing whether curvature exceeds max_curvature. |
 | `displacement_at_k` | `robometrics.driving` | Return mean displacement error using only the top-K predicted modes. |
 | `dynamic_feasibility_score` | `robometrics.physics` | Return a conservative 0..1 feasibility score against dynamic limits. |

@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from robometrics import EvaluationInputError, Evaluator, UnknownMetricError, __version__
+from robometrics import EvaluationInputError, Evaluator, Trajectory, UnknownMetricError, __version__
 
 
 def test_evaluator_runs_named_metrics_with_thresholds() -> None:
@@ -24,6 +24,36 @@ def test_evaluator_runs_named_metrics_with_thresholds() -> None:
     assert result.results[0].metadata["reference"] == "Alahi et al., Social Force, CVPR 2016"
     assert result.results[0].metadata["is_novel"] is False
     assert result.metadata["robometrics_version"] == __version__
+
+
+def test_evaluator_accepts_trajectory_schema_inputs() -> None:
+    pred = Trajectory(points=[[0.0, 0.0], [1.0, 0.0]], timestamps=[0.0, 0.1])
+    gt = Trajectory(points=[[0.0, 0.0], [1.2, 0.0]], timestamps=[0.0, 0.1])
+
+    result = Evaluator().evaluate(
+        prediction=pred,
+        ground_truth=gt,
+        metrics=["ade", "fde"],
+    )
+
+    assert [metric.name for metric in result.results] == ["ade", "fde"]
+    assert result.results[0].value == pytest.approx(0.1)
+    assert result.results[1].value == pytest.approx(0.2)
+
+
+def test_evaluator_accepts_trajectory_schema_metric_inputs() -> None:
+    ego = Trajectory(points=[[0.0, 0.0], [1.0, 0.0]])
+    actor = Trajectory(points=[[0.0, 2.0], [1.0, 0.2]])
+
+    result = Evaluator().evaluate(
+        ego_traj=ego,
+        actor_trajs=[actor],
+        ego_radius=0.5,
+        actor_radius=0.5,
+        metrics=["collision_rate"],
+    )
+
+    assert result.results[0].value == pytest.approx(0.5)
 
 
 def test_evaluator_supports_category_selection() -> None:
@@ -202,6 +232,30 @@ def test_evaluator_dataset_bootstrap_ci_varies_when_values_vary() -> None:
     assert metric.metadata["ci_lower"] < metric.metadata["ci_upper"]
 
 
+def test_evaluator_dataset_bootstrap_seed_is_configurable() -> None:
+    predictions = [
+        np.array([[0.0, 0.0], [1.0, 0.0]]),
+        np.array([[0.0, 0.0], [3.0, 0.0]]),
+        np.array([[0.0, 0.0], [5.0, 0.0]]),
+    ]
+    ground_truths = [np.array([[0.0, 0.0], [1.0, 0.0]]) for _ in predictions]
+    kwargs = {
+        "predictions": predictions,
+        "ground_truths": ground_truths,
+        "metrics": ["ade"],
+        "bootstrap_ci": 1000,
+    }
+
+    first = Evaluator().evaluate_dataset(**kwargs, bootstrap_seed=1).results[0]
+    second = Evaluator().evaluate_dataset(**kwargs, bootstrap_seed=1).results[0]
+    third = Evaluator().evaluate_dataset(**kwargs, bootstrap_seed=2).results[0]
+
+    assert first.metadata["bootstrap_seed"] == 1
+    assert third.metadata["bootstrap_seed"] == 2
+    assert first.metadata["ci_lower"] == second.metadata["ci_lower"]
+    assert first.metadata["ci_upper"] == second.metadata["ci_upper"]
+
+
 def test_evaluator_dataset_bootstrap_ci_degenerate_identical_values() -> None:
     predictions = [np.array([[0.0, 0.0], [2.0, 0.0]]) for _ in range(3)]
     ground_truths = [np.array([[0.0, 0.0], [1.0, 0.0]]) for _ in predictions]
@@ -235,6 +289,17 @@ def test_evaluator_rejects_invalid_ci_alpha() -> None:
             metrics=["ade"],
             bootstrap_ci=100,
             ci_alpha=0.6,
+        )
+
+
+def test_evaluator_rejects_invalid_bootstrap_seed() -> None:
+    with pytest.raises(EvaluationInputError, match="bootstrap_seed"):
+        Evaluator().evaluate_dataset(
+            predictions=[np.array([[0.0, 0.0]])],
+            ground_truths=[np.array([[0.0, 0.0]])],
+            metrics=["ade"],
+            bootstrap_ci=100,
+            bootstrap_seed=True,
         )
 
 

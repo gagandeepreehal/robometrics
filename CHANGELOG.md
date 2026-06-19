@@ -22,6 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Registry-level `higher_is_better` metadata for built-in and custom metrics.
 - Documentation site configuration, performance notes, and alpha roadmap.
 - CI coverage threshold and a Python 3.12 `[io]` extras matrix cell.
+- `Evaluator` support for `Trajectory` schema inputs and configurable
+  `bootstrap_seed` for dataset confidence intervals.
 
 ## [0.1.1] - 2026-06-19
 
