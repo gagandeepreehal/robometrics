@@ -39,6 +39,20 @@ result = Evaluator().evaluate_dataset(
 Path("new.json").write_text(result.to_json(), encoding="utf-8")
 ```
 
+The first time you run this, save the output as `baseline.json` and commit it to
+the repository. Subsequent CI runs compare against that committed file.
+
+> **Tip — JSON schema:** `EvaluationResult.to_json()` produces an object with a
+> `"results"` key containing a list of metric records. Do not hand-craft this
+> file; always generate it via `to_json()`. Loading a file with the wrong key
+> (e.g. `"metrics"` instead of `"results"`) raises a `ValueError`.
+
+```python
+# One-time: generate and commit baseline.json
+result = Evaluator().evaluate_dataset(...)
+Path("baseline.json").write_text(result.to_json(), encoding="utf-8")
+```
+
 For safety-focused repositories, include `collision_rate`, `collision_rate_obb`, `lane_departure_rate`, or `offroad_rate` when the required inputs are available. Keep the baseline file reviewed and intentional; changing it should be treated like changing a test expectation.
 
 `robometrics history <directory>` only reads files named `*_eval.json` or

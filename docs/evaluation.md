@@ -121,6 +121,13 @@ Use `result.strict_passed` for CI gates that should ignore metrics without
 thresholds and fail if any thresholded metric fails. `result.passed` remains
 `None` unless every metric defines pass/fail status.
 
+If a metric raises a runtime error (for example, wrong input shape), it is
+returned with `value=nan` and `passed=None`. It is counted in
+`summary()["error_count"]` and its `metadata["error"]` field describes the
+failure. Errors are **explicit and visible** — check `error_count` rather than
+assuming silence means success. Because errored metrics have `passed=None`, they
+are excluded from `strict_passed` and will not fail a CI gate on their own.
+
 ## Dataset Evaluation
 
 `evaluate_dataset()` runs matching prediction and ground-truth sequences through

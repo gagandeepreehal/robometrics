@@ -2,7 +2,10 @@
 
 ## Supported Versions
 
-RoboMetrics has not made a stable public release yet. Security fixes are handled on the `main` branch until versioned releases begin.
+RoboMetrics is currently in public alpha (`0.1.x`). Security fixes are applied
+to the `main` branch and released as the next patch version. Only the **latest
+published release** is supported. Security fixes are not backported to older
+patch versions — upgrade to the latest release to receive them.
 
 ## Reporting a Vulnerability
 
