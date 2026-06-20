@@ -46,3 +46,6 @@ jobs:
           python examples/load_from_csv.py
           python examples/evaluator_usage.py
           python examples/manipulation_metrics.py
+          python examples/probabilistic_prediction.py
+          python examples/custom_metric_pack.py
+          python examples/history_summary.py

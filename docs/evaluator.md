@@ -75,6 +75,14 @@ dataset_result = Evaluator().evaluate_dataset(
 The result contains one aggregate metric row per metric, with per-sample values
 and min/max/std metadata.
 
+## Threshold Direction
+
+Evaluator thresholds follow registry directionality. Lower-is-better metrics
+such as `ade`, `fde`, and collision rates pass when `value <= threshold`.
+Higher-is-better metrics such as `task_success_rate`, `workspace_coverage`, and
+`force_limit_compliance` pass when `value >= threshold`. The direction is stored
+in result metadata as `higher_is_better`.
+
 ## Error Behavior
 
 Unknown metric names raise `UnknownMetricError` before evaluation starts. If a known metric cannot run with the supplied inputs (for example, a metric that expects a `KxTx2` array is given a `Tx2` array), evaluation continues and that metric is returned as a `MetricResult` with `value=nan`, `passed=None`, and `metadata["error"]` describing the failure. The error is counted in `summary()["error_count"]`.

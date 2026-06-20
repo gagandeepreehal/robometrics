@@ -80,7 +80,11 @@ class Evaluator:
             threshold = threshold_map.get(metric.name)
             if threshold is not None and "error" not in result.metadata:
                 result.threshold = threshold
-                result.passed = bool(result.value <= threshold)
+                result.passed = _passes_threshold(
+                    result.value,
+                    threshold,
+                    higher_is_better=metric.higher_is_better,
+                )
             results.append(result)
 
         if not results and selected:
@@ -418,6 +422,7 @@ def _aggregate_dataset_results(
                 "description": first.metadata.get("description"),
                 "reference": first.metadata.get("reference"),
                 "is_novel": first.metadata.get("is_novel"),
+                "higher_is_better": first.metadata.get("higher_is_better"),
                 "sample_count": len(sample_results),
                 "errors": [
                     result.metadata.get("error")
@@ -428,7 +433,12 @@ def _aggregate_dataset_results(
         )
         threshold = thresholds.get(name)
         metric.threshold = threshold
-        metric.passed = None if threshold is None else bool(metric.value <= threshold)
+        higher_is_better = bool(metric.metadata.get("higher_is_better", False))
+        metric.passed = (
+            None
+            if threshold is None
+            else _passes_threshold(metric.value, threshold, higher_is_better=higher_is_better)
+        )
         aggregate_results.append(metric)
 
     if bootstrap_ci is not None:
@@ -535,6 +545,14 @@ def _aggregate_metric_values(
         }
     )
     return MetricResult(name=name, value=value, unit=unit, metadata=metadata)
+
+
+def _passes_threshold(value: float, threshold: float, *, higher_is_better: bool) -> bool:
+    if not np.isfinite(value):
+        return False
+    if higher_is_better:
+        return bool(value >= threshold)
+    return bool(value <= threshold)
 
 
 def _metric_metadata(metric: MetricDefinition, existing: Mapping[str, Any]) -> dict[str, Any]:

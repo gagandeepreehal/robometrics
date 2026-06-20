@@ -54,7 +54,10 @@ result = evaluator.evaluate(
 
 ## Thresholds
 
-Pass/fail thresholds are applied to metric result values with `value <= threshold`:
+Pass/fail thresholds use registry directionality. Lower-is-better metrics pass
+with `value <= threshold`; metrics marked `higher_is_better=True` pass with
+`value >= threshold`. The same rule is used for single-sample evaluation and
+`evaluate_dataset()` aggregation.
 
 ```python
 result = evaluator.evaluate(

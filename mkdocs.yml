@@ -3,16 +3,40 @@ site_description: Lightweight robotics metrics for Python.
 site_url: https://gagandeepreehal.github.io/robometrics/
 repo_url: https://github.com/gagandeepreehal/robometrics
 repo_name: gagandeepreehal/robometrics
+edit_uri: edit/main/docs/
+use_directory_urls: true
 
 theme:
-  name: mkdocs
+  name: readthedocs
+  highlightjs: true
+  hljs_languages:
+    - bash
+    - python
+    - yaml
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - sane_lists
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+
+extra_css:
+  - stylesheets/extra.css
 
 nav:
-  - Home: index.md
-  - Quickstart: quickstart.md
-  - Evaluation: evaluation.md
-  - Evaluator: evaluator.md
-  - API: api.md
+  - Getting Started:
+      - Home: index.md
+      - Quickstart: quickstart.md
+  - Core API:
+      - Evaluation Guide: evaluation.md
+      - Evaluator Examples: evaluator.md
+      - API Reference: api.md
   - Metrics:
       - Overview: metrics.md
       - Trajectory: metrics/trajectory.md
@@ -32,8 +56,8 @@ nav:
       - CI Integration: guides/ci_integration.md
       - Writing A Pack: guides/writing_a_pack.md
       - ROS Adapter: guides/ros_adapter.md
-  - Performance: performance.md
-  - Roadmap: roadmap.md
-  - Contributing: contributing.md
-  - Release Checklist: release_checklist.md
-  - Publishing: publishing.md
+  - Project:
+      - Performance: performance.md
+      - Roadmap: roadmap.md
+      - Contributing: contributing.md
+      - Publishing: publishing.md
