@@ -5,8 +5,11 @@
 ![Coverage](https://img.shields.io/badge/coverage-90%25%20minimum-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![PyPI](https://img.shields.io/pypi/v/robometrics.svg)](https://pypi.org/project/robometrics/)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://gagandeepreehal.github.io/robometrics/)
 
 Lightweight robotics metrics for Python.
+
+Documentation: https://gagandeepreehal.github.io/robometrics/
 
 RoboMetrics is a small local Python library for computing robotics trajectory,
 prediction, temporal drift, safety, comfort, coverage, calibration, physics,
