@@ -3,7 +3,14 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from robometrics import EvaluationInputError, Evaluator, Trajectory, UnknownMetricError, __version__
+from robometrics import (
+    EvaluationInputError,
+    Evaluator,
+    MetricRegistry,
+    Trajectory,
+    UnknownMetricError,
+    __version__,
+)
 
 
 def test_evaluator_runs_named_metrics_with_thresholds() -> None:
@@ -24,6 +31,36 @@ def test_evaluator_runs_named_metrics_with_thresholds() -> None:
     assert result.results[0].metadata["reference"] == "Alahi et al., Social Force, CVPR 2016"
     assert result.results[0].metadata["is_novel"] is False
     assert result.metadata["robometrics_version"] == __version__
+
+
+def test_evaluator_thresholds_use_metric_direction() -> None:
+    custom = MetricRegistry()
+
+    def score_metric() -> float:
+        return 0.8
+
+    custom.register(
+        name="score_metric",
+        fn=score_metric,
+        category="custom",
+        higher_is_better=True,
+    )
+
+    result = Evaluator(metric_registry=custom).evaluate(
+        prediction=np.array([[0.0, 0.0], [1.0, 0.0]]),
+        metrics=["score_metric"],
+        thresholds={"score_metric": 0.7},
+    )
+
+    assert result.results[0].passed is True
+
+    failing = Evaluator(metric_registry=custom).evaluate(
+        prediction=np.array([[0.0, 0.0], [1.0, 0.0]]),
+        metrics=["score_metric"],
+        thresholds={"score_metric": 0.9},
+    )
+
+    assert failing.results[0].passed is False
 
 
 def test_evaluator_accepts_trajectory_schema_inputs() -> None:
@@ -186,6 +223,31 @@ def test_evaluator_evaluates_dataset() -> None:
     assert result.results[0].name == "ade"
     assert result.results[0].value == pytest.approx(0.05)
     assert result.results[0].metadata["sample_count"] == 2
+    assert result.strict_passed is True
+
+
+def test_evaluator_dataset_thresholds_use_metric_direction() -> None:
+    custom = MetricRegistry()
+
+    def score_metric() -> float:
+        return 0.8
+
+    custom.register(
+        name="score_metric",
+        fn=score_metric,
+        category="custom",
+        higher_is_better=True,
+    )
+
+    result = Evaluator(metric_registry=custom).evaluate_dataset(
+        predictions=[np.array([[0.0, 0.0], [1.0, 0.0]])],
+        ground_truths=[np.array([[0.0, 0.0], [1.0, 0.0]])],
+        metrics=["score_metric"],
+        thresholds={"score_metric": 0.7},
+    )
+
+    assert result.results[0].metadata["higher_is_better"] is True
+    assert result.results[0].passed is True
     assert result.strict_passed is True
 
 

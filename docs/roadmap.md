@@ -5,7 +5,7 @@ units, input shapes, result JSON fields, and registry metadata are intended to
 stay stable within a minor release. Breaking changes before `1.0.0` will be
 called out in `CHANGELOG.md` and should include migration notes.
 
-## Stable In 0.1.x
+## Stable In 0.2.x
 
 - Direct NumPy metric functions for trajectory, prediction, safety, comfort,
   physics, task, manipulation, calibration, coverage, diversity, and temporal
@@ -14,16 +14,18 @@ called out in `CHANGELOG.md` and should include migration notes.
   `EvaluationResult` data contracts.
 - Standards-compliant JSON export for non-finite metric values.
 - CLI metric discovery, comparison, and history summaries.
+- Documentation publishing through GitHub Pages.
+- Dataset-scale performance guidance for driving and manipulation workloads.
+- Worked examples for probabilistic prediction, custom packs, and history
+  summaries.
+- Direction-aware evaluator thresholds. Metrics marked `higher_is_better=True`
+  pass when `value >= threshold`; other metrics pass when `value <= threshold`.
 
-## Planned For 0.2.0
+## Planned For 0.3.0
 
-- Publish the documentation site from `docs/` through GitHub Pages.
-- Expand performance benchmarks for dataset-scale driving and manipulation
-  workloads.
-- Add more worked examples for probabilistic prediction, custom packs, and
-  history summaries.
-- Review threshold semantics for higher-is-better metrics before declaring the
-  evaluator API beta-stable.
+- Add small benchmark scripts that can emit repeatable JSON timing baselines.
+- Expand loader examples for directory-level and dataset-level evaluation.
+- Add migration guidance if any public result schema fields change.
 
 ## Before 1.0.0
 

@@ -316,8 +316,10 @@ reloaded = EvaluationResult.from_json(result.to_json())
 ```
 
 Unknown metric names raise `UnknownMetricError` before evaluation starts.
-Metric execution failures are returned as failed `MetricResult` entries with
-`metadata["error"]`.
+Metric execution failures are returned as `MetricResult` entries with
+`value=nan`, `passed=None`, and `metadata["error"]`. They are visible through
+`EvaluationResult.summary()["error_count"]` but are ignored by
+`result.strict_passed` unless a thresholded metric actually fails.
 
 When array-valued metrics are run through the evaluator, vectors are reduced to
 mean row-wise norm and scalar arrays are reduced to their mean. The raw value
@@ -326,6 +328,9 @@ includes per-unit summaries when units mix; in that case the legacy aggregate
 includes a warning and leaves aggregate statistics as `None`. Use
 `result.strict_passed` for CI gates that should ignore metrics without
 thresholds while still failing on any thresholded metric failure.
+Thresholds follow registry directionality: lower-is-better metrics pass with
+`value <= threshold`, while metrics marked `higher_is_better=True` pass with
+`value >= threshold`.
 
 For dataset-level aggregation, pass matching prediction and ground-truth
 sequences to `Evaluator.evaluate_dataset(...)`. It returns one aggregate

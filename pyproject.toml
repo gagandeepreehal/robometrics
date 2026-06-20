@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robometrics"
-version = "0.1.2"
+version = "0.2.0"
 description = "Lightweight robotics metrics for Python."
 readme = "README.md"
 requires-python = ">=3.9"

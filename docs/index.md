@@ -50,3 +50,5 @@ print(result.to_markdown())
 - `docs/performance.md` tracks geometry-kernel performance expectations.
 - `docs/roadmap.md` states the alpha stability contract and launch roadmap.
 - `docs/api.md` lists the public symbols exported from `robometrics.__all__`.
+- `examples/probabilistic_prediction.py`, `examples/custom_metric_pack.py`, and
+  `examples/history_summary.py` show the 0.2 worked-example paths.

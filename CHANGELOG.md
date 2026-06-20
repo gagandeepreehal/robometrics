@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-20
+
+### Changed
+
+- Evaluator thresholds now respect metric directionality. Metrics marked
+  `higher_is_better=True` pass when `value >= threshold`; lower-is-better
+  metrics continue to pass when `value <= threshold`.
+
+### Added
+
+- Dataset-scale performance guidance for driving and manipulation workloads.
+- Worked examples for probabilistic prediction, custom metric packs, and
+  evaluation history summaries.
+- GitHub Pages deployment workflow for the MkDocs documentation site.
+
 ## [0.1.2] - 2026-06-20
 
 ### Fixed
