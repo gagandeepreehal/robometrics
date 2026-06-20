@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-06-20
+
 ### Fixed
 
 - Corrected comparison directionality for `offroad_rate` and
@@ -16,6 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `load_pack(module_name, registry=custom_registry)`.
 - Vectorized polygon containment and OBB collision checks used by safety
   metrics.
+- `_error_result` now sets `passed=None` instead of `passed=False` so that
+  `strict_passed` correctly ignores runtime errors on metrics that have no
+  threshold assigned.
 
 ### Added
 

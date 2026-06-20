@@ -345,7 +345,7 @@ def _error_result(
         name=metric.name,
         value=float("nan"),
         unit=metric.unit,
-        passed=False,
+        passed=None,
         metadata=metadata,
     )
 

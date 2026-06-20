@@ -77,7 +77,10 @@ and min/max/std metadata.
 
 ## Error Behavior
 
-Unknown metric names raise `UnknownMetricError` before evaluation starts. If a known metric cannot run with the supplied inputs, evaluation continues and that metric is returned as a failed `MetricResult` with `metadata["error"]`.
+Unknown metric names raise `UnknownMetricError` before evaluation starts. If a known metric cannot run with the supplied inputs (for example, a metric that expects a `KxTx2` array is given a `Tx2` array), evaluation continues and that metric is returned as a `MetricResult` with `value=nan`, `passed=None`, and `metadata["error"]` describing the failure. The error is counted in `summary()["error_count"]`.
+
+This is intentional: errors are **explicit and visible** rather than silently skipped. Check `error_count` in CI or iterate over results to find metrics with `"error"` in their metadata.
+
 For automatic category selection, if every selected metric is skipped because a
 required input is missing, the evaluator reports the missing input names instead
 of the generic "no compatible metrics" message.
@@ -87,3 +90,6 @@ arrays use mean row-wise norm, scalar arrays use mean value, and the raw array
 plus reduction name are stored in metadata.
 
 Use `strict_passed` for CI gates that should consider only thresholded metrics.
+Metrics that error at runtime have `passed=None` and are therefore **excluded**
+from `strict_passed`, so a runtime error alone will not fail a CI gate that has
+no threshold for that metric.

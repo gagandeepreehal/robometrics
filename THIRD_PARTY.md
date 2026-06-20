@@ -6,6 +6,11 @@ RoboMetrics depends on the following direct runtime packages:
 | --- | --- | --- |
 | NumPy | Array operations | BSD-3-Clause |
 | SciPy | Spatial distance utilities | BSD-3-Clause |
+
+Optional extras (`pip install "robometrics[io]"`):
+
+| Package | Purpose | License |
+| --- | --- | --- |
 | pandas | CSV loading and DataFrame export support | BSD-3-Clause |
 
 Development dependencies:

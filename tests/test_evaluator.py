@@ -134,7 +134,7 @@ def test_evaluator_stores_metric_failures() -> None:
 
     failure = result.results[1]
     assert failure.name == "min_ade"
-    assert failure.passed is False
+    assert failure.passed is None
     assert "error" in failure.metadata
 
 
