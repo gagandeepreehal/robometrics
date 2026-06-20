@@ -9,7 +9,7 @@
 
 Lightweight robotics metrics for Python.
 
-Documentation: https://gagandeepreehal.github.io/robometrics/
+[Documentation](https://gagandeepreehal.github.io/robometrics/)
 
 RoboMetrics is a small local Python library for computing robotics trajectory,
 prediction, temporal drift, safety, comfort, coverage, calibration, physics,
