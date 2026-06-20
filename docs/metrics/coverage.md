@@ -12,6 +12,16 @@ visited = workspace_coverage(points, cell_size=1.0)
 print(visited)
 ```
 Metrics
+coverage_score(samples, bounds, bins) -> float
+Formula: occupied finite grid bins divided by total bins inside bounds.
+Reference: Standard bounded grid coverage metric
+Unit: ratio
+Direction: higher is better
+
+Coverage score measures how much of a bounded sample space has been visited.
+Duplicate samples do not increase coverage, and out-of-bounds samples are
+ignored.
+
 workspace_coverage(points) -> float
 Formula: count of unique grid cells occupied by sampled positions.
 Reference: Standard grid-cell workspace coverage metric

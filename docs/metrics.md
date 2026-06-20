@@ -31,6 +31,8 @@ safety geometry, and TTC are planar XY metrics.
 - `min_fde(predictions, gt)`: best final displacement error across modes.
 - `miss_rate(predictions, gt, threshold)`: per-sample miss indicator; returns `1.0` when all modes miss the final-point threshold, otherwise `0.0`. Average across samples for a dataset miss rate.
 - `topk_trajectory_error(predictions, gt, k)`: best ADE among the first `k` modes, assuming predictions are already ranked by descending confidence.
+- `prediction_nll(predictions, log_weights, gt)`: mean negative log-likelihood of the ground truth under weighted Gaussian trajectory modes.
+- `displacement_at_k(predictions, gt, k)`: best displacement error among the first `k` ranked prediction modes.
 
 ## Temporal and Robustness
 
@@ -56,9 +58,12 @@ safety geometry, and TTC are planar XY metrics.
 ## Safety
 
 - `collision_rate(ego_traj, actor_trajs, ego_radius, actor_radius)`: fraction of actor-covered ego timesteps colliding with any actor. For example, if the ego has five timesteps and the only actor has three, the denominator is the first three aligned ego timesteps.
+- `collision_rate_obb(ego_traj, ego_dims, ego_yaws, actor_trajs, actor_dims, actor_yaws)`: fraction of actor-covered ego timesteps with oriented-box overlap.
 - `time_to_collision(ego_state, actor_state, *, dt=None)`: constant-velocity disc-agent TTC. Use `AgentState`, dicts, flat `[x, y, vx, vy, radius]` arrays, or trajectory arrays with `dt`.
 - `min_distance_to_actors(ego_traj, actor_trajs)`: minimum time-aligned XY distance to actors. Returns `math.inf` when no actor trajectories are provided.
 - `lane_departure_rate(ego_traj, lane_boundary)`: fraction of ego points outside a polygonal lane boundary.
+- `offroad_rate(ego_traj, drivable_polygons)`: fraction of ego positions outside all drivable-area polygons.
+- `soft_ttc(ego_traj, actor_trajs, dt)`: minimum constant-velocity TTC across rollout timesteps.
 - `recovery_success_rate(opportunities, successes)`: successful recoveries divided by recovery opportunities. No opportunities returns `nan` because the denominator is undefined.
 - `failure_severity(failures, aggregation="mean")`: mean or max severity over numeric non-negative severity values, or known category labels from `minor` through `fatal`. Empty failure collections return `0.0`.
 - `near_miss_rate(clearances, threshold, collision_mask=None)`: fraction of clearance samples with `clearance < threshold` and no collision. Collisions are excluded from near-miss counts by default.
@@ -67,6 +72,7 @@ safety geometry, and TTC are planar XY metrics.
 ## Coverage
 
 - `coverage_score(samples, bounds, bins=10)`: grid coverage for finite `NxD` samples. Bounds are `Dx2`, bins may be scalar or per-dimension, and the score is `occupied_bins / total_bins`. Duplicate samples do not increase coverage. Out-of-bounds samples are ignored.
+- `workspace_coverage(points, cell_size=1.0)`: count of unique discretized workspace cells visited by sampled positions.
 
 ## Calibration
 
@@ -86,6 +92,17 @@ safety geometry, and TTC are planar XY metrics.
 ## Diversity
 
 - `behavioral_diversity(behaviors, max_pairs=10000, normalize=False)`: mean pairwise Euclidean distance between unique behavior embeddings or flattened trajectories/actions. Duplicate behaviors do not inflate diversity. Pair sampling is deterministic when capped by `max_pairs`.
+- `trajectory_diversity(predictions)`: mean pairwise ADE between multi-modal prediction trajectories.
+
+## Task And Manipulation
+
+- `task_success_rate(outcomes)`: mean of binary task success indicators.
+- `goal_reaching_accuracy(positions, goals, tolerance)`: fraction of positions within tolerance of corresponding goals.
+- `grasp_success_rate(attempts, successes)`: successful grasps divided by attempted grasps.
+- `contact_richness(contact_forces, threshold=0.1)`: fraction of timesteps with meaningful contact force magnitude.
+- `force_limit_compliance(forces, max_force)`: fraction of force samples within the configured force limit.
+- `joint_limit_violation_rate(joint_angles, lower_limits, upper_limits)`: fraction of configurations with any joint outside limits.
+- `end_effector_tracking_error(ee_traj, target_traj)`: mean Euclidean end-effector tracking error.
 
 ## Category Taxonomy
 

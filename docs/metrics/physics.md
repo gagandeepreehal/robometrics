@@ -54,3 +54,28 @@ Unit: score
 Direction: higher is better
 
 Dynamic feasibility score combines several constraint checks into a scalar score.
+
+kinematic_feasibility(positions, dt=1.0, timestamps=None, max_velocity=None, max_acceleration=None, max_curvature=None) -> float
+Formula: fraction-style score over optional finite-difference velocity, acceleration, and curvature checks.
+Reference: Standard kinematic feasibility checks
+Unit: score
+Direction: higher is better
+
+Kinematic feasibility scores how often sampled motion remains within configured
+kinematic limits.
+
+dynamic_feasibility(mass, accelerations, ...) -> float
+Formula: Newtonian feasibility score over optional force, acceleration, torque, and friction constraints.
+Reference: Standard dynamics feasibility checks
+Unit: score
+Direction: higher is better
+
+Dynamic feasibility checks force and friction-style physical constraints.
+
+physics_violation_rate(violations) -> float
+Formula: fraction of timesteps or events with any physics violation.
+Reference: RoboMetrics internal violation aggregation
+Unit: ratio
+Direction: lower is better
+
+Physics violation rate aggregates boolean or mapping-based violation signals.

@@ -81,3 +81,38 @@ Unit: seconds
 Direction: higher is safer
 
 Soft TTC summarizes the closest future interaction under local velocity estimates.
+
+recovery_success_rate(opportunities, successes) -> float
+Formula: successful recoveries divided by recovery opportunities.
+Reference: Standard recovery opportunity evaluation
+Unit: ratio
+Direction: higher is better
+
+Recovery success rate reports how often a policy recovers when recovery was
+available. No opportunities returns `nan`.
+
+failure_severity(failures, aggregation="mean") -> float
+Formula: mean or max over numeric severity values or known severity labels.
+Reference: Standard incident severity aggregation
+Unit: severity
+Direction: lower is better
+
+Failure severity summarizes incident impact. Empty failure collections return
+`0.0`.
+
+near_miss_rate(clearances, threshold, collision_mask=None) -> float
+Formula: fraction of clearance samples below threshold, excluding collisions by default.
+Reference: Standard near-miss clearance diagnostic
+Unit: ratio
+Direction: lower is better
+
+Near-miss rate separates risky close calls from confirmed collisions.
+
+intervention_free_time(timestamps, interventions, mode="longest") -> float
+Formula: longest or mean duration of consecutive non-intervention segments.
+Reference: Standard autonomy intervention diagnostic
+Unit: seconds
+Direction: higher is better
+
+Intervention-free time measures how long a system runs without human or safety
+intervention.

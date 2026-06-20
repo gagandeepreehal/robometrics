@@ -12,6 +12,15 @@ score = trajectory_diversity(predictions)
 print(score)
 ```
 Metrics
+behavioral_diversity(behaviors, max_pairs=10000, normalize=False) -> float
+Formula: mean pairwise Euclidean distance between unique behavior embeddings.
+Reference: Standard pairwise behavior diversity metric
+Unit: behavior units
+Direction: higher is better
+
+Behavioral diversity measures spread across behavior embeddings,
+trajectories, or action sequences after flattening each sample.
+
 trajectory_diversity(predictions) -> float
 Formula: mean pairwise ADE between predicted trajectory modes.
 Reference: Standard pairwise trajectory diversity metric
