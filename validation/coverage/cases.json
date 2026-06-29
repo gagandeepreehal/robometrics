@@ -1,0 +1,14 @@
+[
+  {
+    "metric": "coverage_score",
+    "case": "Two occupied cells in a 2x2 grid.",
+    "expected": 0.5,
+    "derivation": "2 occupied bins / 4 total bins"
+  },
+  {
+    "metric": "workspace_coverage",
+    "case": "Three points occupy two unit grid cells.",
+    "expected": 2.0,
+    "derivation": "unique floor(point / 1.0) cells = 2"
+  }
+]

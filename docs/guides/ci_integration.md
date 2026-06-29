@@ -9,6 +9,29 @@ Keep this in mind for score-like metrics such as `task_success_rate` or
 
 Use stable evaluation data in CI. If the dataset is too large, run a small deterministic scenario suite as a smoke gate and reserve full leaderboard or nightly runs for heavier workflows. Store the exact metric list and thresholds in code, not in free-form job comments. When you add `bootstrap_ci` in dataset evaluation, remember that CI still compares point estimates; the interval is metadata for human review unless you encode a separate acceptance rule.
 
+For file-based smoke gates, keep tiny CSV/JSON fixtures in the repository and
+use the CLI directly:
+
+```yaml
+- name: Evaluate regression fixture
+  run: |
+    robometrics evaluate \
+      --pred examples/fixtures/predictions.csv \
+      --gt examples/fixtures/ground_truth.csv \
+      --metrics ade fde \
+      --threshold ade=0.5 \
+      --threshold fde=1.0 \
+      --output result.json
+
+- name: Compare with baseline
+  run: robometrics compare examples/fixtures/baseline_result.json result.json
+
+- name: Generate report
+  run: robometrics report result.json --output report.html
+```
+
+Upload `report.html` as a CI artifact when you want a human-readable summary.
+
 ```yaml
 name: robometrics
 

@@ -1,0 +1,44 @@
+[
+  {
+    "metric": "task_success_rate",
+    "case": "Two successes across three task outcomes.",
+    "expected": 0.6666666666666666,
+    "derivation": "2 / 3"
+  },
+  {
+    "metric": "goal_reaching_accuracy",
+    "case": "One of two final positions is within tolerance.",
+    "expected": 0.5,
+    "derivation": "1 reached / 2 goals"
+  },
+  {
+    "metric": "grasp_success_rate",
+    "case": "One success across two attempted grasps.",
+    "expected": 0.5,
+    "derivation": "1 / 2"
+  },
+  {
+    "metric": "contact_richness",
+    "case": "One of two force samples exceeds threshold.",
+    "expected": 0.5,
+    "derivation": "1 contact-rich timestep / 2 timesteps"
+  },
+  {
+    "metric": "force_limit_compliance",
+    "case": "One of two force samples is within the force limit.",
+    "expected": 0.5,
+    "derivation": "1 compliant timestep / 2 timesteps"
+  },
+  {
+    "metric": "joint_limit_violation_rate",
+    "case": "One of two joint configurations violates a limit.",
+    "expected": 0.5,
+    "derivation": "1 violating config / 2 configs"
+  },
+  {
+    "metric": "end_effector_tracking_error",
+    "case": "End-effector distances 0, 1, 0 over three aligned samples.",
+    "expected": 0.3333333333333333,
+    "derivation": "(0 + 1 + 0) / 3"
+  }
+]

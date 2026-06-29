@@ -15,6 +15,13 @@ RoboMetrics is a small local Python library for computing robotics trajectory,
 prediction, temporal drift, safety, comfort, coverage, calibration, physics,
 and diversity metrics from NumPy arrays and simple CSV/JSON trajectory files.
 
+It is a trusted metrics layer, not a simulator, dashboard platform, dataset
+host, robotics framework, or leaderboard service. Use it when you need typed,
+repeatable metric functions, CI regression checks, lightweight trajectory file
+evaluation, or project-local metric packs. Do not use it as a replacement for
+scenario generation, physics simulation, dataset storage, or full benchmark
+governance.
+
 ## Why This Exists
 
 Robotics projects often grow scattered metric functions across notebooks,
@@ -30,7 +37,7 @@ pip install "robometrics[io]"  # CSV loading and pandas exports
 ```
 
 RoboMetrics is primarily a Python library. The installed CLI is intentionally
-small and meant for package verification and metric discovery:
+local-first and file-based:
 
 If a user-level pip install places `robometrics` outside `PATH`, use
 `python -m robometrics ...` or add the script directory reported by pip, such as
@@ -41,6 +48,15 @@ python -m robometrics --help
 robometrics list-metrics
 robometrics list-metrics --format json
 robometrics describe ade
+robometrics validate examples/fixtures/predictions.csv
+robometrics evaluate \
+  --pred examples/fixtures/predictions.csv \
+  --gt examples/fixtures/ground_truth.csv \
+  --metrics ade fde \
+  --threshold ade=0.5 \
+  --output result.json
+robometrics report result.json --output report.html
+robometrics benchmark list
 robometrics version
 ```
 
@@ -56,6 +72,23 @@ mypy robometrics
 ```
 
 ## Quickstart
+
+Five-minute local workflow:
+
+```bash
+pip install "robometrics[io]"
+robometrics validate examples/fixtures/predictions.csv
+robometrics evaluate \
+  --pred examples/fixtures/predictions.csv \
+  --gt examples/fixtures/ground_truth.csv \
+  --metrics ade fde \
+  --threshold ade=0.5 \
+  --threshold fde=1.0 \
+  --output result.json
+robometrics report result.json --output report.html
+```
+
+Python API:
 
 ```python
 import numpy as np
@@ -338,6 +371,62 @@ Thresholds follow registry directionality: lower-is-better metrics pass with
 For dataset-level aggregation, pass matching prediction and ground-truth
 sequences to `Evaluator.evaluate_dataset(...)`. It returns one aggregate
 `MetricResult` per metric with per-sample values and count/min/max/std metadata.
+
+## CLI Evaluation, Validation, Reports, And Profiles
+
+`robometrics evaluate` loads matching CSV/JSON trajectories, validates file
+existence and shape, runs named metrics, and writes strict `EvaluationResult`
+JSON with metric values, metadata, timestamp, thresholds, and pass/fail status.
+
+```bash
+robometrics evaluate \
+  --pred examples/fixtures/predictions.csv \
+  --gt examples/fixtures/ground_truth.csv \
+  --metrics ade fde \
+  --threshold ade=0.5 \
+  --output result.json
+```
+
+`robometrics validate <path>` inspects trajectory-style CSV/JSON files for
+missing fields, invalid numeric values, NaN/inf, inconsistent dimensions,
+non-monotonic timestamps, empty trajectories, and unsupported formats. Add
+`--output validation.json` for machine-readable output.
+
+`robometrics report result.json --output report.html` generates a lightweight
+static HTML report with summary, metric values, pass/fail indicators, metadata,
+and baseline comparison metadata when present.
+
+Benchmark profiles package repeatable metric sets for small local gates:
+
+```bash
+robometrics benchmark list
+robometrics benchmark run policy_regression_ci \
+  --pred examples/fixtures/predictions.csv \
+  --gt examples/fixtures/ground_truth.csv \
+  --output result.json
+```
+
+Built-in profiles are `trajectory_prediction_basic`, `mobile_robot_safety`,
+`manipulation_tracking`, and `policy_regression_ci`. They are smoke/regression
+profiles, not leaderboard definitions.
+
+## Dataset Adapters
+
+The `robometrics.adapters` package provides lightweight adapters with a common
+interface: `load(path)`, `validate(path)`, and `metadata(path)`. Built-ins cover
+generic CSV, generic JSON, ROS-style JSON exports without importing ROS,
+LeRobot-style JSON exports without importing LeRobot, RLDS-style JSON exports
+without TensorFlow, and an MCAP placeholder that raises an explicit optional
+dependency error. Heavy robotics or dataset packages are not hard dependencies.
+
+## Metric Packs
+
+External packages can expose a `METRIC_PACK` list and register it with
+`robometrics.load_pack("module_name")`. Each entry uses the same registry
+contract as built-in metrics: name, callable, category, unit, required inputs,
+default kwargs, aliases, reference, and directionality. See
+`examples/custom_metric_pack.py` and the metric-pack guide for a complete
+example.
 
 ## Contributing
 

@@ -1,0 +1,38 @@
+[
+  {
+    "metric": "min_ade",
+    "case": "Two modes; the best mode has pointwise distances 0, 1, 0.",
+    "expected": 0.3333333333333333,
+    "derivation": "min((0 + 1 + 0) / 3, (0 + 0 + 1) / 3)"
+  },
+  {
+    "metric": "min_fde",
+    "case": "One mode ends exactly on the ground-truth final point.",
+    "expected": 0.0,
+    "derivation": "min(0, 1)"
+  },
+  {
+    "metric": "miss_rate",
+    "case": "Best final displacement is 0 with threshold 0.5.",
+    "expected": 0.0,
+    "derivation": "0 > 0.5 is false"
+  },
+  {
+    "metric": "topk_trajectory_error",
+    "case": "Top two modes include the best ADE mode.",
+    "expected": 0.3333333333333333,
+    "derivation": "best ADE among the first two modes"
+  },
+  {
+    "metric": "prediction_nll",
+    "case": "Two equally weighted unit-variance modes over three timesteps.",
+    "expected": 0.14604679758655917,
+    "derivation": "-mean(logsumexp(log(0.5) - 0.5 * squared_distance_by_mode))"
+  },
+  {
+    "metric": "displacement_at_k",
+    "case": "Top-1 prediction uses the first mode only.",
+    "expected": 0.3333333333333333,
+    "derivation": "ADE of the first ranked prediction mode"
+  }
+]

@@ -2,6 +2,7 @@
 
 from robometrics._version import __version__
 from robometrics.accumulator import MetricAccumulator
+from robometrics.benchmarks import BenchmarkProfile, get_profile, list_profiles, run_profile
 from robometrics.calibration import calibration_error
 from robometrics.comfort import (
     acceleration,
@@ -27,6 +28,7 @@ from robometrics.evaluator import EvaluationInputError, Evaluator
 from robometrics.history import CheckpointEntry, EvaluationHistory
 from robometrics.io import (
     TrajectoryIOError,
+    load_trajectory,
     load_trajectory_csv,
     load_trajectory_dir,
     load_trajectory_json,
@@ -88,14 +90,21 @@ from robometrics.trajectory import (
     mean_curvature,
     path_length,
 )
+from robometrics.validation import (
+    DatasetValidationResult,
+    ValidationIssue,
+    validate_dataset,
+)
 
 ade = average_displacement_error
 fde = final_displacement_error
 
 __all__ = [
     "AgentState",
+    "BenchmarkProfile",
     "CheckpointEntry",
     "ComparisonResult",
+    "DatasetValidationResult",
     "EvaluationInputError",
     "EvaluationHistory",
     "EvaluationResult",
@@ -108,6 +117,7 @@ __all__ = [
     "Trajectory",
     "TrajectoryIOError",
     "UnknownMetricError",
+    "ValidationIssue",
     "__version__",
     "acceleration",
     "acceleration_magnitude",
@@ -146,7 +156,9 @@ __all__ = [
     "kinematic_feasibility",
     "lane_departure_rate",
     "lateral_error",
+    "list_profiles",
     "load_pack",
+    "load_trajectory",
     "load_trajectory_csv",
     "load_trajectory_dir",
     "load_trajectory_json",
@@ -167,6 +179,7 @@ __all__ = [
     "prediction_nll",
     "recovery_success_rate",
     "registry",
+    "run_profile",
     "rms_acceleration",
     "smoothness_score",
     "soft_ttc",
@@ -176,5 +189,7 @@ __all__ = [
     "time_to_collision",
     "topk_trajectory_error",
     "trajectory_diversity",
+    "validate_dataset",
     "workspace_coverage",
+    "get_profile",
 ]

@@ -5,8 +5,10 @@ This page lists every public symbol exported by `robometrics.__all__`.
 | Symbol | Module | Description |
 | --- | --- | --- |
 | `AgentState` | `robometrics.schemas` | Planar constant-velocity agent state. |
+| `BenchmarkProfile` | `robometrics.benchmarks` | Declarative benchmark profile metadata. |
 | `CheckpointEntry` | `robometrics.history` | One recorded evaluation checkpoint. |
 | `ComparisonResult` | `robometrics.results` | Metric-by-metric comparison between two evaluation results. |
+| `DatasetValidationResult` | `robometrics.validation` | Validation report for one CSV or JSON trajectory-style dataset. |
 | `EvaluationInputError` | `robometrics.evaluator` | Raised when an evaluation request cannot be constructed. |
 | `EvaluationHistory` | `robometrics.history` | Track EvaluationResult objects across training checkpoints. |
 | `EvaluationResult` | `robometrics.results` | Collection of metric results from one local evaluation run. |
@@ -19,6 +21,7 @@ This page lists every public symbol exported by `robometrics.__all__`.
 | `Trajectory` | `robometrics.schemas` | Serializable trajectory with optional timestamps. |
 | `TrajectoryIOError` | `robometrics.io` | Raised when a trajectory file cannot be read or parsed. |
 | `UnknownMetricError` | `robometrics.registry` | Raised when a metric name is not registered. |
+| `ValidationIssue` | `robometrics.validation` | One dataset validation issue. |
 | `__version__` | `robometrics._version` | Package version string. |
 | `acceleration` | `robometrics.comfort` | Return approximate acceleration vectors from a position trajectory. |
 | `acceleration_magnitude` | `robometrics.comfort` | Return per-step acceleration magnitudes. |
@@ -45,6 +48,7 @@ This page lists every public symbol exported by `robometrics.__all__`.
 | `fde` | `robometrics.trajectory` | Return final-step Euclidean distance between predicted and ground-truth paths. |
 | `final_displacement_error` | `robometrics.trajectory` | Return final-step Euclidean distance between predicted and ground-truth paths. |
 | `force_limit_compliance` | `robometrics.manipulation` | Return fraction of timesteps where force magnitude is within limit. |
+| `get_profile` | `robometrics.benchmarks` | Return one benchmark profile by name. |
 | `goal_reaching_accuracy` | `robometrics.task` | Return fraction of goals reached within Euclidean tolerance. |
 | `grasp_success_rate` | `robometrics.manipulation` | Return fraction of grasp attempts that succeeded. |
 | `hausdorff_distance` | `robometrics.trajectory` | Return symmetric Hausdorff distance using all coordinate dimensions. |
@@ -57,7 +61,9 @@ This page lists every public symbol exported by `robometrics.__all__`.
 | `kinematic_feasibility` | `robometrics.physics` | Return a trajectory kinematic feasibility score. |
 | `lane_departure_rate` | `robometrics.safety` | Return fraction of ego points outside a polygonal lane boundary. |
 | `lateral_error` | `robometrics.trajectory` | Return mean absolute planar XY lateral deviation from a reference trajectory. |
+| `list_profiles` | `robometrics.benchmarks` | Return all built-in benchmark profiles. |
 | `load_pack` | `robometrics.registry` | Import a metric pack module and register its metrics. |
+| `load_trajectory` | `robometrics.io` | Load a trajectory from .npy, .npz, .csv, or .json. |
 | `long_horizon_drift` | `robometrics.temporal` | Return later-weighted mean rollout error. |
 | `longitudinal_error` | `robometrics.trajectory` | Return mean absolute planar XY longitudinal deviation along a reference trajectory. |
 | `max_acceleration` | `robometrics.comfort` | Return maximum acceleration magnitude. |
@@ -76,6 +82,7 @@ This page lists every public symbol exported by `robometrics.__all__`.
 | `recovery_success_rate` | `robometrics.safety` | Return successful recoveries divided by recovery opportunities. |
 | `registry` | `robometrics.registry` | Registry for named metric callables. |
 | `rms_acceleration` | `robometrics.comfort` | Return root-mean-square acceleration magnitude. |
+| `run_profile` | `robometrics.benchmarks` | Run a benchmark profile against prediction and ground-truth arrays. |
 | `smoothness_score` | `robometrics.comfort` | Return a scale-normalized third-difference smoothness score. |
 | `soft_ttc` | `robometrics.driving` | Return minimum constant-velocity TTC computed at each rollout timestep. |
 | `speed_profile` | `robometrics.physics` | Return speed magnitude at each trajectory point. |
@@ -84,4 +91,5 @@ This page lists every public symbol exported by `robometrics.__all__`.
 | `time_to_collision` | `robometrics.safety` | Return constant-velocity time to collision for two disc agents. |
 | `topk_trajectory_error` | `robometrics.prediction` | Return best ADE among the first k predictions, assumed confidence-ranked. |
 | `trajectory_diversity` | `robometrics.diversity` | Return mean pairwise ADE between predicted trajectory modes. |
+| `validate_dataset` | `robometrics.validation` | Validate a trajectory-style CSV or JSON file. |
 | `workspace_coverage` | `robometrics.coverage` | Return the number of occupied grid cells visited by sampled positions. |

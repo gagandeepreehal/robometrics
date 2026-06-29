@@ -1,0 +1,50 @@
+[
+  {
+    "metric": "ade",
+    "case": "Pointwise distances 0, 1, 0 over three aligned 2D samples.",
+    "expected": 0.3333333333333333,
+    "derivation": "(0 + 1 + 0) / 3"
+  },
+  {
+    "metric": "fde",
+    "case": "Final predicted and ground-truth points are both [2, 0].",
+    "expected": 0.0,
+    "derivation": "norm([2, 0] - [2, 0])"
+  },
+  {
+    "metric": "hausdorff_distance",
+    "case": "Straight prediction and one-point lateral deviation in ground truth.",
+    "expected": 1.0,
+    "derivation": "largest nearest-neighbor distance is the middle point offset of 1"
+  },
+  {
+    "metric": "path_length",
+    "case": "Four points on a straight line with unit spacing.",
+    "expected": 3.0,
+    "derivation": "1 + 1 + 1"
+  },
+  {
+    "metric": "curvature",
+    "case": "Straight line trajectory.",
+    "expected": [0.0, 0.0, 0.0, 0.0],
+    "derivation": "planar second derivative is zero at every sample"
+  },
+  {
+    "metric": "mean_curvature",
+    "case": "Straight line trajectory.",
+    "expected": 0.0,
+    "derivation": "mean([0, 0, 0, 0])"
+  },
+  {
+    "metric": "lateral_error",
+    "case": "Middle point is offset one meter normal to a straight reference.",
+    "expected": 0.3333333333333333,
+    "derivation": "(0 + 1 + 0) / 3"
+  },
+  {
+    "metric": "longitudinal_error",
+    "case": "Offset is purely lateral to the straight reference.",
+    "expected": 0.0,
+    "derivation": "all tangent-projected offsets are zero"
+  }
+]

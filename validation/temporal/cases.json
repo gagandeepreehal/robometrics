@@ -1,0 +1,32 @@
+[
+  {
+    "metric": "temporal_drift",
+    "case": "Single error curve [0, 1, 3].",
+    "expected": 1.5,
+    "derivation": "least-squares slope over timesteps 0, 1, 2"
+  },
+  {
+    "metric": "action_jerk",
+    "case": "Actions [0, 1, 3] with dt=1.",
+    "expected": 1.0,
+    "derivation": "mean(square(second_difference([0, 1, 3])))"
+  },
+  {
+    "metric": "control_smoothness",
+    "case": "Same actions as action_jerk.",
+    "expected": 0.5,
+    "derivation": "1 / (1 + action_jerk)"
+  },
+  {
+    "metric": "long_horizon_drift",
+    "case": "Single error curve [0, 1, 3].",
+    "expected": 1.8333333333333333,
+    "derivation": "(1*0 + 2*1 + 3*3) / (1 + 2 + 3)"
+  },
+  {
+    "metric": "compounding_error_index",
+    "case": "Error curve [0, 1, 3].",
+    "expected": 2.2499999999983125,
+    "derivation": "(3 - 0) / (mean([0, 1, 3]) + 1e-12)"
+  }
+]
