@@ -1,0 +1,50 @@
+[
+  {
+    "metric": "speed_profile",
+    "case": "Straight line with unit spacing and dt=1.",
+    "expected": [1.0, 1.0, 1.0, 1.0],
+    "derivation": "finite-difference speed is 1m/s at each sample"
+  },
+  {
+    "metric": "acceleration_limits_violated",
+    "case": "Bent path max acceleration magnitude against limit 2.0.",
+    "expected": 2.1213203435596424,
+    "derivation": "max acceleration magnitude from the comfort reference case"
+  },
+  {
+    "metric": "jerk_limits_violated",
+    "case": "Bent path max jerk magnitude against limit 4.0.",
+    "expected": 1.4142135623730951,
+    "derivation": "max jerk magnitude from the comfort reference case"
+  },
+  {
+    "metric": "curvature_limits_violated",
+    "case": "Straight line has zero curvature.",
+    "expected": 0.0,
+    "derivation": "max([0, 0, 0, 0])"
+  },
+  {
+    "metric": "dynamic_feasibility_score",
+    "case": "Straight line max speed is below the configured limit.",
+    "expected": 1.0,
+    "derivation": "no relative violation, so 1 / (1 + 0)"
+  },
+  {
+    "metric": "kinematic_feasibility",
+    "case": "One of two velocity checks exceeds max_velocity.",
+    "expected": 0.5,
+    "derivation": "1 - 1 violation / 2 velocity checks"
+  },
+  {
+    "metric": "dynamic_feasibility",
+    "case": "One of two force checks exceeds max_force.",
+    "expected": 0.5,
+    "derivation": "1 - 1 violation / 2 force checks"
+  },
+  {
+    "metric": "physics_violation_rate",
+    "case": "Two of three timesteps have at least one violation.",
+    "expected": 0.6666666666666666,
+    "derivation": "2 / 3"
+  }
+]

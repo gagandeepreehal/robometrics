@@ -6,7 +6,7 @@ from math import sqrt
 from typing import Optional
 
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 
 from robometrics.geometry import FloatArray, as_numeric_array, as_prediction_set
 
@@ -42,10 +42,14 @@ def behavioral_diversity(
         raise ValueError("max_pairs must be positive or None")
 
     total_pairs = count * (count - 1) // 2
+    pair_indices: NDArray[np.int64]
     if max_pairs is None or total_pairs <= max_pairs:
         pair_indices = np.arange(total_pairs, dtype=np.int64)
     else:
-        pair_indices = np.linspace(0, total_pairs - 1, num=max_pairs, dtype=np.int64)
+        pair_indices = np.asarray(
+            np.linspace(0, total_pairs - 1, num=max_pairs, dtype=np.int64),
+            dtype=np.int64,
+        )
 
     distance_sum = 0.0
     scale = sqrt(float(unique_behaviors.shape[1])) if normalize else 1.0

@@ -36,6 +36,7 @@ nav:
   - Core API:
       - Evaluation Guide: evaluation.md
       - Evaluator Examples: evaluator.md
+      - CLI Commands: cli.md
       - API Reference: api.md
   - Metrics:
       - Overview: metrics.md
@@ -52,6 +53,9 @@ nav:
       - Diversity: metrics/diversity.md
       - Temporal: metrics/temporal.md
   - Guides:
+      - Adapter Guide: adapters.md
+      - Benchmark Profiles: benchmark_profiles.md
+      - Validation Suite: validation_suite.md
       - Comparing Policies: guides/comparing_policies.md
       - CI Integration: guides/ci_integration.md
       - Writing A Pack: guides/writing_a_pack.md

@@ -1,0 +1,8 @@
+[
+  {
+    "metric": "calibration_error",
+    "case": "Two samples in two bins with confidence 0.25/0.75 and correctness 0/1.",
+    "expected": 0.25,
+    "derivation": "0.5 * |0 - 0.25| + 0.5 * |1 - 0.75|"
+  }
+]

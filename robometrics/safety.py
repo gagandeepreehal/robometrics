@@ -259,6 +259,7 @@ def near_miss_rate(
     if clearance_arr.size == 0:
         raise ValueError("clearances must contain at least one value")
     limit = validate_positive(float(threshold), name="threshold")
+    collisions: NDArray[np.bool_]
     if collision_mask is None:
         collisions = np.zeros(clearance_arr.shape, dtype=np.bool_)
     else:

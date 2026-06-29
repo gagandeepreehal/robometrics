@@ -29,7 +29,7 @@ jobs:
       - name: Ruff
         run: ruff check .
       - name: Mypy
-        run: mypy robometrics
+        run: mypy --python-version "${{ matrix.python-version }}" robometrics
       - name: Pytest
         run: pytest --cov=robometrics --cov-report=term-missing --cov-fail-under=90
       - name: Examples smoke test

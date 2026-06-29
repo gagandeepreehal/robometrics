@@ -1,0 +1,14 @@
+[
+  {
+    "metric": "behavioral_diversity",
+    "case": "Two behavior vectors [0,0] and [3,4].",
+    "expected": 5.0,
+    "derivation": "Euclidean distance sqrt(3^2 + 4^2)"
+  },
+  {
+    "metric": "trajectory_diversity",
+    "case": "Two trajectory modes differ by distances 0, 1, 1.",
+    "expected": 0.6666666666666666,
+    "derivation": "(0 + 1 + 1) / 3"
+  }
+]

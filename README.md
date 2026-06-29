@@ -15,6 +15,13 @@ RoboMetrics is a small local Python library for computing robotics trajectory,
 prediction, temporal drift, safety, comfort, coverage, calibration, physics,
 and diversity metrics from NumPy arrays and simple CSV/JSON trajectory files.
 
+It is a trusted metrics layer, not a simulator, dashboard platform, dataset
+host, robotics framework, or leaderboard service. Use it when you need typed,
+repeatable metric functions, CI regression checks, lightweight trajectory file
+evaluation, or project-local metric packs. Do not use it as a replacement for
+scenario generation, physics simulation, dataset storage, or full benchmark
+governance.
+
 ## Why This Exists
 
 Robotics projects often grow scattered metric functions across notebooks,
@@ -30,18 +37,28 @@ pip install "robometrics[io]"  # CSV loading and pandas exports
 ```
 
 RoboMetrics is primarily a Python library. The installed CLI is intentionally
-small and meant for package verification and metric discovery:
+local-first and file-based. The examples below use `python -m robometrics`
+because it works even when a user-level pip install places console scripts
+outside `PATH`.
 
-If a user-level pip install places `robometrics` outside `PATH`, use
-`python -m robometrics ...` or add the script directory reported by pip, such as
-`$HOME/Library/Python/3.9/bin` on macOS system Python, to `PATH`.
+The `robometrics` console script is also installed; use it directly when the
+script directory reported by pip is on `PATH`.
 
 ```bash
 python -m robometrics --help
-robometrics list-metrics
-robometrics list-metrics --format json
-robometrics describe ade
-robometrics version
+python -m robometrics list-metrics
+python -m robometrics list-metrics --format json
+python -m robometrics describe ade
+python -m robometrics validate examples/fixtures/predictions.csv
+python -m robometrics evaluate \
+  --pred examples/fixtures/predictions.csv \
+  --gt examples/fixtures/ground_truth.csv \
+  --metrics ade fde \
+  --threshold ade=0.5 \
+  --output result.json
+python -m robometrics report result.json --output report.html
+python -m robometrics benchmark list
+python -m robometrics version
 ```
 
 For local development:
@@ -56,6 +73,23 @@ mypy robometrics
 ```
 
 ## Quickstart
+
+Five-minute local workflow:
+
+```bash
+pip install "robometrics[io]"
+python -m robometrics validate examples/fixtures/predictions.csv
+python -m robometrics evaluate \
+  --pred examples/fixtures/predictions.csv \
+  --gt examples/fixtures/ground_truth.csv \
+  --metrics ade fde \
+  --threshold ade=0.5 \
+  --threshold fde=1.0 \
+  --output result.json
+python -m robometrics report result.json --output report.html
+```
+
+Python API:
 
 ```python
 import numpy as np
@@ -338,6 +372,62 @@ Thresholds follow registry directionality: lower-is-better metrics pass with
 For dataset-level aggregation, pass matching prediction and ground-truth
 sequences to `Evaluator.evaluate_dataset(...)`. It returns one aggregate
 `MetricResult` per metric with per-sample values and count/min/max/std metadata.
+
+## CLI Evaluation, Validation, Reports, And Profiles
+
+`python -m robometrics evaluate` loads matching CSV/JSON trajectories, validates file
+existence and shape, runs named metrics, and writes strict `EvaluationResult`
+JSON with metric values, metadata, timestamp, thresholds, and pass/fail status.
+
+```bash
+python -m robometrics evaluate \
+  --pred examples/fixtures/predictions.csv \
+  --gt examples/fixtures/ground_truth.csv \
+  --metrics ade fde \
+  --threshold ade=0.5 \
+  --output result.json
+```
+
+`python -m robometrics validate <path>` inspects trajectory-style CSV/JSON files for
+missing fields, invalid numeric values, NaN/inf, inconsistent dimensions,
+non-monotonic timestamps, empty trajectories, and unsupported formats. Add
+`--output validation.json` for machine-readable output.
+
+`python -m robometrics report result.json --output report.html` generates a lightweight
+static HTML report with summary, metric values, pass/fail indicators, metadata,
+and baseline comparison metadata when present.
+
+Benchmark profiles package repeatable metric sets for small local gates:
+
+```bash
+python -m robometrics benchmark list
+python -m robometrics benchmark run policy_regression_ci \
+  --pred examples/fixtures/predictions.csv \
+  --gt examples/fixtures/ground_truth.csv \
+  --output result.json
+```
+
+Built-in profiles are `trajectory_prediction_basic`, `mobile_robot_safety`,
+`manipulation_tracking`, and `policy_regression_ci`. They are smoke/regression
+profiles, not leaderboard definitions.
+
+## Dataset Adapters
+
+The `robometrics.adapters` package provides lightweight adapters with a common
+interface: `load(path)`, `validate(path)`, and `metadata(path)`. Built-ins cover
+generic CSV, generic JSON, ROS-style JSON exports without importing ROS,
+LeRobot-style JSON exports without importing LeRobot, RLDS-style JSON exports
+without TensorFlow, and an MCAP placeholder that raises an explicit optional
+dependency error. Heavy robotics or dataset packages are not hard dependencies.
+
+## Metric Packs
+
+External packages can expose a `METRIC_PACK` list and register it with
+`robometrics.load_pack("module_name")`. Each entry uses the same registry
+contract as built-in metrics: name, callable, category, unit, required inputs,
+default kwargs, aliases, reference, and directionality. See
+`examples/custom_metric_pack.py` and the metric-pack guide for a complete
+example.
 
 ## Contributing
 

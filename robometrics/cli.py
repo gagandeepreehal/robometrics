@@ -6,14 +6,21 @@ import argparse
 import json
 import math
 import re
+import sys
 from collections.abc import Sequence
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional, TypedDict
 
 from robometrics._version import __version__
+from robometrics.benchmarks import list_profiles, run_profile
+from robometrics.evaluator import EvaluationInputError, Evaluator
 from robometrics.history import EvaluationHistory
+from robometrics.io import load_trajectory
 from robometrics.registry import MetricDefinition, registry
+from robometrics.reporting import write_html_report
 from robometrics.results import ComparisonResult, EvaluationResult
+from robometrics.validation import validate_dataset
 
 
 class MetricPayload(TypedDict):
@@ -47,6 +54,20 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return _compare_results(args.a, args.b, output_format=args.format)
     if args.command == "history":
         return _history_command(args.directory, metric=args.metric, output_format=args.format)
+    if args.command == "evaluate":
+        return _evaluate_command(
+            pred_path=args.pred,
+            gt_path=args.gt,
+            metrics=args.metrics,
+            output_path=args.output,
+            threshold_values=args.threshold,
+        )
+    if args.command == "validate":
+        return _validate_command(args.path, output_path=args.output)
+    if args.command == "report":
+        return _report_command(args.result, output_path=args.output)
+    if args.command == "benchmark":
+        return _benchmark_command(args)
     if args.command == "version":
         print(__version__)
         return 0
@@ -113,6 +134,53 @@ def _build_parser() -> argparse.ArgumentParser:
         default="markdown",
         help="output format",
     )
+
+    evaluate_parser = subparsers.add_parser(
+        "evaluate",
+        help="evaluate trajectory CSV/JSON predictions against ground truth",
+    )
+    evaluate_parser.add_argument("--pred", required=True, help="prediction trajectory CSV/JSON")
+    evaluate_parser.add_argument("--gt", required=True, help="ground-truth trajectory CSV/JSON")
+    evaluate_parser.add_argument(
+        "--metrics",
+        nargs="+",
+        required=True,
+        help="metric names, for example: ade fde",
+    )
+    evaluate_parser.add_argument(
+        "--threshold",
+        action="append",
+        default=[],
+        metavar="METRIC=VALUE",
+        help="optional pass/fail threshold; repeat for multiple metrics",
+    )
+    evaluate_parser.add_argument("--output", required=True, help="output EvaluationResult JSON")
+
+    validate_parser = subparsers.add_parser(
+        "validate",
+        help="validate trajectory-style CSV/JSON data",
+    )
+    validate_parser.add_argument("path", help="dataset file to validate")
+    validate_parser.add_argument("--output", help="optional JSON validation report path")
+
+    report_parser = subparsers.add_parser(
+        "report",
+        help="generate a static HTML report from EvaluationResult JSON",
+    )
+    report_parser.add_argument("result", help="EvaluationResult JSON path")
+    report_parser.add_argument("--output", required=True, help="output HTML report path")
+
+    benchmark_parser = subparsers.add_parser(
+        "benchmark",
+        help="list or run built-in benchmark profiles",
+    )
+    benchmark_subparsers = benchmark_parser.add_subparsers(dest="benchmark_command")
+    benchmark_subparsers.add_parser("list", help="list benchmark profiles")
+    benchmark_run = benchmark_subparsers.add_parser("run", help="run a benchmark profile")
+    benchmark_run.add_argument("profile", help="profile name")
+    benchmark_run.add_argument("--pred", required=True, help="prediction trajectory CSV/JSON")
+    benchmark_run.add_argument("--gt", required=True, help="ground-truth trajectory CSV/JSON")
+    benchmark_run.add_argument("--output", required=True, help="output EvaluationResult JSON")
 
     subparsers.add_parser("version", help="print the installed package version")
     return parser
@@ -222,6 +290,145 @@ def _history_command(directory: str, *, metric: Optional[str], output_format: st
         print(f"| {step} | {_format_value(value)} |")
     print(f"Trend: {_format_value(history.trend(metric))}")
     return 0
+
+
+def _evaluate_command(
+    *,
+    pred_path: str,
+    gt_path: str,
+    metrics: Sequence[str],
+    output_path: str,
+    threshold_values: Sequence[str],
+) -> int:
+    try:
+        pred = _load_cli_trajectory(pred_path, label="--pred")
+        gt = _load_cli_trajectory(gt_path, label="--gt")
+        thresholds = _parse_thresholds(threshold_values)
+        result = Evaluator().evaluate(
+            prediction=pred,
+            ground_truth=gt,
+            metrics=list(metrics),
+            thresholds=thresholds,
+        )
+        _require_cli_metric_success(result)
+    except Exception as exc:  # noqa: BLE001 - CLI errors must be printed cleanly.
+        print(f"robometrics evaluate: {exc}", file=sys.stderr)
+        return 2
+
+    result.metadata.update(
+        {
+            "command": "evaluate",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "inputs": {"pred": str(pred_path), "gt": str(gt_path)},
+            "metric_names": list(metrics),
+        }
+    )
+    Path(output_path).write_text(result.to_json(), encoding="utf-8")
+    print(f"wrote {output_path}")
+    return 0 if result.strict_passed is not False else 1
+
+
+def _validate_command(path: str, *, output_path: Optional[str]) -> int:
+    result = validate_dataset(path)
+    print(result.to_text())
+    if output_path is not None:
+        Path(output_path).write_text(result.to_json(), encoding="utf-8")
+    return 0 if result.passed else 1
+
+
+def _report_command(result_path: str, *, output_path: str) -> int:
+    try:
+        output = write_html_report(result_path, output_path)
+    except Exception as exc:  # noqa: BLE001 - CLI errors must be printed cleanly.
+        print(f"robometrics report: {exc}", file=sys.stderr)
+        return 2
+    print(f"wrote {output}")
+    return 0
+
+
+def _benchmark_command(args: argparse.Namespace) -> int:
+    if args.benchmark_command == "list":
+        print("| Name | Metrics | Description |")
+        print("| --- | --- | --- |")
+        for profile in list_profiles():
+            print(
+                "| "
+                + " | ".join(
+                    [
+                        profile.name,
+                        ", ".join(profile.metrics),
+                        profile.description,
+                    ]
+                )
+                + " |"
+            )
+        return 0
+
+    if args.benchmark_command == "run":
+        try:
+            pred = _load_cli_trajectory(args.pred, label="--pred")
+            gt = _load_cli_trajectory(args.gt, label="--gt")
+            _require_matching_cli_shapes(pred, gt)
+            result = run_profile(args.profile, prediction=pred, ground_truth=gt)
+        except Exception as exc:  # noqa: BLE001 - CLI errors must be printed cleanly.
+            print(f"robometrics benchmark run: {exc}", file=sys.stderr)
+            return 2
+        result.metadata.update(
+            {
+                "command": "benchmark run",
+                "inputs": {"pred": str(args.pred), "gt": str(args.gt)},
+            }
+        )
+        Path(args.output).write_text(result.to_json(), encoding="utf-8")
+        print(f"wrote {args.output}")
+        return 0 if result.strict_passed is not False else 1
+
+    print("robometrics benchmark: expected 'list' or 'run'", file=sys.stderr)
+    return 2
+
+
+def _load_cli_trajectory(path: str, *, label: str) -> Any:
+    trajectory_path = Path(path)
+    if not trajectory_path.exists():
+        raise EvaluationInputError(f"{label} file does not exist: {trajectory_path}")
+    if not trajectory_path.is_file():
+        raise EvaluationInputError(f"{label} path is not a file: {trajectory_path}")
+    try:
+        return load_trajectory(trajectory_path)
+    except Exception as exc:  # noqa: BLE001 - preserve loader context in CLI message.
+        raise EvaluationInputError(f"could not load {label} {trajectory_path}: {exc}") from exc
+
+
+def _require_matching_cli_shapes(pred: Any, gt: Any) -> None:
+    pred_shape = getattr(pred, "shape", None)
+    gt_shape = getattr(gt, "shape", None)
+    if pred_shape != gt_shape:
+        raise EvaluationInputError(
+            f"--pred and --gt must have the same shape; got {pred_shape} and {gt_shape}"
+        )
+
+
+def _require_cli_metric_success(result: EvaluationResult) -> None:
+    if result.results and all("error" in metric.metadata for metric in result.results):
+        message = str(result.results[0].metadata.get("error") or "no metric could be evaluated")
+        raise EvaluationInputError(message)
+
+
+def _parse_thresholds(values: Sequence[str]) -> dict[str, float]:
+    thresholds: dict[str, float] = {}
+    for raw in values:
+        if "=" not in raw:
+            raise EvaluationInputError("thresholds must use METRIC=VALUE syntax")
+        name, value = raw.split("=", 1)
+        metric = registry.get(name)
+        try:
+            threshold = float(value)
+        except ValueError as exc:
+            raise EvaluationInputError(f"threshold for {name} must be numeric") from exc
+        if not math.isfinite(threshold):
+            raise EvaluationInputError(f"threshold for {name} must be finite")
+        thresholds[metric.name] = threshold
+    return thresholds
 
 
 def _metric_payload(metric: MetricDefinition) -> MetricPayload:

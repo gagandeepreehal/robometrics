@@ -1,0 +1,62 @@
+[
+  {
+    "metric": "acceleration",
+    "case": "Four-point bent path with dt=1.",
+    "expected": [[-1.5, 1.5], [-0.5, 0.5], [0.5, -0.5], [1.5, -1.5]],
+    "derivation": "second gradient of [[0,0],[1,0],[1,1],[2,1]]"
+  },
+  {
+    "metric": "jerk",
+    "case": "Four-point bent path with dt=1.",
+    "expected": [[1.0, -1.0], [1.0, -1.0], [1.0, -1.0], [1.0, -1.0]],
+    "derivation": "gradient of the acceleration reference case"
+  },
+  {
+    "metric": "jerk_cost",
+    "case": "Four constant jerk magnitudes sqrt(2).",
+    "expected": 2.0000000000000004,
+    "derivation": "mean(square([sqrt(2), sqrt(2), sqrt(2), sqrt(2)]))"
+  },
+  {
+    "metric": "acceleration_magnitude",
+    "case": "Norms of the reference acceleration vectors.",
+    "expected": [2.1213203435596424, 0.7071067811865476, 0.7071067811865476, 2.1213203435596424],
+    "derivation": "row-wise Euclidean norms of acceleration"
+  },
+  {
+    "metric": "jerk_magnitude",
+    "case": "Norms of the reference jerk vectors.",
+    "expected": [1.4142135623730951, 1.4142135623730951, 1.4142135623730951, 1.4142135623730951],
+    "derivation": "row-wise Euclidean norms of jerk"
+  },
+  {
+    "metric": "max_acceleration",
+    "case": "Maximum acceleration magnitude from the reference bent path.",
+    "expected": 2.1213203435596424,
+    "derivation": "max(acceleration_magnitude)"
+  },
+  {
+    "metric": "mean_acceleration",
+    "case": "Mean acceleration magnitude from the reference bent path.",
+    "expected": 1.414213562373095,
+    "derivation": "mean(acceleration_magnitude)"
+  },
+  {
+    "metric": "rms_acceleration",
+    "case": "RMS acceleration magnitude from the reference bent path.",
+    "expected": 1.5811388300841895,
+    "derivation": "sqrt(mean(square(acceleration_magnitude)))"
+  },
+  {
+    "metric": "max_deceleration",
+    "case": "Maximum negative longitudinal acceleration along the bent path.",
+    "expected": 1.8973665961010275,
+    "derivation": "max(max(-dot(acceleration, velocity_unit), 0))"
+  },
+  {
+    "metric": "smoothness_score",
+    "case": "Straight line has zero third finite difference.",
+    "expected": 1.0,
+    "derivation": "1 / (1 + log1p(0))"
+  }
+]
