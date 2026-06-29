@@ -37,27 +37,28 @@ pip install "robometrics[io]"  # CSV loading and pandas exports
 ```
 
 RoboMetrics is primarily a Python library. The installed CLI is intentionally
-local-first and file-based:
+local-first and file-based. The examples below use `python -m robometrics`
+because it works even when a user-level pip install places console scripts
+outside `PATH`.
 
-If a user-level pip install places `robometrics` outside `PATH`, use
-`python -m robometrics ...` or add the script directory reported by pip, such as
-`$HOME/Library/Python/3.9/bin` on macOS system Python, to `PATH`.
+The `robometrics` console script is also installed; use it directly when the
+script directory reported by pip is on `PATH`.
 
 ```bash
 python -m robometrics --help
-robometrics list-metrics
-robometrics list-metrics --format json
-robometrics describe ade
-robometrics validate examples/fixtures/predictions.csv
-robometrics evaluate \
+python -m robometrics list-metrics
+python -m robometrics list-metrics --format json
+python -m robometrics describe ade
+python -m robometrics validate examples/fixtures/predictions.csv
+python -m robometrics evaluate \
   --pred examples/fixtures/predictions.csv \
   --gt examples/fixtures/ground_truth.csv \
   --metrics ade fde \
   --threshold ade=0.5 \
   --output result.json
-robometrics report result.json --output report.html
-robometrics benchmark list
-robometrics version
+python -m robometrics report result.json --output report.html
+python -m robometrics benchmark list
+python -m robometrics version
 ```
 
 For local development:
@@ -77,15 +78,15 @@ Five-minute local workflow:
 
 ```bash
 pip install "robometrics[io]"
-robometrics validate examples/fixtures/predictions.csv
-robometrics evaluate \
+python -m robometrics validate examples/fixtures/predictions.csv
+python -m robometrics evaluate \
   --pred examples/fixtures/predictions.csv \
   --gt examples/fixtures/ground_truth.csv \
   --metrics ade fde \
   --threshold ade=0.5 \
   --threshold fde=1.0 \
   --output result.json
-robometrics report result.json --output report.html
+python -m robometrics report result.json --output report.html
 ```
 
 Python API:
@@ -374,12 +375,12 @@ sequences to `Evaluator.evaluate_dataset(...)`. It returns one aggregate
 
 ## CLI Evaluation, Validation, Reports, And Profiles
 
-`robometrics evaluate` loads matching CSV/JSON trajectories, validates file
+`python -m robometrics evaluate` loads matching CSV/JSON trajectories, validates file
 existence and shape, runs named metrics, and writes strict `EvaluationResult`
 JSON with metric values, metadata, timestamp, thresholds, and pass/fail status.
 
 ```bash
-robometrics evaluate \
+python -m robometrics evaluate \
   --pred examples/fixtures/predictions.csv \
   --gt examples/fixtures/ground_truth.csv \
   --metrics ade fde \
@@ -387,20 +388,20 @@ robometrics evaluate \
   --output result.json
 ```
 
-`robometrics validate <path>` inspects trajectory-style CSV/JSON files for
+`python -m robometrics validate <path>` inspects trajectory-style CSV/JSON files for
 missing fields, invalid numeric values, NaN/inf, inconsistent dimensions,
 non-monotonic timestamps, empty trajectories, and unsupported formats. Add
 `--output validation.json` for machine-readable output.
 
-`robometrics report result.json --output report.html` generates a lightweight
+`python -m robometrics report result.json --output report.html` generates a lightweight
 static HTML report with summary, metric values, pass/fail indicators, metadata,
 and baseline comparison metadata when present.
 
 Benchmark profiles package repeatable metric sets for small local gates:
 
 ```bash
-robometrics benchmark list
-robometrics benchmark run policy_regression_ci \
+python -m robometrics benchmark list
+python -m robometrics benchmark run policy_regression_ci \
   --pred examples/fixtures/predictions.csv \
   --gt examples/fixtures/ground_truth.csv \
   --output result.json

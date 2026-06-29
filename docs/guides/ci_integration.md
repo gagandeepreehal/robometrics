@@ -1,6 +1,6 @@
 # CI Integration
 
-Continuous integration is a good fit for guardrail metrics: collision rate, lane departure rate, offroad rate, miss rate, final displacement error, and any task metric with a clear acceptance threshold. The recommended pattern is to keep a baseline JSON artifact in the repository or download it from a stable artifact store, run the candidate evaluation in CI, then call `robometrics compare baseline.json new.json`. The command prints a comparison and exits with status code 0 when candidate result B wins or exactly ties every thresholded metric. A thresholded metric that regresses, is missing from B, or has a non-finite value makes the shell step fail naturally.
+Continuous integration is a good fit for guardrail metrics: collision rate, lane departure rate, offroad rate, miss rate, final displacement error, and any task metric with a clear acceptance threshold. The recommended pattern is to keep a baseline JSON artifact in the repository or download it from a stable artifact store, run the candidate evaluation in CI, then call `python -m robometrics compare baseline.json new.json`. The command prints a comparison and exits with status code 0 when candidate result B wins or exactly ties every thresholded metric. A thresholded metric that regresses, is missing from B, or has a non-finite value makes the shell step fail naturally.
 
 Evaluator thresholds follow metric direction. Lower-is-better metrics pass when
 `value <= threshold`; higher-is-better metrics pass when `value >= threshold`.
@@ -15,7 +15,7 @@ use the CLI directly:
 ```yaml
 - name: Evaluate regression fixture
   run: |
-    robometrics evaluate \
+    python -m robometrics evaluate \
       --pred examples/fixtures/predictions.csv \
       --gt examples/fixtures/ground_truth.csv \
       --metrics ade fde \
@@ -24,10 +24,10 @@ use the CLI directly:
       --output result.json
 
 - name: Compare with baseline
-  run: robometrics compare examples/fixtures/baseline_result.json result.json
+  run: python -m robometrics compare examples/fixtures/baseline_result.json result.json
 
 - name: Generate report
-  run: robometrics report result.json --output report.html
+  run: python -m robometrics report result.json --output report.html
 ```
 
 Upload `report.html` as a CI artifact when you want a human-readable summary.
@@ -48,7 +48,7 @@ jobs:
           python-version: "3.11"
       - run: pip install .
       - run: python scripts/evaluate_policy.py --output new.json
-      - run: robometrics compare baseline.json new.json --format markdown
+      - run: python -m robometrics compare baseline.json new.json --format markdown
 ```
 
 The evaluation script should write an `EvaluationResult` JSON file. A minimal local version looks like this:

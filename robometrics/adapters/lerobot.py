@@ -9,7 +9,7 @@ from typing import Any, Union
 import numpy as np
 
 from robometrics.schemas import Trajectory
-from robometrics.validation import DatasetValidationResult, ValidationIssue, validate_dataset
+from robometrics.validation import DatasetValidationResult, ValidationIssue
 
 PathLike = Union[str, Path]
 
@@ -30,14 +30,23 @@ class LeRobotStyleAdapter:
         """Validate the JSON file selected for this adapter."""
         try:
             resolved = _resolve_json_path(path)
-            self.load(resolved)
+            trajectory = self.load(resolved)
         except Exception as exc:  # noqa: BLE001 - validation reports adapter failures.
             return DatasetValidationResult(
                 path=str(path),
                 format=self.format_name,
                 issues=[ValidationIssue(code="adapter_error", message=str(exc))],
             )
-        return validate_dataset(resolved)
+        dimensions = len(trajectory.points[0]) if trajectory.points else None
+        return DatasetValidationResult(
+            path=str(resolved),
+            format=self.format_name,
+            row_count=len(trajectory.points),
+            dimensions=dimensions,
+            has_timestamps=trajectory.timestamps is not None,
+            issues=[],
+            metadata=self.metadata(resolved),
+        )
 
     def metadata(self, path: PathLike) -> dict[str, object]:
         """Return path-level adapter metadata."""

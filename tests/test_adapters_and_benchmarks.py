@@ -55,8 +55,12 @@ def test_lerobot_style_adapter_reads_steps(tmp_path) -> None:
     )
 
     trajectory = LeRobotStyleAdapter().load(path)
+    report = LeRobotStyleAdapter().validate(path)
 
     assert trajectory.points == [[0.0, 0.0], [1.0, 0.0]]
+    assert report.passed is True
+    assert report.row_count == 2
+    assert report.dimensions == 2
 
 
 def test_rlds_style_adapter_reads_episode_steps(tmp_path) -> None:

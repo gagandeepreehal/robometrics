@@ -14,10 +14,10 @@ jobs:
       - name: Install package
         run: python -m pip install -e ".[dev,io]"
       - name: Validate fixture data
-        run: robometrics validate examples/fixtures/predictions.csv
+        run: python -m robometrics validate examples/fixtures/predictions.csv
       - name: Evaluate regression fixture
         run: |
-          robometrics evaluate \
+          python -m robometrics evaluate \
             --pred examples/fixtures/predictions.csv \
             --gt examples/fixtures/ground_truth.csv \
             --metrics ade fde \
@@ -25,9 +25,9 @@ jobs:
             --threshold fde=1.0 \
             --output result.json
       - name: Compare against baseline
-        run: robometrics compare examples/fixtures/baseline_result.json result.json
+        run: python -m robometrics compare examples/fixtures/baseline_result.json result.json
       - name: Generate report
-        run: robometrics report result.json --output report.html
+        run: python -m robometrics report result.json --output report.html
       - uses: actions/upload-artifact@v4
         with:
           name: robometrics-report

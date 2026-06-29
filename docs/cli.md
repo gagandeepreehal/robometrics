@@ -2,11 +2,14 @@
 
 RoboMetrics CLI commands are local-first wrappers around the Python API. They
 read small CSV/JSON files, emit strict JSON, and avoid heavyweight services.
+Examples use `python -m robometrics` so they work even when a user-level pip
+install places console scripts outside `PATH`; the `robometrics` executable is
+equivalent when it is on `PATH`.
 
 ## Evaluate
 
 ```bash
-robometrics evaluate \
+python -m robometrics evaluate \
   --pred examples/fixtures/predictions.csv \
   --gt examples/fixtures/ground_truth.csv \
   --metrics ade fde \
@@ -25,8 +28,8 @@ metrics pass with `value <= threshold`, and higher-is-better metrics pass with
 ## Validate
 
 ```bash
-robometrics validate examples/fixtures/predictions.csv
-robometrics validate examples/fixtures/predictions.csv --output validation.json
+python -m robometrics validate examples/fixtures/predictions.csv
+python -m robometrics validate examples/fixtures/predictions.csv --output validation.json
 ```
 
 `validate` inspects trajectory-style CSV/JSON files for missing required
@@ -38,7 +41,7 @@ JSON validation report.
 ## Report
 
 ```bash
-robometrics report result.json --output report.html
+python -m robometrics report result.json --output report.html
 ```
 
 `report` creates a standalone static HTML file with a summary table, metric
@@ -48,8 +51,8 @@ the result payload contains comparison metadata.
 ## Benchmark Profiles
 
 ```bash
-robometrics benchmark list
-robometrics benchmark run policy_regression_ci \
+python -m robometrics benchmark list
+python -m robometrics benchmark run policy_regression_ci \
   --pred examples/fixtures/predictions.csv \
   --gt examples/fixtures/ground_truth.csv \
   --output result.json
