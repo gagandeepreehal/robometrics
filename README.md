@@ -141,8 +141,11 @@ distance metrics, and path length use all coordinate dimensions. Curvature,
 lateral error, longitudinal error, collision checks, lane departure, and
 constant-velocity TTC are planar XY metrics.
 
-Empty arrays, NaN/inf values, bad ranks, mismatched trajectory lengths, invalid
-`dt`, and incompatible dimensions raise `ValueError` with a targeted message.
+Empty arrays, NaN/inf values, bad ranks, invalid `dt`, and incompatible
+dimensions raise `ValueError` with a targeted message. Metrics that compare
+aligned samples, such as ADE and FDE, require matching trajectory shapes.
+Set-based metrics such as `hausdorff_distance` may compare different numbers
+of points when coordinate dimensionality matches.
 The `Evaluator` also accepts `Trajectory` schema objects and converts them with
 `.array()` before dispatching metric functions.
 
@@ -326,8 +329,10 @@ csv_traj = load_trajectory_csv("trajectory.csv")
 json_traj = load_trajectory_json("trajectory.json")
 ```
 
-CSV files must include `x` and `y` columns, and may include `z`. JSON files may
-contain either a raw list of points or an object with a `points` field.
+CSV files must include `x` and `y` columns, and may include `z`. The generic
+CSV adapter preserves a present `z` column when constructing `Trajectory`
+objects. JSON files may contain either a raw list of points or an object with a
+`points` field.
 Use `load_trajectory_dir()` to load every supported trajectory file in a
 directory into a filename-keyed dictionary.
 
@@ -375,9 +380,12 @@ sequences to `Evaluator.evaluate_dataset(...)`. It returns one aggregate
 
 ## CLI Evaluation, Validation, Reports, And Profiles
 
-`python -m robometrics evaluate` loads matching CSV/JSON trajectories, validates file
-existence and shape, runs named metrics, and writes strict `EvaluationResult`
-JSON with metric values, metadata, timestamp, thresholds, and pass/fail status.
+`python -m robometrics evaluate` loads CSV/JSON trajectories, validates file
+existence, runs named metrics using each metric's registry compatibility rules,
+and writes strict `EvaluationResult` JSON with metric values, metadata,
+timestamp, thresholds, and pass/fail status. Metrics such as ADE and FDE require
+matching shapes; `hausdorff_distance` can compare unequal sample counts when
+both trajectories use the same coordinate dimensionality.
 
 ```bash
 python -m robometrics evaluate \
@@ -418,7 +426,9 @@ interface: `load(path)`, `validate(path)`, and `metadata(path)`. Built-ins cover
 generic CSV, generic JSON, ROS-style JSON exports without importing ROS,
 LeRobot-style JSON exports without importing LeRobot, RLDS-style JSON exports
 without TensorFlow, and an MCAP placeholder that raises an explicit optional
-dependency error. Heavy robotics or dataset packages are not hard dependencies.
+dependency error. The generic CSV adapter loads `x`/`y` and preserves `z` when
+that optional column is present. Heavy robotics or dataset packages are not hard
+dependencies.
 
 ## Metric Packs
 

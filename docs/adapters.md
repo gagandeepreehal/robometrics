@@ -26,6 +26,10 @@ a `DatasetValidationResult`. `metadata(path)` returns path and adapter metadata.
 | RLDS-style JSON | `rlds`, `rlds-style` | none; expects small JSON exports |
 | MCAP placeholder | `mcap` | raises a clear optional dependency error |
 
+Generic CSV files load `x` and `y` columns and preserve an optional `z` column
+as a third coordinate. Validation reports the same 2D or 3D dimensionality that
+`load(path)` returns in the `Trajectory` schema.
+
 The ROS, LeRobot, RLDS, and MCAP adapters intentionally do not import ROS,
 TensorFlow, LeRobot, or MCAP at package import time. Export heavy datasets to
 small CSV/JSON fixtures for CI gates, and keep full dataset loaders in project

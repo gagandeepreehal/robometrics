@@ -36,7 +36,10 @@ Reference: Hausdorff, Grundzuge der Mengenlehre, 1914
 Unit: meters
 Direction: lower is better
 
-Hausdorff distance captures worst-case geometric mismatch between two sampled paths.
+Hausdorff distance captures worst-case geometric mismatch between two sampled
+paths. Unlike ADE and FDE, it treats trajectories as point sets: the two inputs
+may have different sample counts as long as they use the same coordinate
+dimensionality.
 
 path_length(traj) -> float
 Formula: sum over t of norm(traj[t + 1] - traj[t]).
