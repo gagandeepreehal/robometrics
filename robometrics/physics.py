@@ -305,6 +305,7 @@ def physics_violation_rate(violations: Union[Mapping[str, ArrayLike], ArrayLike]
         A unitless rate in ``[0, 1]`` where lower is better. Empty masks are
         invalid.
     """
+    combined: NDArray[np.bool_]
     if isinstance(violations, Mapping):
         if not violations:
             raise ValueError("violations must contain at least one mask")

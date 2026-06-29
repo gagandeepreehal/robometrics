@@ -37,8 +37,10 @@ def coverage_score(
     normalized = (sample_arr[in_bounds] - lower) / (upper - lower)
     raw_indices = np.floor(normalized * bin_counts).astype(np.int64)
     indices = np.clip(raw_indices, 0, bin_counts - 1)
-    occupied = np.ravel_multi_index(indices.T, tuple(int(value) for value in bin_counts))
-    occupied_arr = np.asarray(occupied).reshape(-1)
+    multipliers = np.ones_like(bin_counts)
+    for dimension in range(bin_counts.shape[0] - 2, -1, -1):
+        multipliers[dimension] = multipliers[dimension + 1] * bin_counts[dimension + 1]
+    occupied_arr = np.sum(indices * multipliers, axis=1)
     unique_occupied = int(np.unique(occupied_arr).shape[0])
     total_bins = int(np.prod(bin_counts))
     return float(unique_occupied / total_bins)
