@@ -303,7 +303,6 @@ def _evaluate_command(
     try:
         pred = _load_cli_trajectory(pred_path, label="--pred")
         gt = _load_cli_trajectory(gt_path, label="--gt")
-        _require_matching_cli_shapes(pred, gt)
         thresholds = _parse_thresholds(threshold_values)
         result = Evaluator().evaluate(
             prediction=pred,
@@ -311,6 +310,7 @@ def _evaluate_command(
             metrics=list(metrics),
             thresholds=thresholds,
         )
+        _require_cli_metric_success(result)
     except Exception as exc:  # noqa: BLE001 - CLI errors must be printed cleanly.
         print(f"robometrics evaluate: {exc}", file=sys.stderr)
         return 2
@@ -406,6 +406,12 @@ def _require_matching_cli_shapes(pred: Any, gt: Any) -> None:
         raise EvaluationInputError(
             f"--pred and --gt must have the same shape; got {pred_shape} and {gt_shape}"
         )
+
+
+def _require_cli_metric_success(result: EvaluationResult) -> None:
+    if result.results and all("error" in metric.metadata for metric in result.results):
+        message = str(result.results[0].metadata.get("error") or "no metric could be evaluated")
+        raise EvaluationInputError(message)
 
 
 def _parse_thresholds(values: Sequence[str]) -> dict[str, float]:

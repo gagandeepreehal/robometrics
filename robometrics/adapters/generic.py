@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 from typing import Union
 
@@ -19,7 +20,7 @@ class GenericCSVAdapter:
 
     def load(self, path: PathLike) -> Trajectory:
         """Load a CSV trajectory into the standard Trajectory schema."""
-        arr = load_trajectory_csv(path)
+        arr = load_trajectory_csv(path, z_col="z" if _csv_has_z_column(path) else None)
         return Trajectory(points=arr.tolist(), metadata=self.metadata(path))
 
     def validate(self, path: PathLike) -> DatasetValidationResult:
@@ -35,6 +36,16 @@ class GenericCSVAdapter:
             "path": str(resolved),
             "exists": resolved.exists(),
         }
+
+
+def _csv_has_z_column(path: PathLike) -> bool:
+    try:
+        with Path(path).open(newline="", encoding="utf-8") as handle:
+            reader = csv.reader(handle)
+            header = next(reader, [])
+    except OSError:
+        return False
+    return "z" in header
 
 
 class GenericJSONAdapter:

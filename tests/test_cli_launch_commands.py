@@ -108,7 +108,37 @@ def test_cli_evaluate_reports_invalid_shape(capsys, tmp_path) -> None:
     )
 
     assert code == 2
-    assert "same shape" in capsys.readouterr().err
+    assert "not compatible" in capsys.readouterr().err
+
+
+def test_cli_evaluate_allows_unequal_lengths_for_hausdorff(tmp_path) -> None:
+    pred = tmp_path / "pred.json"
+    gt = tmp_path / "gt.json"
+    output = tmp_path / "result.json"
+    pred.write_text(
+        json.dumps({"points": [[0.0, 0.0], [2.0, 0.0], [4.0, 0.0]]}),
+        encoding="utf-8",
+    )
+    gt.write_text(json.dumps({"points": [[0.0, 0.0], [4.0, 0.0]]}), encoding="utf-8")
+
+    code = cli.main(
+        [
+            "evaluate",
+            "--pred",
+            str(pred),
+            "--gt",
+            str(gt),
+            "--metrics",
+            "hausdorff_distance",
+            "--output",
+            str(output),
+        ]
+    )
+
+    assert code == 0
+    result = EvaluationResult.from_json(output.read_text(encoding="utf-8"))
+    assert [metric.name for metric in result.results] == ["hausdorff_distance"]
+    assert result.results[0].value == 2.0
 
 
 def test_cli_validate_outputs_human_and_json_reports(tmp_path, capsys) -> None:
