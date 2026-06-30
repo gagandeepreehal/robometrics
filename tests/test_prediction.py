@@ -27,6 +27,9 @@ def test_miss_rate_is_set_level_indicator() -> None:
     assert miss_rate(close, gt, threshold=0.5) == 0.0
     assert miss_rate(far, gt, threshold=0.5) == 1.0
 
+    with pytest.raises(ValueError, match="non-negative finite"):
+        miss_rate(close, gt, threshold=float("nan"))
+
 
 def test_topk_trajectory_error_uses_ranked_prefix() -> None:
     gt = np.array([[0.0, 0.0], [1.0, 0.0]])

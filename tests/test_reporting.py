@@ -70,6 +70,20 @@ def test_render_html_report_includes_metadata_baseline_comparison() -> None:
     assert "baseline" in html
 
 
+def test_render_html_report_skips_comparison_when_metadata_is_not_an_object() -> None:
+    result = EvaluationResult(results=[MetricResult(name="ade", value=1.0)])
+
+    html = render_html_report(
+        result,
+        raw_payload={
+            "results": [metric.to_dict() for metric in result.results],
+            "metadata": [],
+        },
+    )
+
+    assert "Baseline Comparison" not in html
+
+
 def test_write_html_report_round_trips_baseline_comparison_payload(tmp_path) -> None:
     result_path = tmp_path / "result.json"
     output_path = tmp_path / "report.html"
