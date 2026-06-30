@@ -24,9 +24,12 @@ class ROS2BagJSONAdapter:
         """Load a ROS 2 bag JSON export into the standard Trajectory schema."""
         resolved = Path(path)
         payload = json.loads(resolved.read_text(encoding="utf-8"))
-        points, timestamps = _points_from_ros2_export(payload, topic=self.topic)
+        points, timestamps, selected_topic = _points_from_ros2_export(
+            payload, topic=self.topic
+        )
         metadata = self.metadata(resolved)
         metadata["message_count"] = len(points)
+        metadata["topic"] = selected_topic
         return Trajectory(
             points=points,
             timestamps=timestamps if len(timestamps) == len(points) else None,
@@ -85,18 +88,21 @@ def _points_from_ros2_export(
     payload: Any,
     *,
     topic: Optional[str],
-) -> tuple[list[list[float]], list[float]]:
+) -> tuple[list[list[float]], list[float], Optional[str]]:
     from robometrics.adapters.ros_style import _generic_point, _ros_points
 
     records = _message_records(payload)
     if records is None:
-        return _ros_points(_record_message(payload)), []
+        return _ros_points(_record_message(payload)), [], topic
 
     points: list[list[float]] = []
     timestamps: list[float] = []
     last_error: Optional[str] = None
+    selected_topic = topic
+    topic_bound = topic is not None
     for record in records:
-        if topic is not None and _record_topic(record) != topic:
+        record_topic = _record_topic(record)
+        if topic_bound and record_topic != selected_topic:
             continue
         message = _record_message(record)
         try:
@@ -107,6 +113,9 @@ def _points_from_ros2_export(
             except ValueError as exc:
                 last_error = str(exc)
                 continue
+        if not topic_bound:
+            selected_topic = record_topic
+            topic_bound = True
         points.extend(message_points)
         timestamp = _record_timestamp(record)
         if timestamp is not None and len(message_points) == 1:
@@ -116,7 +125,7 @@ def _points_from_ros2_export(
         topic_hint = f" for topic {topic!r}" if topic is not None else ""
         detail = f"; last message error: {last_error}" if last_error else ""
         raise ValueError(f"ROS 2 bag JSON contains no trajectory messages{topic_hint}{detail}")
-    return points, timestamps
+    return points, timestamps, selected_topic
 
 
 def _message_records(payload: Any) -> Optional[list[Any]]:

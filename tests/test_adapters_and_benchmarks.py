@@ -280,6 +280,52 @@ def test_mcap_adapter_loads_json_messages_when_extra_is_available(tmp_path, monk
     assert report.row_count == 2
 
 
+def test_mcap_adapter_defaults_to_first_valid_topic(tmp_path, monkeypatch) -> None:
+    @dataclass
+    class FakeSchema:
+        name: str = "trajectory"
+        encoding: str = "jsonschema"
+
+    @dataclass
+    class FakeChannel:
+        topic: str
+        message_encoding: str = "json"
+
+    @dataclass
+    class FakeMessage:
+        data: bytes
+
+    class FakeReader:
+        def iter_messages(self):
+            yield (
+                FakeSchema(),
+                FakeChannel("/odom"),
+                FakeMessage(json.dumps({"position": {"x": 0.0, "y": 0.0}}).encode()),
+            )
+            yield (
+                FakeSchema(),
+                FakeChannel("/plan"),
+                FakeMessage(json.dumps({"position": {"x": 99.0, "y": 99.0}}).encode()),
+            )
+            yield (
+                FakeSchema(),
+                FakeChannel("/odom"),
+                FakeMessage(json.dumps({"position": {"x": 1.0, "y": 0.0}}).encode()),
+            )
+
+    reader_module = types.ModuleType("mcap.reader")
+    reader_module.make_reader = lambda handle: FakeReader()
+    monkeypatch.setitem(sys.modules, "mcap", types.ModuleType("mcap"))
+    monkeypatch.setitem(sys.modules, "mcap.reader", reader_module)
+    path = tmp_path / "run.mcap"
+    path.write_bytes(b"fake")
+
+    trajectory = MCAPAdapter().load(path)
+
+    assert trajectory.points == [[0.0, 0.0], [1.0, 0.0]]
+    assert trajectory.metadata["topic"] == "/odom"
+
+
 def test_ros2_bag_json_adapter_reads_message_exports(tmp_path) -> None:
     path = tmp_path / "ros2_messages.json"
     path.write_text(
@@ -322,6 +368,40 @@ def test_ros2_bag_json_adapter_reads_message_exports(tmp_path) -> None:
     assert report.passed is True
     assert report.has_timestamps is True
     assert report.metadata["requires_rclpy"] is False
+
+
+def test_ros2_bag_json_adapter_defaults_to_first_valid_topic(tmp_path) -> None:
+    path = tmp_path / "ros2_messages.json"
+    path.write_text(
+        json.dumps(
+            {
+                "messages": [
+                    {
+                        "topic": "/odom",
+                        "timestamp": 1.0,
+                        "message": {"position": {"x": 0.0, "y": 0.0}},
+                    },
+                    {
+                        "topic": "/plan",
+                        "timestamp": 2.0,
+                        "message": {"position": {"x": 99.0, "y": 99.0}},
+                    },
+                    {
+                        "topic": "/odom",
+                        "timestamp": 3.0,
+                        "message": {"position": {"x": 1.0, "y": 0.0}},
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    trajectory = get_adapter("ros2-json").load(path)
+
+    assert trajectory.points == [[0.0, 0.0], [1.0, 0.0]]
+    assert trajectory.timestamps == [1.0, 3.0]
+    assert trajectory.metadata["topic"] == "/odom"
 
 
 def test_ros2_bag_json_adapter_reads_path_message_export(tmp_path) -> None:

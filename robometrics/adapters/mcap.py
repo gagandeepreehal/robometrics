@@ -39,13 +39,15 @@ class MCAPAdapter:
         points: list[list[float]] = []
         metadata = self.metadata(resolved)
         last_error: Optional[str] = None
+        selected_topic = self.topic
+        topic_bound = self.topic is not None
 
         try:
             with resolved.open("rb") as handle:
                 reader = make_reader(handle)
                 for schema, channel, message in reader.iter_messages():
                     topic = str(getattr(channel, "topic", ""))
-                    if self.topic is not None and topic != self.topic:
+                    if topic_bound and topic != selected_topic:
                         continue
                     payload = _decode_json_message(getattr(message, "data", b""))
                     if payload is None:
@@ -55,10 +57,13 @@ class MCAPAdapter:
                     except ValueError as exc:
                         last_error = str(exc)
                         continue
+                    if not topic_bound:
+                        selected_topic = topic
+                        topic_bound = True
                     points.extend(message_points)
                     metadata.update(
                         {
-                            "topic": topic,
+                            "topic": selected_topic,
                             "message_encoding": str(getattr(channel, "message_encoding", "")),
                             "schema_name": str(getattr(schema, "name", "")),
                             "schema_encoding": str(getattr(schema, "encoding", "")),

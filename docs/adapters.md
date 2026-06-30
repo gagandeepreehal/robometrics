@@ -68,6 +68,11 @@ adapter = get_adapter("ros2-json")
 trajectory = adapter.load("ros2_messages.json")
 ```
 
+When `topic` is not set, the adapter uses the first record that successfully
+parses as a trajectory and ignores later topics. Instantiate
+`ROS2BagJSONAdapter(topic="/odom")` when the JSON export contains multiple
+trajectory topics and you need a specific one.
+
 ## MCAP
 
 Install the optional extra before reading MCAP files:
@@ -80,6 +85,8 @@ The built-in MCAP adapter reads messages whose payload is UTF-8 JSON shaped
 like generic RoboMetrics trajectory JSON or ROS-style exported JSON. Binary ROS
 2 CDR decoding is deliberately left to project-specific export steps so the
 core package stays lightweight.
+When no topic is configured, `MCAPAdapter` uses the first JSON trajectory topic
+it can parse and ignores later topics.
 
 ## Adding An Adapter
 
