@@ -5,6 +5,7 @@
 ![Coverage](https://img.shields.io/badge/coverage-90%25%20minimum-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![PyPI](https://img.shields.io/pypi/v/robometrics.svg)](https://pypi.org/project/robometrics/)
+[![Downloads](https://static.pepy.tech/badge/robometrics)](https://pepy.tech/project/robometrics)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://gagandeepreehal.github.io/robometrics/)
 
 Lightweight robotics metrics for Python.
