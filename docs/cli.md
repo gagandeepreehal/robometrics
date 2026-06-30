@@ -9,9 +9,23 @@ equivalent when it is on `PATH`.
 ## Evaluate
 
 ```bash
+cat > predictions.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.0,0.0
+2,2.0,0.0
+CSV
+
+cat > ground_truth.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.1,0.0
+2,2.1,0.0
+CSV
+
 python -m robometrics evaluate \
-  --pred examples/fixtures/predictions.csv \
-  --gt examples/fixtures/ground_truth.csv \
+  --pred predictions.csv \
+  --gt ground_truth.csv \
   --metrics ade fde \
   --threshold ade=0.5 \
   --threshold fde=1.0 \
@@ -33,8 +47,8 @@ metrics pass with `value <= threshold`, and higher-is-better metrics pass with
 ## Validate
 
 ```bash
-python -m robometrics validate examples/fixtures/predictions.csv
-python -m robometrics validate examples/fixtures/predictions.csv --output validation.json
+python -m robometrics validate predictions.csv
+python -m robometrics validate predictions.csv --output validation.json
 ```
 
 `validate` inspects trajectory-style CSV/JSON files for missing required
@@ -58,8 +72,8 @@ the result payload contains comparison metadata.
 ```bash
 python -m robometrics benchmark list
 python -m robometrics benchmark run policy_regression_ci \
-  --pred examples/fixtures/predictions.csv \
-  --gt examples/fixtures/ground_truth.csv \
+  --pred predictions.csv \
+  --gt ground_truth.csv \
   --output result.json
 ```
 

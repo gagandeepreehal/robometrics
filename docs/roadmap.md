@@ -5,7 +5,7 @@ units, input shapes, result JSON fields, and registry metadata are intended to
 stay stable within a minor release. Breaking changes before `1.0.0` will be
 called out in `CHANGELOG.md` and should include migration notes.
 
-## Stable In 0.2.x
+## Stable In 0.3.x
 
 - Direct NumPy metric functions for trajectory, prediction, safety, comfort,
   physics, task, manipulation, calibration, coverage, diversity, and temporal
@@ -20,9 +20,6 @@ called out in `CHANGELOG.md` and should include migration notes.
   summaries.
 - Direction-aware evaluator thresholds. Metrics marked `higher_is_better=True`
   pass when `value >= threshold`; other metrics pass when `value <= threshold`.
-
-## Completed For 0.3.0
-
 - `scripts/benchmark_timing_baselines.py` emits repeatable JSON timing baselines
   for geometry safety, dataset evaluator, and manipulation metric workloads.
 - `examples/dataset_loader_evaluation.py` and the loader examples guide cover

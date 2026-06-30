@@ -48,9 +48,24 @@ print(distance_error, comfort, collisions)
 ```bash
 python -m robometrics list-metrics
 python -m robometrics describe ade
+
+cat > predictions.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.0,0.0
+2,2.0,0.0
+CSV
+
+cat > ground_truth.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.1,0.0
+2,2.1,0.0
+CSV
+
 python -m robometrics evaluate \
-  --pred examples/fixtures/predictions.csv \
-  --gt examples/fixtures/ground_truth.csv \
+  --pred predictions.csv \
+  --gt ground_truth.csv \
   --metrics ade fde \
   --threshold ade=0.5 \
   --threshold fde=1.0 \

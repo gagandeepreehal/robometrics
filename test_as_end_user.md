@@ -134,23 +134,35 @@ print("Round-trip OK:", reloaded.summary()["metric_count"] == result.summary()["
 
 Verify: `strict_passed` is a bool; `metric_count` matches between the original and reloaded result.
 
-### Step 7 — CLI: validate and evaluate fixture files
+### Step 7 — CLI: validate and evaluate local fixture files
 
-Find the fixture files (they ship with the package or repo):
+Create tiny CSV files in your current working directory:
 
 ```bash
-python -c "import robometrics, pathlib; print(pathlib.Path(robometrics.__file__).parent.parent)"
+cat > predictions.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.0,0.0
+2,2.0,0.0
+CSV
+
+cat > ground_truth.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.1,0.0
+2,2.1,0.0
+CSV
 ```
 
-Then run (substitute the actual repo/package path):
+Then run:
 
 ```bash
-python -m robometrics validate examples/fixtures/predictions.csv
-python -m robometrics validate examples/fixtures/ground_truth.csv
+python -m robometrics validate predictions.csv
+python -m robometrics validate ground_truth.csv
 
 python -m robometrics evaluate \
-  --pred examples/fixtures/predictions.csv \
-  --gt   examples/fixtures/ground_truth.csv \
+  --pred predictions.csv \
+  --gt   ground_truth.csv \
   --metrics ade fde \
   --threshold ade=0.5 \
   --threshold fde=1.0 \
@@ -177,8 +189,8 @@ Verify: the HTML file is non-empty and contains pass/fail indicators.
 python -m robometrics benchmark list
 
 python -m robometrics benchmark run policy_regression_ci \
-  --pred examples/fixtures/predictions.csv \
-  --gt   examples/fixtures/ground_truth.csv \
+  --pred predictions.csv \
+  --gt   ground_truth.csv \
   --output /tmp/rm_benchmark.json
 
 python -m json.tool /tmp/rm_benchmark.json | head -20
@@ -192,12 +204,12 @@ Verify: `benchmark list` prints at least the four built-in profiles; `benchmark 
 from robometrics import load_trajectory_csv, load_trajectory_json
 from robometrics.adapters import GenericCSVAdapter
 
-csv_traj = load_trajectory_csv("examples/fixtures/predictions.csv")
-print("Loaded CSV shape:", csv_traj.array().shape)
+csv_traj = load_trajectory_csv("predictions.csv")
+print("Loaded CSV shape:", csv_traj.shape)
 
 adapter = GenericCSVAdapter()
-print("Adapter validate:", adapter.validate("examples/fixtures/predictions.csv"))
-print("Adapter metadata:", adapter.metadata("examples/fixtures/predictions.csv"))
+print("Adapter validate:", adapter.validate("predictions.csv"))
+print("Adapter metadata:", adapter.metadata("predictions.csv"))
 ```
 
 ### Step 11 — Error handling (negative tests)

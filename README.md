@@ -53,10 +53,25 @@ python -m robometrics --help
 python -m robometrics list-metrics
 python -m robometrics list-metrics --format json
 python -m robometrics describe ade
-python -m robometrics validate examples/fixtures/predictions.csv
+
+cat > predictions.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.0,0.0
+2,2.0,0.0
+CSV
+
+cat > ground_truth.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.1,0.0
+2,2.1,0.0
+CSV
+
+python -m robometrics validate predictions.csv
 python -m robometrics evaluate \
-  --pred examples/fixtures/predictions.csv \
-  --gt examples/fixtures/ground_truth.csv \
+  --pred predictions.csv \
+  --gt ground_truth.csv \
   --metrics ade fde \
   --threshold ade=0.5 \
   --output result.json
@@ -83,10 +98,25 @@ Five-minute local workflow:
 
 ```bash
 pip install "robometrics[io]"
-python -m robometrics validate examples/fixtures/predictions.csv
+
+cat > predictions.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.0,0.0
+2,2.0,0.0
+CSV
+
+cat > ground_truth.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.1,0.0
+2,2.1,0.0
+CSV
+
+python -m robometrics validate predictions.csv
 python -m robometrics evaluate \
-  --pred examples/fixtures/predictions.csv \
-  --gt examples/fixtures/ground_truth.csv \
+  --pred predictions.csv \
+  --gt ground_truth.csv \
   --metrics ade fde \
   --threshold ade=0.5 \
   --threshold fde=1.0 \
@@ -405,9 +435,23 @@ matching shapes; `hausdorff_distance` can compare unequal sample counts when
 both trajectories use the same coordinate dimensionality.
 
 ```bash
+cat > predictions.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.0,0.0
+2,2.0,0.0
+CSV
+
+cat > ground_truth.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.1,0.0
+2,2.1,0.0
+CSV
+
 python -m robometrics evaluate \
-  --pred examples/fixtures/predictions.csv \
-  --gt examples/fixtures/ground_truth.csv \
+  --pred predictions.csv \
+  --gt ground_truth.csv \
   --metrics ade fde \
   --threshold ade=0.5 \
   --output result.json
@@ -427,8 +471,8 @@ Benchmark profiles package repeatable metric sets for small local gates:
 ```bash
 python -m robometrics benchmark list
 python -m robometrics benchmark run policy_regression_ci \
-  --pred examples/fixtures/predictions.csv \
-  --gt examples/fixtures/ground_truth.csv \
+  --pred predictions.csv \
+  --gt ground_truth.csv \
   --output result.json
 ```
 

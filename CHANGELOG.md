@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Nothing yet.
+
+## [0.3.0] - 2026-06-30
+
+### Added
+
 - Versioned `EvaluationResult` JSON output with top-level
   `"schema_version": "1"` and a public `EVALUATION_RESULT_SCHEMA_VERSION`
   constant.
@@ -26,7 +32,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Result schema migration guide for the versioned `EvaluationResult` JSON
   contract.
 
+### Changed
+
+- Install-facing README and MkDocs CLI examples now create tiny local CSV files
+  inline instead of assuming a source checkout with `examples/fixtures/`.
+- End-user QA checklist now matches the public loader API by treating
+  `load_trajectory_csv(...)` output as a NumPy array.
+
 ## [0.2.0] - 2026-06-20
+
+First public release.
 
 ### Changed
 
@@ -41,7 +56,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   evaluation history summaries.
 - GitHub Pages deployment workflow for the MkDocs documentation site.
 
-## [0.1.2] - 2026-06-20
+## Pre-0.2.0 Development
 
 ### Fixed
 
@@ -64,11 +79,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - CI coverage threshold and a Python 3.12 `[io]` extras matrix cell.
 - `Evaluator` support for `Trajectory` schema inputs and configurable
   `bootstrap_seed` for dataset confidence intervals.
-
-## [0.1.1] - 2026-06-19
-
-### Added
-
 - NumPy-based trajectory, prediction, comfort, safety, and physics metrics.
 - Local `Evaluator`, metric registry, structured results, thresholds, and exporters.
 - CSV, JSON, NumPy, and NPZ trajectory loading helpers.

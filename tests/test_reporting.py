@@ -36,6 +36,8 @@ def test_render_html_report_escapes_values_and_renders_statuses() -> None:
 
     html = render_html_report(result)
 
+    assert "schema_version" in html
+    assert "<td>1</td>" in html
     assert "&lt;bad&gt;" in html
     assert "&lt;script&gt;" in html
     assert '<td class="fail">FAIL</td>' in html
@@ -103,5 +105,6 @@ def test_write_html_report_round_trips_baseline_comparison_payload(tmp_path) -> 
 
     assert returned == output_path
     html = output_path.read_text(encoding="utf-8")
+    assert "schema_version" in html
     assert "Baseline Comparison" in html
     assert "candidate" in html
