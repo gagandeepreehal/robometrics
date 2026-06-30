@@ -39,6 +39,7 @@ nav:
   - Core API:
       - Evaluation Guide: evaluation.md
       - Evaluator Examples: evaluator.md
+      - Input And Output Contract: input_output_contract.md
       - CLI Commands: cli.md
       - API Reference: api.md
   - Metrics:

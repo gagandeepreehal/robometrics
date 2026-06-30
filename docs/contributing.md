@@ -8,13 +8,20 @@ See the repository [CONTRIBUTING.md](https://github.com/gagandeepreehal/robometr
 ruff check .
 mypy robometrics
 pytest --cov=robometrics --cov-report=term-missing
+python examples/basic_metrics.py
+python examples/evaluator_quickstart.py
+python examples/thresholds.py
+python examples/export_results.py
 python examples/trajectory_metrics.py
 python examples/prediction_metrics.py
+python examples/driving_metrics.py
 python examples/safety_metrics.py
 python examples/comfort_metrics.py
 python examples/new_metrics_example.py
 python examples/load_from_csv.py
 python examples/dataset_loader_evaluation.py
+python examples/evaluator_usage.py
+python examples/manipulation_metrics.py
 ```
 
 ## Contribution Scope

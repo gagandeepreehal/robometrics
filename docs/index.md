@@ -31,6 +31,12 @@ Browse the metric families, units, directionality, and edge-case behavior.
 </div>
 </div>
 
+<div class="rm-callout" markdown="1">
+Prefer a notebook? Open the
+[Colab demo](https://colab.research.google.com/github/gagandeepreehal/robometrics/blob/main/notebooks/robometrics_colab_demo.ipynb)
+and run the same local-first evaluation flow without cloning the repository.
+</div>
+
 ## Installation
 
 ```bash
@@ -41,6 +47,13 @@ Install optional I/O support when you want CSV helpers that use pandas:
 
 ```bash
 pip install "robometrics[io]"
+```
+
+Install only the extras you need:
+
+```bash
+pip install "robometrics[mcap]"      # MCAP JSON-message adapter
+pip install "robometrics[loggers]"   # W&B and MLflow logging helpers
 ```
 
 ## 30-Second Evaluation
@@ -102,7 +115,8 @@ Use [Writing a Pack](guides/writing_a_pack.md) when your project needs custom me
 | Need | Page |
 | --- | --- |
 | Confirm project fit and boundaries | [What RoboMetrics Is And Isn't](what_it_is.md) |
-| Learn accepted input shapes | [Quickstart](quickstart.md) |
+| Learn accepted input shapes, units, and return types | [Input And Output Contract](input_output_contract.md) |
+| Try the fastest local workflow | [Quickstart](quickstart.md) |
 | Run multiple metrics together | [Evaluation Guide](evaluation.md) |
 | Load directories or matched datasets | [Loader Examples](guides/loader_examples.md) |
 | Handle result JSON versions | [Result Schema Migration](guides/result_schema_migration.md) |

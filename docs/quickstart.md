@@ -16,6 +16,16 @@ Install optional CSV/DataFrame helpers when you need pandas-backed exports:
 pip install "robometrics[io]"
 ```
 
+Install other optional extras only when that integration is needed:
+
+```bash
+pip install "robometrics[mcap]"      # optional MCAP JSON-message adapter
+pip install "robometrics[loggers]"   # optional W&B and MLflow logging
+```
+
+For a notebook path, open the
+[Colab demo](https://colab.research.google.com/github/gagandeepreehal/robometrics/blob/main/notebooks/robometrics_colab_demo.ipynb).
+
 ## Evaluate One Trajectory
 
 ```python
@@ -78,6 +88,9 @@ is more reliable in user-level installs where console scripts may be outside
 
 ## Input Shapes
 
+For the full shape, unit, return-type, JSON schema, and logging contract, see
+[Input And Output Contract](input_output_contract.md).
+
 | Input type | Accepted shape | Notes |
 | --- | --- | --- |
 | Trajectory | `Nx2` or `Nx3` | Finite, non-empty arrays. `Nx3` works wherever trajectory metrics accept `Nx2`. |
@@ -103,6 +116,28 @@ result = evaluator.evaluate(
 )
 ```
 
+## Runnable Examples
+
+The repository includes small scripts that mirror the README examples and are
+useful smoke checks when developing locally:
+
+```bash
+python examples/basic_metrics.py
+python examples/evaluator_quickstart.py
+python examples/thresholds.py
+python examples/export_results.py
+python examples/trajectory_metrics.py
+python examples/prediction_metrics.py
+python examples/driving_metrics.py
+python examples/safety_metrics.py
+python examples/comfort_metrics.py
+python examples/new_metrics_example.py
+python examples/load_from_csv.py
+python examples/dataset_loader_evaluation.py
+python examples/evaluator_usage.py
+python examples/manipulation_metrics.py
+```
+
 ## Next Steps
 
 <div class="rm-grid rm-grid-2" markdown="1">
@@ -116,6 +151,12 @@ Browse canonical metric names, aliases, units, directionality, and edge cases.
 [Evaluation Guide](evaluation.md)
 
 Learn thresholds, `strict_passed`, dataset aggregation, JSON output, and registry behavior.
+</div>
+
+<div class="rm-card" markdown="1">
+[Input And Output Contract](input_output_contract.md)
+
+Confirm supported shapes, units, return types, JSON schema behavior, and logger helpers.
 </div>
 
 <div class="rm-card" markdown="1">
