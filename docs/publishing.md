@@ -38,7 +38,7 @@ The environment names must match the workflow `environment` values exactly.
 3. Confirm `pyproject.toml` version and `robometrics.__version__` match.
 4. Run the `Publish to TestPyPI` workflow manually.
 5. Install from TestPyPI in a fresh environment and smoke test the package.
-6. Create and publish a GitHub Release for the version tag, such as `v0.1.0`.
+6. Create and publish a GitHub Release for the version tag, such as `v0.3.0`.
 7. The `Publish to PyPI` workflow will build and upload the distributions.
 8. Install from PyPI in a fresh environment and smoke test again.
 
@@ -47,11 +47,16 @@ The environment names must match the workflow `environment` values exactly.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip
 pip install -e ".[dev]"
 python -m pip install --upgrade build twine
+python -c "import shutil; shutil.rmtree('build', ignore_errors=True); shutil.rmtree('dist', ignore_errors=True)"
 python -m build
 twine check dist/*
 ```
+
+If editable install support is unavailable in an older local packaging toolchain,
+use `pip install ".[dev]"` for the build check after upgrading pip.
 
 ## TestPyPI Install Check
 
@@ -73,4 +78,4 @@ pip install robometrics
 python -c "import robometrics; print(robometrics.__version__)"
 ```
 
-PyPI versions are immutable. If a file for `0.1.0` is uploaded, publish fixes as a new version such as `0.1.1`.
+PyPI versions are immutable. If a file for `0.3.0` is uploaded, publish fixes as a new version such as `0.3.1`.

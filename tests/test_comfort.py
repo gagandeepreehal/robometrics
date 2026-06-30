@@ -98,9 +98,12 @@ def test_max_deceleration_for_slowing_trajectory() -> None:
 def test_stationary_and_single_point_trajectories_are_well_defined() -> None:
     stationary = np.array([[1.0, 1.0], [1.0, 1.0], [1.0, 1.0]])
     single = np.array([[1.0, 1.0]])
+    repeated = np.zeros((4, 2), dtype=np.float64)
 
     assert max_acceleration(stationary, dt=0.1) == 0.0
+    assert max_deceleration(single, dt=0.1) == 0.0
     assert np.allclose(acceleration(single, dt=0.1), np.zeros((1, 2)))
+    assert smoothness_score(repeated) == 1.0
 
 
 def test_invalid_dt_raises() -> None:

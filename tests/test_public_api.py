@@ -18,6 +18,7 @@ def test_public_api_exports_core_objects() -> None:
         "Evaluator",
         "EvaluationHistory",
         "EvaluationResult",
+        "EVALUATION_RESULT_SCHEMA_VERSION",
         "fde",
         "MetricComparison",
         "MetricResult",

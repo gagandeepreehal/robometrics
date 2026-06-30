@@ -70,10 +70,13 @@ Path("new.json").write_text(result.to_json(), encoding="utf-8")
 The first time you run this, save the output as `baseline.json` and commit it to
 the repository. Subsequent CI runs compare against that committed file.
 
-> **Tip — JSON schema:** `EvaluationResult.to_json()` produces an object with a
-> `"results"` key containing a list of metric records. Do not hand-craft this
-> file; always generate it via `to_json()`. Loading a file with the wrong key
-> (e.g. `"metrics"` instead of `"results"`) raises a `ValueError`.
+> **Tip — JSON schema:** `EvaluationResult.to_json()` produces an object with
+> `"schema_version": "1"` and a `"results"` list of metric records. Do not
+> hand-craft this file; always generate it via `to_json()`. Loading a file with
+> the wrong key (e.g. `"metrics"` instead of `"results"`) raises a `ValueError`;
+> loading a file with an unknown `schema_version` also raises. See the
+> [result schema migration guide](result_schema_migration.md) for the versioning
+> policy.
 
 ```python
 # One-time: generate and commit baseline.json

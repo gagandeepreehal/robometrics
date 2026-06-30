@@ -113,6 +113,50 @@ def test_evaluation_result_exports_csv(tmp_path) -> None:
     assert path.read_text(encoding="utf-8") == csv_text
 
 
+def test_evaluation_result_logs_to_wandb_run_object() -> None:
+    class FakeRun:
+        def __init__(self) -> None:
+            self.payload = None
+
+        def log(self, payload: dict[str, object]) -> None:
+            self.payload = payload
+
+    result = EvaluationResult(
+        results=[
+            MetricResult(name="ade", value=0.25, passed=True),
+            MetricResult(name="bad", value=float("nan"), passed=False),
+        ]
+    )
+    run = FakeRun()
+
+    payload = result.log_to_wandb(run, prefix="eval")
+
+    assert run.payload == payload
+    assert payload["eval/ade"] == 0.25
+    assert payload["eval/ade/passed"] == 1
+    assert "eval/bad" not in payload
+    assert payload["eval/bad/passed"] == 0
+    assert payload["eval/summary/metric_count"] == 2
+
+
+def test_evaluation_result_logs_to_mlflow_run_object() -> None:
+    class FakeMlflow:
+        def __init__(self) -> None:
+            self.metrics = {}
+
+        def log_metric(self, name: str, value: object) -> None:
+            self.metrics[name] = value
+
+    result = EvaluationResult(results=[MetricResult(name="fde", value=0.5, passed=True)])
+    run = FakeMlflow()
+
+    payload = result.log_to_mlflow(run, prefix="policy eval")
+
+    assert run.metrics == payload
+    assert payload["policy_eval/fde"] == 0.5
+    assert payload["policy_eval/summary/strict_passed"] == 1
+
+
 def test_evaluation_result_accepts_metrics_alias() -> None:
     metric = MetricResult(name="example", value=1.0)
     result = EvaluationResult(metrics=[metric])
@@ -143,6 +187,7 @@ def test_evaluation_result_round_trips_json() -> None:
 
     restored = EvaluationResult.from_json(result.to_json())
 
+    assert json.loads(result.to_json())["schema_version"] == "1"
     assert restored.metadata == {"robometrics_version": "test"}
     assert restored.results[0].name == "min_distance_to_actors"
     assert restored.results[0].value == float("inf")
@@ -156,6 +201,17 @@ def test_evaluation_result_round_trips_json() -> None:
         EvaluationResult.from_dict({"results": [1]})
     with pytest.raises(ValueError, match="EvaluationResult JSON"):
         EvaluationResult.from_json("[]")
+
+
+def test_evaluation_result_rejects_unknown_schema_version() -> None:
+    with pytest.raises(ValueError, match="unsupported EvaluationResult schema_version"):
+        EvaluationResult.from_dict({"schema_version": "999", "results": []})
+
+
+def test_evaluation_result_accepts_legacy_payload_without_schema_version() -> None:
+    result = EvaluationResult.from_dict({"results": [], "metadata": {"legacy": True}})
+
+    assert result.metadata == {"legacy": True}
 
 
 def test_evaluation_result_strict_passed_ignores_unthresholded_metrics() -> None:

@@ -6,6 +6,17 @@ containment through `points_in_polygon()`. `collision_rate_obb()` evaluates all
 timesteps for each actor with a batched separating-axis test instead of a Python
 loop per timestep.
 
+For repeatable JSON timing baselines, run:
+
+```bash
+python scripts/benchmark_timing_baselines.py --repeat 3 --output timing_baseline.json
+```
+
+The output contains `schema_version`, `robometrics_version`, per-case run
+durations, best time, mean time, and deterministic case metadata. Commit a
+baseline only when the machine class and workload size are meaningful for your
+project; timing values are expected to vary across laptops and CI runners.
+
 Use this smoke benchmark when changing geometry kernels:
 
 ```python

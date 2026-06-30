@@ -10,6 +10,7 @@ from robometrics import (
     Trajectory,
     UnknownMetricError,
     __version__,
+    ade,
 )
 
 
@@ -76,6 +77,38 @@ def test_evaluator_accepts_trajectory_schema_inputs() -> None:
     assert [metric.name for metric in result.results] == ["ade", "fde"]
     assert result.results[0].value == pytest.approx(0.1)
     assert result.results[1].value == pytest.approx(0.2)
+
+
+def test_evaluator_and_metric_functions_accept_tensor_like_inputs() -> None:
+    class TensorLike:
+        def __init__(self, data: object) -> None:
+            self.data = np.asarray(data, dtype=np.float64)
+            self.calls: list[str] = []
+
+        def detach(self) -> TensorLike:
+            self.calls.append("detach")
+            return self
+
+        def cpu(self) -> TensorLike:
+            self.calls.append("cpu")
+            return self
+
+        def numpy(self) -> np.ndarray:
+            self.calls.append("numpy")
+            return self.data
+
+        def __array__(self, dtype: object = None) -> np.ndarray:
+            raise AssertionError("tensor-like input should be detached before NumPy conversion")
+
+    pred = TensorLike([[0.0, 0.0], [1.0, 0.0]])
+    gt = TensorLike([[0.0, 0.0], [1.2, 0.0]])
+
+    result = Evaluator().evaluate(prediction=pred, ground_truth=gt, metrics=["ade"])
+
+    assert result.results[0].value == pytest.approx(0.1)
+    assert pred.calls[:3] == ["detach", "cpu", "numpy"]
+    assert gt.calls[:3] == ["detach", "cpu", "numpy"]
+    assert ade(TensorLike(pred.data), TensorLike(gt.data)) == pytest.approx(0.1)
 
 
 def test_evaluator_accepts_trajectory_schema_metric_inputs() -> None:

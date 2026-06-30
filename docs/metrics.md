@@ -1,108 +1,171 @@
-# Metrics
+# Metric Catalog
 
-Built-in metrics are registered for evaluation through `robometrics.registry`. The evaluator uses short canonical names for common displacement metrics, including `ade` and `fde`, while aliases remain available through registry lookup.
+Use this page to choose metric families and confirm the direction of each
+metric before wiring thresholds into an evaluator or CI gate. Built-in metrics
+are registered through `robometrics.registry`; common displacement metrics use
+short canonical names such as `ade` and `fde`, while aliases remain available.
 
-Registered aliases:
+<div class="rm-grid rm-grid-3" markdown="1">
+<div class="rm-card" markdown="1">
+**Path quality**
 
-- `average_displacement_error` -> `ade`
-- `final_displacement_error` -> `fde`
-- `minade` -> `min_ade`
-- `minfde` -> `min_fde`
+[Trajectory](metrics/trajectory.md), [Prediction](metrics/prediction.md), and
+[Temporal](metrics/temporal.md) metrics measure tracking error, forecast modes,
+and rollout drift.
+</div>
 
-## Trajectory
+<div class="rm-card" markdown="1">
+**Safety and feasibility**
 
-- `average_displacement_error(pred, gt)`: mean pointwise Euclidean distance.
-- `final_displacement_error(pred, gt)`: final-point Euclidean distance.
-- `hausdorff_distance(pred, gt)`: symmetric Hausdorff distance using all coordinate dimensions.
-- `path_length(traj)`: total Euclidean path length.
-- `curvature(traj)`: approximate planar XY curvature at each point; returns an array.
-- `curvature_profile(traj)`: alias for `curvature(traj)`.
-- `mean_curvature(traj)`: mean planar XY curvature as a scalar.
-- `lateral_error(pred, ref)`: mean absolute planar XY perpendicular error from a reference path.
-- `longitudinal_error(pred, ref)`: mean absolute planar XY along-track error from a reference path.
+[Safety](metrics/safety.md), [Driving](metrics/driving.md), and
+[Physics](metrics/physics.md) metrics inspect collisions, road containment,
+speed, acceleration, jerk, and feasibility constraints.
+</div>
+
+<div class="rm-card" markdown="1">
+**Task and dataset signals**
+
+[Task](metrics/task.md), [Manipulation](metrics/manipulation.md),
+[Coverage](metrics/coverage.md), [Diversity](metrics/diversity.md), and
+[Calibration](metrics/calibration.md) cover completion, contact, exploration,
+sample spread, and confidence quality.
+</div>
+</div>
+
+## Aliases
+
+| Alias | Canonical metric |
+| --- | --- |
+| `average_displacement_error` | `ade` |
+| `final_displacement_error` | `fde` |
+| `minade` | `min_ade` |
+| `minfde` | `min_fde` |
+
+## Family Summary
+
+| Family | Typical inputs | Common units | Direction |
+| --- | --- | --- | --- |
+| [Trajectory](metrics/trajectory.md) | `Nx2` or `Nx3` paths | meters, `1/m` | Mostly lower is better |
+| [Prediction](metrics/prediction.md) | `KxTx2` or `KxTx3` modes | meters, ratio, nats | Mostly lower is better |
+| [Driving](metrics/driving.md) | Ranked predictions, drivable polygons, actors | meters, ratio, seconds | Mixed |
+| [Safety](metrics/safety.md) | Ego path, actors, lane/drivable geometry | ratio, meters, seconds | Mixed |
+| [Comfort](metrics/comfort.md) | Sampled trajectories and `dt` | `m/s^2`, `m/s^3`, score | Lower magnitude or higher score |
+| [Physics](metrics/physics.md) | Trajectories, timestamps, constraints, forces | speed, acceleration, score | Mixed |
+| [Task](metrics/task.md) | Outcomes, positions, goals | ratio | Higher is better |
+| [Manipulation](metrics/manipulation.md) | Grasps, contact forces, joints, end-effector paths | ratio, force, meters | Mixed |
+| [Calibration](metrics/calibration.md) | Confidence and correctness arrays | ratio | Lower is better |
+| [Coverage](metrics/coverage.md) | Finite sample matrices | ratio, cells | Higher is better |
+| [Diversity](metrics/diversity.md) | Embeddings, trajectories, modes | behavior units, meters | Higher is better |
+| [Temporal](metrics/temporal.md) | `TxD` or `BxTxD` rollouts/actions | error/timestep, score | Mixed |
+
+## Registered Metrics
+
+### Trajectory
+
+| Metric | What it reports | Direction |
+| --- | --- | --- |
+| `ade` / `average_displacement_error` | Mean pointwise Euclidean distance | Lower is better |
+| `fde` / `final_displacement_error` | Final-point Euclidean distance | Lower is better |
+| `hausdorff_distance` | Worst-case geometric mismatch between point sets | Lower is better |
+| `path_length` | Total traveled distance | Context dependent |
+| `curvature` / `curvature_profile` | Planar XY curvature profile | Lower is smoother |
+| `mean_curvature` | Mean planar XY curvature | Lower is smoother |
+| `lateral_error` | Perpendicular deviation from a reference path | Lower is better |
+| `longitudinal_error` | Along-track lead or lag from a reference path | Lower is better |
 
 ADE, FDE, Hausdorff distance, prediction distance metrics, and path length use
 all provided coordinate dimensions. Curvature, lateral/longitudinal error,
 safety geometry, and TTC are planar XY metrics.
 
-## Prediction
+### Prediction
 
-- `min_ade(predictions, gt)`: best average displacement error across modes.
-- `min_fde(predictions, gt)`: best final displacement error across modes.
-- `miss_rate(predictions, gt, threshold)`: per-sample miss indicator; returns `1.0` when all modes miss the final-point threshold, otherwise `0.0`. Average across samples for a dataset miss rate.
-- `topk_trajectory_error(predictions, gt, k)`: best ADE among the first `k` modes, assuming predictions are already ranked by descending confidence.
-- `prediction_nll(predictions, log_weights, gt)`: mean negative log-likelihood of the ground truth under weighted Gaussian trajectory modes.
-- `displacement_at_k(predictions, gt, k)`: best displacement error among the first `k` ranked prediction modes.
+| Metric | What it reports | Direction |
+| --- | --- | --- |
+| `min_ade` | Best ADE across prediction modes | Lower is better |
+| `min_fde` | Best FDE across prediction modes | Lower is better |
+| `miss_rate` | Whether all modes miss the final-point threshold | Lower is better |
+| `topk_trajectory_error` | Best ADE among the first `k` ranked modes | Lower is better |
+| `prediction_nll` | Confidence-weighted negative log likelihood | Lower is better |
+| `displacement_at_k` | Best displacement error among the first `k` ranked modes | Lower is better |
 
-## Temporal and Robustness
+### Temporal And Robustness
 
-- `temporal_drift(predicted, reference)`: least-squares slope of per-timestep L2 error over timestep index for `TxD` or `BxTxD` arrays. Perfect prediction returns `0.0`; increasing error returns a positive value; decreasing error returns a negative value.
-- `action_jerk(actions, dt=1.0)`: mean squared L2 norm of the second finite difference of `TxD` or `BxTxD` action sequences divided by `dt**2`. Lower is smoother. Constant and linear action sequences return `0.0`.
-- `control_smoothness(actions, dt=1.0)`: bounded score `1 / (1 + action_jerk(actions, dt))`; higher is smoother and constant/linear controls return `1.0`.
-- `long_horizon_drift(predicted, reference)`: later-weighted mean L2 rollout error with weights `1..T`. Perfect rollouts return `0.0`; the same error is penalized more when it appears later in the horizon.
-- `compounding_error_index(errors_or_predicted, reference=None, epsilon=1e-12)`: normalized non-negative growth index `max(0, final_error - initial_error) / (mean_error + epsilon)`. It accepts explicit error curves shaped `T` or `BxT`, or predicted/reference state arrays shaped `TxD` or `BxTxD`. `0.0` means error did not compound from first to final timestep.
+| Metric | What it reports | Direction |
+| --- | --- | --- |
+| `temporal_drift` | Slope of per-timestep L2 error | Lower is better |
+| `action_jerk` | Mean squared second finite difference of actions | Lower is smoother |
+| `control_smoothness` | Bounded smoothness score from action jerk | Higher is smoother |
+| `long_horizon_drift` | Later-weighted rollout error | Lower is better |
+| `compounding_error_index` | Normalized non-negative error growth | Lower is better |
 
-## Comfort and Control
+### Comfort And Control
 
-- `acceleration(traj, dt)`: approximate per-step acceleration vectors.
-- `jerk(traj, dt)`: approximate per-step jerk vectors.
-- `acceleration_magnitude(traj, dt)`: per-step acceleration magnitudes.
-- `jerk_magnitude(traj, dt)`: per-step jerk magnitudes.
-- `jerk_cost(traj, dt)`: mean squared jerk magnitude.
-- `max_acceleration(traj, dt)`: maximum acceleration magnitude.
-- `mean_acceleration(traj, dt)`: mean acceleration magnitude.
-- `rms_acceleration(traj, dt)`: root-mean-square acceleration magnitude.
-- `max_deceleration(traj, dt)`: maximum longitudinal deceleration magnitude.
-- `smoothness_score(traj)`: bounded shape score where `1.0` is smoother. The formula is `1 / (1 + log1p(cost))`, where `cost` is mean squared third finite difference normalized by mean squared step length. It is unitless, spatial-scale-invariant for geometrically similar paths, and separate from physical `jerk_cost(traj, dt)`. Trajectories shorter than four points return `1.0` with a `RuntimeWarning` because third finite differences are not measurable.
+| Metric | What it reports | Direction |
+| --- | --- | --- |
+| `acceleration` | Per-step acceleration vectors | Lower magnitude is smoother |
+| `jerk` | Per-step jerk vectors | Lower magnitude is smoother |
+| `acceleration_magnitude` | Per-step acceleration magnitudes | Lower is smoother |
+| `jerk_magnitude` | Per-step jerk magnitudes | Lower is smoother |
+| `jerk_cost` | Mean squared jerk magnitude | Lower is smoother |
+| `max_acceleration` | Maximum acceleration magnitude | Lower is smoother |
+| `mean_acceleration` | Mean acceleration magnitude | Lower is smoother |
+| `rms_acceleration` | Root-mean-square acceleration magnitude | Lower is smoother |
+| `max_deceleration` | Maximum longitudinal deceleration magnitude | Lower is smoother |
+| `smoothness_score` | Unitless shape score from normalized third finite difference | Higher is smoother |
 
-## Safety
+`smoothness_score` is spatial-scale-invariant for geometrically similar paths
+and separate from physical `jerk_cost(traj, dt)`. Trajectories shorter than four
+points return `1.0` with a `RuntimeWarning` because third finite differences
+are not measurable.
 
-- `collision_rate(ego_traj, actor_trajs, ego_radius, actor_radius)`: fraction of actor-covered ego timesteps colliding with any actor. For example, if the ego has five timesteps and the only actor has three, the denominator is the first three aligned ego timesteps.
-- `collision_rate_obb(ego_traj, ego_dims, ego_yaws, actor_trajs, actor_dims, actor_yaws)`: fraction of actor-covered ego timesteps with oriented-box overlap.
-- `time_to_collision(ego_state, actor_state, *, dt=None)`: constant-velocity disc-agent TTC. Use `AgentState`, dicts, flat `[x, y, vx, vy, radius]` arrays, or trajectory arrays with `dt`.
-- `min_distance_to_actors(ego_traj, actor_trajs)`: minimum time-aligned XY distance to actors. Returns `math.inf` when no actor trajectories are provided.
-- `lane_departure_rate(ego_traj, lane_boundary)`: fraction of ego points outside a polygonal lane boundary.
-- `offroad_rate(ego_traj, drivable_polygons)`: fraction of ego positions outside all drivable-area polygons.
-- `soft_ttc(ego_traj, actor_trajs, dt)`: minimum constant-velocity TTC across rollout timesteps.
-- `recovery_success_rate(opportunities, successes)`: successful recoveries divided by recovery opportunities. No opportunities returns `nan` because the denominator is undefined.
-- `failure_severity(failures, aggregation="mean")`: mean or max severity over numeric non-negative severity values, or known category labels from `minor` through `fatal`. Empty failure collections return `0.0`.
-- `near_miss_rate(clearances, threshold, collision_mask=None)`: fraction of clearance samples with `clearance < threshold` and no collision. Collisions are excluded from near-miss counts by default.
-- `intervention_free_time(timestamps, interventions, mode="longest")`: longest or mean duration of consecutive non-intervention segments. Segment duration is `timestamp[last_false] - timestamp[first_false]`.
+### Safety And Driving
 
-## Coverage
+| Metric | What it reports | Direction |
+| --- | --- | --- |
+| `collision_rate` | Disc collision fraction across actor-covered timesteps | Lower is better |
+| `collision_rate_obb` | Oriented-box collision fraction | Lower is better |
+| `time_to_collision` | Constant-velocity disc-agent TTC | Higher is safer |
+| `min_distance_to_actors` | Closest time-aligned XY actor distance | Higher is safer |
+| `lane_departure_rate` | Fraction of ego points outside a lane polygon | Lower is better |
+| `offroad_rate` | Fraction of ego positions outside drivable areas | Lower is better |
+| `soft_ttc` | Minimum rollout TTC under local velocity estimates | Higher is safer |
+| `recovery_success_rate` | Successful recoveries divided by opportunities | Higher is better |
+| `failure_severity` | Mean or max incident severity | Lower is better |
+| `near_miss_rate` | Fraction of clearances below threshold, excluding collisions | Lower is better |
+| `intervention_free_time` | Longest or mean non-intervention segment duration | Higher is better |
 
-- `coverage_score(samples, bounds, bins=10)`: grid coverage for finite `NxD` samples. Bounds are `Dx2`, bins may be scalar or per-dimension, and the score is `occupied_bins / total_bins`. Duplicate samples do not increase coverage. Out-of-bounds samples are ignored.
-- `workspace_coverage(points, cell_size=1.0)`: count of unique discretized workspace cells visited by sampled positions.
+### Coverage, Calibration, Diversity, Task, And Manipulation
 
-## Calibration
+| Metric | What it reports | Direction |
+| --- | --- | --- |
+| `coverage_score` | Occupied finite grid bins divided by total bins | Higher is better |
+| `workspace_coverage` | Unique discretized workspace cells visited | Higher is better |
+| `calibration_error` | Expected calibration error | Lower is better |
+| `behavioral_diversity` | Mean pairwise distance between behavior embeddings | Higher is better |
+| `trajectory_diversity` | Mean pairwise ADE between prediction modes | Higher is better |
+| `task_success_rate` | Mean binary task success | Higher is better |
+| `goal_reaching_accuracy` | Fraction of positions within goal tolerance | Higher is better |
+| `grasp_success_rate` | Successful grasps divided by attempts | Higher is better |
+| `contact_richness` | Fraction of meaningful contact-force timesteps | Higher is better |
+| `force_limit_compliance` | Fraction of force samples inside the limit | Higher is better |
+| `joint_limit_violation_rate` | Fraction of configurations outside joint limits | Lower is better |
+| `end_effector_tracking_error` | Mean end-effector tracking error | Lower is better |
 
-- `calibration_error(confidences, correctness, n_bins=10)`: expected calibration error over uniform bins in `[0, 1]`. Lower is better. Confidence values must be probabilities and correctness labels must be boolean or 0/1.
+### Physical Consistency
 
-## Physical Consistency
+| Metric | What it reports | Direction |
+| --- | --- | --- |
+| `speed_profile` | Speed estimate at each trajectory point | Context dependent |
+| `acceleration_limits_violated` | Whether acceleration exceeds a limit | Lower is better |
+| `jerk_limits_violated` | Whether jerk exceeds a limit | Lower is better |
+| `curvature_limits_violated` | Whether curvature exceeds a limit | Lower is better |
+| `dynamic_feasibility_score` | Worst-relative-violation feasibility score | Higher is more feasible |
+| `kinematic_feasibility` | Velocity, acceleration, and curvature feasibility score | Higher is more feasible |
+| `dynamic_feasibility` | Force, acceleration, torque, and friction feasibility score | Higher is more feasible |
+| `physics_violation_rate` | Fraction of timesteps or events with any violation | Lower is better |
 
-- `speed_profile(traj, dt)`: speed at each point. Returns length N for an N-point trajectory; endpoint values are finite-difference gradient estimates rather than `N-1` interval speeds.
-- `acceleration_limits_violated(traj, dt, max_accel)`: thresholded acceleration result.
-- `jerk_limits_violated(traj, dt, max_jerk)`: thresholded jerk result.
-- `curvature_limits_violated(traj, max_curvature)`: thresholded curvature result.
-- `dynamic_feasibility_score(traj, dt, constraints)`: `0..1` feasibility score for optional speed, acceleration, jerk, and curvature limits. The score is based on the worst relative violation, so adding satisfied constraints does not dilute an existing violation. Zero limits are accepted; positive observed motion against a zero limit scores `0.0`. Supported constraint keys are `max_speed`, `max_accel`, `max_jerk`, and `max_curvature`; unknown keys raise `ValueError`.
-- `kinematic_feasibility(positions, dt=1.0, timestamps=None, max_velocity=None, max_acceleration=None, max_curvature=None)`: `0..1` score from finite-difference velocity, acceleration, and optional curvature limit checks. Higher is more feasible.
-- `dynamic_feasibility(mass, accelerations, ...)`: `0..1` Newtonian feasibility score for optional max force, max acceleration, max torque, and friction-cone checks. Higher is more feasible and no configured constraints returns `1.0` after input validation.
-- `physics_violation_rate(violations)`: fraction of timesteps/events with any violation. Mapping values are aggregated by logical OR; lower is better.
-
-## Diversity
-
-- `behavioral_diversity(behaviors, max_pairs=10000, normalize=False)`: mean pairwise Euclidean distance between unique behavior embeddings or flattened trajectories/actions. Duplicate behaviors do not inflate diversity. Pair sampling is deterministic when capped by `max_pairs`.
-- `trajectory_diversity(predictions)`: mean pairwise ADE between multi-modal prediction trajectories.
-
-## Task And Manipulation
-
-- `task_success_rate(outcomes)`: mean of binary task success indicators.
-- `goal_reaching_accuracy(positions, goals, tolerance)`: fraction of positions within tolerance of corresponding goals.
-- `grasp_success_rate(attempts, successes)`: successful grasps divided by attempted grasps.
-- `contact_richness(contact_forces, threshold=0.1)`: fraction of timesteps with meaningful contact force magnitude.
-- `force_limit_compliance(forces, max_force)`: fraction of force samples within the configured force limit.
-- `joint_limit_violation_rate(joint_angles, lower_limits, upper_limits)`: fraction of configurations with any joint outside limits.
-- `end_effector_tracking_error(ee_traj, target_traj)`: mean Euclidean end-effector tracking error.
+`dynamic_feasibility_score` supports `max_speed`, `max_accel`, `max_jerk`, and
+`max_curvature`. Unknown constraint keys raise `ValueError`.
 
 ## Category Taxonomy
 
@@ -115,12 +178,14 @@ selecting multiple categories or explicit metric names.
 
 ## Edge-Case Behavior
 
-- Empty arrays, one-dimensional arrays, invalid shapes, and trajectories with `NaN` or infinite values raise `ValueError`.
-- Single-point trajectories are valid for metrics that can define a degenerate result, such as `path_length`, `curvature`, `speed_profile`, comfort metrics, and dynamic feasibility checks.
-- `Nx3` trajectories are supported anywhere trajectory inputs accept `Nx2`; planar metrics such as `curvature` use the XY components.
-- Thresholded physics metrics return structured `MetricResult` objects with `value`, `unit`, `passed`, `threshold`, and `metadata`.
-- `min_distance_to_actors(ego_traj, [])` returns `math.inf` because there is no finite actor distance to report.
-- `recovery_success_rate()` returns `nan` when there are no recovery opportunities.
-- `failure_severity([])` returns `0.0`.
-- `coverage_score()` ignores out-of-bounds samples instead of clipping them.
-- `physics_violation_rate()` uses logical OR across violation types by default.
+| Case | Behavior |
+| --- | --- |
+| Empty arrays, one-dimensional arrays, invalid shapes, `NaN`, or infinite values | Raise `ValueError` |
+| Single-point trajectories | Accepted by metrics with defined degenerate outputs |
+| `Nx3` trajectories | Supported wherever trajectory inputs accept `Nx2`; planar metrics use XY |
+| Thresholded physics metrics | Return `MetricResult` with `value`, `unit`, `passed`, `threshold`, and `metadata` |
+| `min_distance_to_actors(ego_traj, [])` | Returns `math.inf` |
+| `recovery_success_rate()` with no opportunities | Returns `nan` |
+| `failure_severity([])` | Returns `0.0` |
+| `coverage_score()` with out-of-bounds samples | Ignores out-of-bounds samples instead of clipping |
+| `physics_violation_rate()` with multiple violation types | Uses logical OR by default |

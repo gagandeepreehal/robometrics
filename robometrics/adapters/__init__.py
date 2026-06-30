@@ -7,6 +7,7 @@ from robometrics.adapters.generic import GenericCSVAdapter, GenericJSONAdapter
 from robometrics.adapters.lerobot import LeRobotStyleAdapter
 from robometrics.adapters.mcap import MCAPAdapter
 from robometrics.adapters.rlds import RLDSStyleAdapter
+from robometrics.adapters.ros2_bag import ROS2BagJSONAdapter
 from robometrics.adapters.ros_style import ROSStyleAdapter
 
 __all__ = [
@@ -15,6 +16,7 @@ __all__ = [
     "LeRobotStyleAdapter",
     "MCAPAdapter",
     "RLDSStyleAdapter",
+    "ROS2BagJSONAdapter",
     "ROSStyleAdapter",
     "TrajectoryAdapter",
     "get_adapter",
@@ -31,6 +33,9 @@ def get_adapter(name: str) -> TrajectoryAdapter:
         "generic-json": GenericJSONAdapter(),
         "ros": ROSStyleAdapter(),
         "ros-style": ROSStyleAdapter(),
+        "ros2": ROS2BagJSONAdapter(),
+        "ros2-json": ROS2BagJSONAdapter(),
+        "ros2-bag-json": ROS2BagJSONAdapter(),
         "lerobot": LeRobotStyleAdapter(),
         "lerobot-style": LeRobotStyleAdapter(),
         "rlds": RLDSStyleAdapter(),

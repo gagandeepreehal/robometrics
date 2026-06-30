@@ -14,6 +14,7 @@ python examples/safety_metrics.py
 python examples/comfort_metrics.py
 python examples/new_metrics_example.py
 python examples/load_from_csv.py
+python examples/dataset_loader_evaluation.py
 ```
 
 ## Contribution Scope

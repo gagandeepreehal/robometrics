@@ -1,6 +1,35 @@
 # RoboMetrics
 
+<div class="rm-hero" markdown="1">
 RoboMetrics is a lightweight Python library for evaluating robotics and autonomy outputs with typed, local metric functions. It covers trajectories, multi-modal prediction, driving safety, comfort, physics feasibility, task outcomes, manipulation signals, calibration, coverage, and experiment comparison without requiring a simulator, dashboard, ROS install, or cloud service.
+</div>
+
+<div class="rm-badges" markdown="1">
+<span class="rm-badge">Local-first</span>
+<span class="rm-badge">Typed Python API</span>
+<span class="rm-badge">CLI-ready JSON</span>
+<span class="rm-badge">Simulator-agnostic</span>
+</div>
+
+<div class="rm-grid rm-grid-3" markdown="1">
+<div class="rm-card" markdown="1">
+[Start in Python](quickstart.md)
+
+Install the package, run `Evaluator`, and inspect `EvaluationResult` output.
+</div>
+
+<div class="rm-card" markdown="1">
+[Start from files](guides/policy_output.md)
+
+Validate CSV or JSON policy outputs, evaluate them, and generate a report.
+</div>
+
+<div class="rm-card" markdown="1">
+[Pick metrics](metrics.md)
+
+Browse the metric families, units, directionality, and edge-case behavior.
+</div>
+</div>
 
 ## Installation
 
@@ -14,7 +43,7 @@ Install optional I/O support when you want CSV helpers that use pandas:
 pip install "robometrics[io]"
 ```
 
-## 30-Second Quickstart
+## 30-Second Evaluation
 
 ```python
 import numpy as np
@@ -40,15 +69,47 @@ result = Evaluator().evaluate_dataset(
 print(result.to_markdown())
 ```
 
-## Documentation Map
+## Choose Your Path
 
-- `docs/metrics/` documents metric families with units, formulas, references, and directionality.
-- `docs/guides/comparing_policies.md` shows policy checkpoint comparison with `EvaluationResult.compare()`.
-- `docs/guides/ci_integration.md` shows how to wire `robometrics compare` into GitHub Actions.
-- `docs/guides/writing_a_pack.md` shows third-party metric pack registration.
-- `docs/guides/ros_adapter.md` shows ROS message conversion when ROS is installed and sourced.
-- `docs/performance.md` tracks geometry-kernel performance expectations.
-- `docs/roadmap.md` states the alpha stability contract and launch roadmap.
-- `docs/api.md` lists the public symbols exported from `robometrics.__all__`.
-- `examples/probabilistic_prediction.py`, `examples/custom_metric_pack.py`, and
-  `examples/history_summary.py` show the 0.2 worked-example paths.
+<div class="rm-grid rm-grid-2" markdown="1">
+<div class="rm-card" markdown="1">
+**Evaluate policy outputs**
+
+Use the [policy-output guide](guides/policy_output.md) when your data comes from Isaac, MuJoCo, LeRobot, ROS 2, logs, or a custom rollout exporter.
+</div>
+
+<div class="rm-card" markdown="1">
+**Compare checkpoints**
+
+Use [Comparing Policies](guides/comparing_policies.md) for baseline-vs-candidate comparisons and `EvaluationResult.compare()`.
+</div>
+
+<div class="rm-card" markdown="1">
+**Automate CI checks**
+
+Use [CI Integration](guides/ci_integration.md) to wire `robometrics compare` into GitHub Actions.
+</div>
+
+<div class="rm-card" markdown="1">
+**Extend the registry**
+
+Use [Writing a Pack](guides/writing_a_pack.md) when your project needs custom metrics while keeping the same evaluator and CLI surface.
+</div>
+</div>
+
+## What To Read Next
+
+| Need | Page |
+| --- | --- |
+| Confirm project fit and boundaries | [What RoboMetrics Is And Isn't](what_it_is.md) |
+| Learn accepted input shapes | [Quickstart](quickstart.md) |
+| Run multiple metrics together | [Evaluation Guide](evaluation.md) |
+| Load directories or matched datasets | [Loader Examples](guides/loader_examples.md) |
+| Handle result JSON versions | [Result Schema Migration](guides/result_schema_migration.md) |
+| Use the shell interface | [CLI Commands](cli.md) |
+| Browse metric units and direction | [Metric Catalog](metrics.md) |
+| Check exported symbols | [API Reference](api.md) |
+
+<div class="rm-callout" markdown="1">
+RoboMetrics is the metrics layer. It does not replace a simulator, planner, replay system, dashboard, or experiment tracker; it gives those systems a small, explicit evaluation contract.
+</div>

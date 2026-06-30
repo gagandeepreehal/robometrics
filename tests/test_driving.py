@@ -38,6 +38,7 @@ def test_soft_ttc_stationary_collision_and_diverging_rollout() -> None:
     actor = np.array([[10.0, 0.0], [11.0, 0.0], [12.0, 0.0]])
 
     assert soft_ttc(stationary, [stationary], dt=1.0) == 0.0
+    assert soft_ttc(ego, [], dt=1.0) == inf
     assert soft_ttc(ego, [actor], dt=1.0) == inf
 
 
@@ -75,8 +76,16 @@ def test_prediction_nll_rejects_shape_mismatches() -> None:
     gt = np.array([[0.0, 0.0], [1.0, 0.0]])
     predictions = gt[None, :, :]
 
+    with pytest.raises(ValueError, match="requires gt or ground_truth"):
+        prediction_nll(predictions, [0.0])
+    with pytest.raises(ValueError, match="provide either"):
+        prediction_nll(predictions, [0.0], gt, ground_truth=gt)
+    with pytest.raises(ValueError, match="K-length"):
+        prediction_nll(predictions, [[0.0]], gt)
     with pytest.raises(ValueError, match="log_weights length"):
         prediction_nll(predictions, [0.0, 0.0], gt)
+    with pytest.raises(ValueError, match="finite"):
+        prediction_nll(predictions, [np.inf], gt)
     with pytest.raises(ValueError, match="timesteps/dimensions"):
         prediction_nll(predictions, [0.0], np.array([[0.0, 0.0]]))
 

@@ -4,14 +4,32 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robometrics"
-version = "0.2.0"
+version = "0.3.0"
 description = "Lightweight robotics metrics for Python."
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
 authors = [{ name = "RoboMetrics contributors" }]
 maintainers = [{ name = "RoboMetrics contributors" }]
-keywords = ["robotics", "metrics", "trajectories", "prediction", "safety", "numpy"]
+keywords = [
+  "robotics",
+  "metrics",
+  "trajectory",
+  "trajectories",
+  "evaluation",
+  "benchmarking",
+  "ADE",
+  "FDE",
+  "collision",
+  "safety",
+  "autonomous",
+  "policy evaluation",
+  "robot learning",
+  "imitation learning",
+  "motion planning",
+  "prediction",
+  "numpy",
+]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -24,6 +42,8 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Physics",
   "Typing :: Typed",
 ]
 dependencies = [
@@ -34,6 +54,13 @@ dependencies = [
 [project.optional-dependencies]
 io = ["pandas>=1.5"]
 docs = ["mkdocs>=1.6"]
+mcap = ["mcap>=1.2"]
+wandb = ["wandb>=0.16"]
+mlflow = ["mlflow>=2.10"]
+loggers = [
+  "mlflow>=2.10",
+  "wandb>=0.16",
+]
 dev = [
   "coverage[toml]>=7",
   "mypy>=1.10,<1.18",

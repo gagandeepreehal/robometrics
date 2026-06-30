@@ -9,9 +9,23 @@ equivalent when it is on `PATH`.
 ## Evaluate
 
 ```bash
+cat > predictions.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.0,0.0
+2,2.0,0.0
+CSV
+
+cat > ground_truth.csv <<'CSV'
+t,x,y
+0,0.0,0.0
+1,1.1,0.0
+2,2.1,0.0
+CSV
+
 python -m robometrics evaluate \
-  --pred examples/fixtures/predictions.csv \
-  --gt examples/fixtures/ground_truth.csv \
+  --pred predictions.csv \
+  --gt ground_truth.csv \
   --metrics ade fde \
   --threshold ade=0.5 \
   --threshold fde=1.0 \
@@ -21,6 +35,8 @@ python -m robometrics evaluate \
 `evaluate` validates that both files exist, loads CSV or JSON trajectory data
 through the existing IO helpers, runs the requested metrics using each metric's
 registry compatibility rules, and writes an `EvaluationResult` JSON file.
+The file includes top-level `"schema_version": "1"` as the stable contract for
+CI parsers and downstream tools.
 Aligned-sample metrics such as `ade` and `fde` require matching prediction and
 ground-truth shapes. Set-based metrics such as `hausdorff_distance` can compare
 different numbers of points when coordinate dimensionality matches.
@@ -31,8 +47,8 @@ metrics pass with `value <= threshold`, and higher-is-better metrics pass with
 ## Validate
 
 ```bash
-python -m robometrics validate examples/fixtures/predictions.csv
-python -m robometrics validate examples/fixtures/predictions.csv --output validation.json
+python -m robometrics validate predictions.csv
+python -m robometrics validate predictions.csv --output validation.json
 ```
 
 `validate` inspects trajectory-style CSV/JSON files for missing required
@@ -56,8 +72,8 @@ the result payload contains comparison metadata.
 ```bash
 python -m robometrics benchmark list
 python -m robometrics benchmark run policy_regression_ci \
-  --pred examples/fixtures/predictions.csv \
-  --gt examples/fixtures/ground_truth.csv \
+  --pred predictions.csv \
+  --gt ground_truth.csv \
   --output result.json
 ```
 

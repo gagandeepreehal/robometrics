@@ -64,8 +64,14 @@ def test_calibration_error_batches_are_flattened_and_deterministic() -> None:
 
 
 def test_calibration_error_rejects_invalid_inputs() -> None:
+    with pytest.raises(ValueError, match="requires correctness or outcomes"):
+        calibration_error([0.5])
+    with pytest.raises(ValueError, match="provide either"):
+        calibration_error([0.5], [1], outcomes=[1])
     with pytest.raises(ValueError, match="same shape"):
         calibration_error([0.5, 0.6], [1])
+    with pytest.raises(ValueError, match="at least one value"):
+        calibration_error([], [])
     with pytest.raises(ValueError, match=r"\[0, 1\]"):
         calibration_error([1.2], [1])
     with pytest.raises(ValueError, match="0/1"):

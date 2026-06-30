@@ -34,6 +34,7 @@ def render_html_report(
     summary = result.summary()
     metadata = result.metadata
     comparison = _comparison_payload(raw)
+    schema_version = raw.get("schema_version", result.schema_version)
     rows = "\n".join(_metric_row(metric.to_dict()) for metric in result.results)
 
     return (
@@ -59,7 +60,7 @@ def render_html_report(
         "<body>\n"
         "  <h1>RoboMetrics Report</h1>\n"
         "  <h2>Summary</h2>\n"
-        f"  {_summary_table(summary)}\n"
+        f"  {_summary_table(summary, schema_version=schema_version)}\n"
         "  <h2>Metric Values</h2>\n"
         "  <table>\n"
         "    <thead><tr><th>Metric</th><th>Value</th><th>Unit</th>"
@@ -96,8 +97,11 @@ def _metric_row(metric: dict[str, Any]) -> str:
     )
 
 
-def _summary_table(summary: dict[str, Any]) -> str:
+def _summary_table(summary: dict[str, Any], *, schema_version: Any) -> str:
     rows = []
+    rows.append(
+        f"<tr><th>{_escape('schema_version')}</th><td>{_escape(schema_version)}</td></tr>"
+    )
     keys = (
         "metric_count",
         "passed",

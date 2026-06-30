@@ -99,6 +99,13 @@ those export paths.
 `to_json()` emits standards-compliant JSON. Non-finite metric values such as `NaN` or `inf` are exported as `null`.
 Each affected metric includes `metadata["value_serialization"]` so strict JSON
 consumers can distinguish `nan`, `inf`, and `-inf` from ordinary null values.
+Every `EvaluationResult` JSON object includes top-level `"schema_version": "1"`.
+Treat that field as the stable machine-readable contract for CI parsers,
+dashboards, and experiment trackers. New `1.x`-compatible releases may add
+fields, but they must not remove or rename existing schema-version-1 fields.
+Readers should reject unknown non-`1` versions rather than silently accepting a
+new output contract. See the [result schema migration guide](guides/result_schema_migration.md)
+for reader and migration policy.
 
 `summary()` includes per-unit summaries when units are mixed. The legacy
 aggregate is still present for convenience, but aggregate statistics are `None`
@@ -153,6 +160,8 @@ min, max, standard deviation, raw values, and sample errors in metadata.
 When `bootstrap_ci` is set, `bootstrap_seed` controls the random resampling used
 for confidence intervals; the default `0` preserves reproducible output, and
 passing another integer changes the resampling stream.
+For file-backed dataset construction, see the
+[loader examples guide](guides/loader_examples.md).
 
 ## Registry
 

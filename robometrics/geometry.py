@@ -18,7 +18,7 @@ else:
 
 def as_trajectory(data: ArrayLike, *, name: str = "trajectory") -> FloatArray:
     """Return a finite non-empty Nx2 or Nx3 trajectory array."""
-    arr = np.asarray(data, dtype=np.float64)
+    arr = np.asarray(as_numpy_compatible(data), dtype=np.float64)
     if arr.ndim != 2 or arr.shape[1] not in (2, 3):
         raise ValueError(f"{name} must be a Nx2 or Nx3 array")
     if arr.shape[0] == 0:
@@ -30,7 +30,7 @@ def as_trajectory(data: ArrayLike, *, name: str = "trajectory") -> FloatArray:
 
 def as_prediction_set(data: ArrayLike, *, name: str = "predictions") -> FloatArray:
     """Return a finite non-empty KxTx2 or KxTx3 prediction array."""
-    arr = np.asarray(data, dtype=np.float64)
+    arr = np.asarray(as_numpy_compatible(data), dtype=np.float64)
     if arr.ndim != 3 or arr.shape[2] not in (2, 3):
         raise ValueError(f"{name} must be a KxTx2 or KxTx3 array")
     if arr.shape[0] == 0 or arr.shape[1] == 0:
@@ -47,7 +47,7 @@ def as_numeric_array(
     allow_empty: bool = False,
 ) -> FloatArray:
     """Return a finite numeric NumPy array without changing its rank."""
-    arr = np.asarray(data, dtype=np.float64)
+    arr = np.asarray(as_numpy_compatible(data), dtype=np.float64)
     if arr.size == 0 and not allow_empty:
         raise ValueError(f"{name} must contain at least one value")
     if not np.all(np.isfinite(arr)):
@@ -71,7 +71,7 @@ def as_batch_time_array(data: ArrayLike, *, name: str = "values") -> FloatArray:
 
 def as_1d_array(data: ArrayLike, *, name: str) -> FloatArray:
     """Return a finite non-empty 1D numeric array."""
-    arr = np.asarray(data, dtype=np.float64)
+    arr = np.asarray(as_numpy_compatible(data), dtype=np.float64)
     if arr.ndim != 1:
         raise ValueError(f"{name} must be a 1D array")
     if arr.shape[0] == 0:
@@ -88,7 +88,7 @@ def as_boolean_mask(
     allow_empty: bool = False,
 ) -> NDArray[np.bool_]:
     """Return a boolean mask from bool or 0/1 numeric input."""
-    raw = np.asarray(data)
+    raw = np.asarray(as_numpy_compatible(data))
     if raw.dtype == np.bool_:
         if raw.size == 0 and not allow_empty:
             raise ValueError(f"{name} must contain at least one value")
@@ -102,7 +102,7 @@ def as_boolean_mask(
 
 def as_points(data: ArrayLike, *, name: str) -> FloatArray:
     """Return a finite non-empty NxD point array."""
-    arr = np.asarray(data, dtype=np.float64)
+    arr = np.asarray(as_numpy_compatible(data), dtype=np.float64)
     if arr.ndim != 2:
         raise ValueError(f"{name} must be a NxD array")
     if arr.shape[0] == 0:
@@ -180,16 +180,38 @@ def validate_timestamps(data: ArrayLike, *, name: str = "timestamps") -> FloatAr
     return timestamps
 
 
+def as_numpy_compatible(data: Any) -> Any:
+    """Return array-like data that NumPy can consume, including PyTorch tensors."""
+    if _is_tensor_like(data):
+        return data.detach().cpu().numpy()
+    if isinstance(data, list) and any(_is_tensor_like(item) for item in data):
+        return [as_numpy_compatible(item) for item in data]
+    if isinstance(data, tuple) and any(_is_tensor_like(item) for item in data):
+        return tuple(as_numpy_compatible(item) for item in data)
+    return data
+
+
+def _is_tensor_like(value: Any) -> bool:
+    if isinstance(value, np.ndarray):
+        return False
+    return (
+        callable(getattr(value, "detach", None))
+        and callable(getattr(value, "cpu", None))
+        and callable(getattr(value, "numpy", None))
+    )
+
+
 def as_actor_trajectories(actor_trajs: object) -> list[FloatArray]:
     """Normalize actor trajectories to a list of finite Nx2/Nx3 arrays."""
+    coerced = as_numpy_compatible(actor_trajs)
     try:
-        arr = np.asarray(actor_trajs, dtype=np.float64)
+        arr = np.asarray(coerced, dtype=np.float64)
     except (TypeError, ValueError):
-        if not isinstance(actor_trajs, Iterable):
+        if not isinstance(coerced, Iterable):
             raise ValueError("actor_trajs must be an actor trajectory or iterable") from None
         return [
             as_trajectory(actor, name=f"actor_trajs[{index}]")
-            for index, actor in enumerate(actor_trajs)
+            for index, actor in enumerate(coerced)
         ]
 
     if arr.size == 0:

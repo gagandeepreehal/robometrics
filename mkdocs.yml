@@ -5,6 +5,7 @@ repo_url: https://github.com/gagandeepreehal/robometrics
 repo_name: gagandeepreehal/robometrics
 edit_uri: edit/main/docs/
 use_directory_urls: true
+strict: true
 
 theme:
   name: readthedocs
@@ -30,16 +31,18 @@ extra_css:
   - stylesheets/extra.css
 
 nav:
-  - Getting Started:
-      - Home: index.md
+  - Start Here:
+      - Overview: index.md
       - Quickstart: quickstart.md
+      - What It Is: what_it_is.md
+      - Run From Policy Output: guides/policy_output.md
   - Core API:
       - Evaluation Guide: evaluation.md
       - Evaluator Examples: evaluator.md
       - CLI Commands: cli.md
       - API Reference: api.md
   - Metrics:
-      - Overview: metrics.md
+      - Metric Catalog: metrics.md
       - Trajectory: metrics/trajectory.md
       - Prediction: metrics/prediction.md
       - Driving: metrics/driving.md
@@ -56,9 +59,11 @@ nav:
       - Adapter Guide: adapters.md
       - Benchmark Profiles: benchmark_profiles.md
       - Validation Suite: validation_suite.md
+      - Loader Examples: guides/loader_examples.md
+      - Result Schema Migration: guides/result_schema_migration.md
       - Comparing Policies: guides/comparing_policies.md
       - CI Integration: guides/ci_integration.md
-      - Writing A Pack: guides/writing_a_pack.md
+      - Writing a Pack: guides/writing_a_pack.md
       - ROS Adapter: guides/ros_adapter.md
   - Project:
       - Performance: performance.md
