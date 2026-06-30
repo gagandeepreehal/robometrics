@@ -8,6 +8,7 @@ from typing import Any, Optional, Union
 import numpy as np
 
 from robometrics._version import __version__
+from robometrics.geometry import as_numpy_compatible
 from robometrics.registry import MetricDefinition, MetricRegistry, registry
 from robometrics.results import EvaluationResult, MetricResult
 from robometrics.schemas import Trajectory
@@ -255,14 +256,23 @@ def _build_inputs(
 def _coerce_input_value(value: Any) -> Any:
     if isinstance(value, Trajectory):
         return value.array()
-    if isinstance(value, list) and any(isinstance(item, Trajectory) for item in value):
+    if isinstance(value, list) and any(
+        isinstance(item, Trajectory) or item is not as_numpy_compatible(item)
+        for item in value
+    ):
         return [
-            item.array() if isinstance(item, Trajectory) else item
+            item.array() if isinstance(item, Trajectory) else as_numpy_compatible(item)
             for item in value
         ]
-    if isinstance(value, tuple) and any(isinstance(item, Trajectory) for item in value):
-        return tuple(item.array() if isinstance(item, Trajectory) else item for item in value)
-    return value
+    if isinstance(value, tuple) and any(
+        isinstance(item, Trajectory) or item is not as_numpy_compatible(item)
+        for item in value
+    ):
+        return tuple(
+            item.array() if isinstance(item, Trajectory) else as_numpy_compatible(item)
+            for item in value
+        )
+    return as_numpy_compatible(value)
 
 
 def _validate_common_array(

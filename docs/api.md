@@ -12,6 +12,7 @@ This page lists every public symbol exported by `robometrics.__all__`.
 | `EvaluationInputError` | `robometrics.evaluator` | Raised when an evaluation request cannot be constructed. |
 | `EvaluationHistory` | `robometrics.history` | Track EvaluationResult objects across training checkpoints. |
 | `EvaluationResult` | `robometrics.results` | Collection of metric results from one local evaluation run. |
+| `EVALUATION_RESULT_SCHEMA_VERSION` | `robometrics.results` | Stable `EvaluationResult` JSON schema version string. |
 | `Evaluator` | `robometrics.evaluator` | Evaluate registered RoboMetrics metrics against local Python inputs, including `Trajectory` schema objects. |
 | `MetricDefinition` | `robometrics.registry` | Registered metric metadata and execution contract. |
 | `MetricComparison` | `robometrics.results` | Comparison of one metric across two evaluation results. |

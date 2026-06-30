@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
+from importlib import import_module
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, ClassVar, Optional, Union
 
 import numpy as np
+
+EVALUATION_RESULT_SCHEMA_VERSION = "1"
 
 
 @dataclass
@@ -159,6 +162,7 @@ class EvaluationResult:
         metadata: Extra JSON-compatible run metadata.
     """
 
+    schema_version: ClassVar[str] = EVALUATION_RESULT_SCHEMA_VERSION
     results: list[MetricResult]
     metadata: dict[str, Any]
 
@@ -301,6 +305,7 @@ class EvaluationResult:
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-compatible dictionary."""
         return {
+            "schema_version": self.schema_version,
             "results": [metric.to_dict() for metric in self.results],
             "summary": self.summary(),
             "metadata": _json_safe(self.metadata),
@@ -313,6 +318,12 @@ class EvaluationResult:
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> EvaluationResult:
         """Create an evaluation result from a dictionary produced by ``to_dict()``."""
+        schema_version = payload.get("schema_version")
+        if schema_version is not None and str(schema_version) != cls.schema_version:
+            raise ValueError(
+                "unsupported EvaluationResult schema_version: "
+                f"{schema_version!r}; expected {cls.schema_version!r}"
+            )
         raw_results = payload.get("results")
         if not isinstance(raw_results, list):
             raise ValueError("EvaluationResult payload must contain a results list")
@@ -388,6 +399,45 @@ class EvaluationResult:
             Path(path).write_text(csv_text, encoding="utf-8")
         return csv_text
 
+    def log_to_wandb(
+        self,
+        run: Optional[Any] = None,
+        *,
+        prefix: str = "robometrics",
+    ) -> dict[str, Any]:
+        """Log finite metric values and summary counts to a Weights & Biases run."""
+        target = run if run is not None else _active_wandb_run()
+        log = getattr(target, "log", None)
+        if not callable(log):
+            raise TypeError("wandb run object must provide a callable log(payload) method")
+        payload = _logging_payload(self, prefix=prefix)
+        log(payload)
+        return payload
+
+    def log_to_mlflow(
+        self,
+        run: Optional[Any] = None,
+        *,
+        prefix: str = "robometrics",
+    ) -> dict[str, Any]:
+        """Log finite metric values and summary counts through MLflow."""
+        target = run if run is not None else _mlflow_module()
+        payload = _logging_payload(self, prefix=prefix)
+        log_metrics = getattr(target, "log_metrics", None)
+        if callable(log_metrics):
+            log_metrics(payload)
+            return payload
+
+        log_metric = getattr(target, "log_metric", None)
+        if callable(log_metric):
+            for name, value in payload.items():
+                log_metric(name, value)
+            return payload
+
+        raise TypeError(
+            "MLflow logger must provide log_metrics(payload) or log_metric(name, value)"
+        )
+
 
 def _display_name(name: str) -> str:
     special = {
@@ -409,6 +459,51 @@ def _require_pandas(function_name: str) -> Any:
             "Install it with: pip install robometrics[io]"
         ) from exc
     return pd
+
+
+def _active_wandb_run() -> Any:
+    try:
+        wandb = import_module("wandb")
+    except ImportError as exc:
+        raise ImportError(
+            "Weights & Biases logging requires wandb. "
+            "Install it with: pip install robometrics[wandb]"
+        ) from exc
+    if wandb.run is None:
+        raise RuntimeError("wandb has no active run; pass a run object or call wandb.init()")
+    return wandb.run
+
+
+def _mlflow_module() -> Any:
+    try:
+        return import_module("mlflow")
+    except ImportError as exc:
+        raise ImportError(
+            "MLflow logging requires mlflow. "
+            "Install it with: pip install robometrics[mlflow]"
+        ) from exc
+
+
+def _logging_payload(result: EvaluationResult, *, prefix: str) -> dict[str, Any]:
+    root = _normalize_logging_prefix(prefix)
+    payload: dict[str, Any] = {}
+    for metric in result.results:
+        if np.isfinite(metric.value):
+            payload[f"{root}/{metric.name}"] = float(metric.value)
+        if metric.passed is not None:
+            payload[f"{root}/{metric.name}/passed"] = int(bool(metric.passed))
+
+    summary = result.summary()
+    for key in ("metric_count", "passed_count", "failed_count", "error_count"):
+        payload[f"{root}/summary/{key}"] = int(summary[key])
+    if summary["strict_passed"] is not None:
+        payload[f"{root}/summary/strict_passed"] = int(bool(summary["strict_passed"]))
+    return payload
+
+
+def _normalize_logging_prefix(prefix: str) -> str:
+    normalized = str(prefix).strip().strip("/").replace(" ", "_")
+    return normalized or "robometrics"
 
 
 _LOWER_IS_BETTER_OVERRIDES = {

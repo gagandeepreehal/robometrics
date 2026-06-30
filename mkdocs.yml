@@ -33,6 +33,8 @@ nav:
   - Getting Started:
       - Home: index.md
       - Quickstart: quickstart.md
+      - What It Is: what_it_is.md
+      - From Policy Output: guides/policy_output.md
   - Core API:
       - Evaluation Guide: evaluation.md
       - Evaluator Examples: evaluator.md

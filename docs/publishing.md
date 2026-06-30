@@ -47,11 +47,15 @@ The environment names must match the workflow `environment` values exactly.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip
 pip install -e ".[dev]"
 python -m pip install --upgrade build twine
 python -m build
 twine check dist/*
 ```
+
+If editable install support is unavailable in an older local packaging toolchain,
+use `pip install ".[dev]"` for the build check after upgrading pip.
 
 ## TestPyPI Install Check
 

@@ -24,6 +24,10 @@ print(trajectory_result.summary())
 print(trajectory_result.to_markdown())
 ```
 
+PyTorch-style tensors work without making PyTorch a RoboMetrics dependency. If
+an input object exposes `.detach().cpu().numpy()`, RoboMetrics uses that before
+dispatching metric functions.
+
 ## Multimodal Prediction Metrics
 
 Prediction metrics such as `min_ade`, `min_fde`, `miss_rate`, and `topk_trajectory_error` expect a `KxTx2` or `KxTx3` prediction array and a `Tx2` or `Tx3` ground-truth trajectory.
@@ -59,6 +63,9 @@ print(prediction_result.summary())
 print(prediction_result.to_json())
 ```
 
+The JSON contains top-level `"schema_version": "1"`. Use that as the stable
+machine-readable contract for downstream CI and experiment tooling.
+
 ## Dataset Aggregation
 
 Use `evaluate_dataset()` when each sample has one prediction and one
@@ -74,6 +81,20 @@ dataset_result = Evaluator().evaluate_dataset(
 
 The result contains one aggregate metric row per metric, with per-sample values
 and min/max/std metadata.
+
+## Experiment Logging
+
+`EvaluationResult` can log finite metric values and summary counts to existing
+Weights & Biases or MLflow runs:
+
+```python
+result.log_to_wandb(wandb_run)
+result.log_to_mlflow(mlflow)
+```
+
+Install `robometrics[wandb]`, `robometrics[mlflow]`, or
+`robometrics[loggers]` only when you want RoboMetrics to import those optional
+packages directly.
 
 ## Threshold Direction
 

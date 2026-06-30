@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Versioned `EvaluationResult` JSON output with top-level
+  `"schema_version": "1"` and a public `EVALUATION_RESULT_SCHEMA_VERSION`
+  constant.
+- PyTorch-style tensor input coercion through `.detach().cpu().numpy()` without
+  adding PyTorch as a dependency.
+- Optional `EvaluationResult.log_to_wandb(...)` and `log_to_mlflow(...)`
+  helpers for experiment tracking.
+- Optional `robometrics[mcap]` MCAP JSON-message adapter and a ROS 2 bag JSON
+  adapter that does not import `rclpy`.
+- End-to-end CLI integration tests that write input files, evaluate, and render
+  HTML reports.
+- Policy-output getting-started tutorial, Colab demo notebook, and explicit
+  "What RoboMetrics Is And Isn't" scope page.
+
 ## [0.2.0] - 2026-06-20
 
 ### Changed

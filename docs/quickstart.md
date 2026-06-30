@@ -39,3 +39,7 @@ inspect an installed package from the shell. The `robometrics` console script is
 also installed, but user-level pip installs can place it outside `PATH`.
 
 File IO helpers raise `TrajectoryIOError` for missing or malformed files, and `ValueError` for invalid trajectory contents.
+
+If you are starting from simulator or policy logs instead of NumPy arrays, use
+the [policy-output tutorial](guides/policy_output.md). For project fit, see
+[What RoboMetrics Is And Isn't](what_it_is.md).

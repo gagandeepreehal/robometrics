@@ -58,7 +58,13 @@ from robometrics.registry import (
     load_pack,
     registry,
 )
-from robometrics.results import ComparisonResult, EvaluationResult, MetricComparison, MetricResult
+from robometrics.results import (
+    EVALUATION_RESULT_SCHEMA_VERSION,
+    ComparisonResult,
+    EvaluationResult,
+    MetricComparison,
+    MetricResult,
+)
 from robometrics.safety import (
     collision_rate,
     collision_rate_obb,
@@ -108,6 +114,7 @@ __all__ = [
     "EvaluationInputError",
     "EvaluationHistory",
     "EvaluationResult",
+    "EVALUATION_RESULT_SCHEMA_VERSION",
     "Evaluator",
     "MetricDefinition",
     "MetricComparison",

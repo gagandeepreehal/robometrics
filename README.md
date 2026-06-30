@@ -9,7 +9,8 @@
 
 Lightweight robotics metrics for Python.
 
-[Documentation](https://gagandeepreehal.github.io/robometrics/)
+[Documentation](https://gagandeepreehal.github.io/robometrics/) |
+[Colab demo](https://colab.research.google.com/github/gagandeepreehal/robometrics/blob/main/notebooks/robometrics_colab_demo.ipynb)
 
 RoboMetrics is a small local Python library for computing robotics trajectory,
 prediction, temporal drift, safety, comfort, coverage, calibration, physics,
@@ -34,6 +35,8 @@ codebases.
 ```bash
 pip install robometrics
 pip install "robometrics[io]"  # CSV loading and pandas exports
+pip install "robometrics[mcap]"  # optional MCAP JSON-message adapter
+pip install "robometrics[loggers]"  # optional W&B and MLflow logging
 ```
 
 RoboMetrics is primarily a Python library. The installed CLI is intentionally
@@ -66,6 +69,7 @@ For local development:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip
 pip install -e ".[dev]"
 pytest
 ruff check .
@@ -173,8 +177,16 @@ and metadata.
 `EvaluationResult` is a small container for local batches of metric results and
 can export and reload dictionaries, strict JSON, Markdown tables, CSV, and
 pandas DataFrames. Install `robometrics[io]` for CSV and pandas-backed exports.
+Evaluation JSON includes top-level `"schema_version": "1"`; downstream CI,
+dashboards, and experiment trackers should treat that as the stable output
+contract and reject unknown future schema versions instead of guessing.
 Non-finite metric values are serialized as `null` in JSON with metadata that
 records whether the original value was `nan`, `inf`, or `-inf`.
+Use `result.log_to_wandb(run)` or `result.log_to_mlflow(run)` to send finite
+metric values and summary counts into existing experiment runs. Passing a run
+or logger object avoids importing optional logging packages; install
+`robometrics[wandb]`, `robometrics[mlflow]`, or `robometrics[loggers]` when you
+want RoboMetrics to import those tools directly.
 
 `speed_profile()` returns one speed estimate per input point; endpoint speeds
 are finite-difference gradient estimates, not `N-1` interval speeds.
@@ -357,6 +369,9 @@ print(result.to_json())
 reloaded = EvaluationResult.from_json(result.to_json())
 ```
 
+PyTorch-style tensor inputs are accepted without adding PyTorch as a dependency:
+objects with `.detach().cpu().numpy()` are converted before metric dispatch.
+
 Unknown metric names raise `UnknownMetricError` before evaluation starts.
 Metric execution failures are returned as `MetricResult` entries with
 `value=nan`, `passed=None`, and `metadata["error"]`. They are visible through
@@ -424,11 +439,11 @@ profiles, not leaderboard definitions.
 The `robometrics.adapters` package provides lightweight adapters with a common
 interface: `load(path)`, `validate(path)`, and `metadata(path)`. Built-ins cover
 generic CSV, generic JSON, ROS-style JSON exports without importing ROS,
-LeRobot-style JSON exports without importing LeRobot, RLDS-style JSON exports
-without TensorFlow, and an MCAP placeholder that raises an explicit optional
-dependency error. The generic CSV adapter loads `x`/`y` and preserves `z` when
-that optional column is present. Heavy robotics or dataset packages are not hard
-dependencies.
+ROS 2 bag JSON exports without importing `rclpy`, LeRobot-style JSON exports
+without importing LeRobot, RLDS-style JSON exports without TensorFlow, and MCAP
+JSON-message logs through the optional `robometrics[mcap]` extra. The generic
+CSV adapter loads `x`/`y` and preserves `z` when that optional column is
+present. Heavy robotics or dataset packages are not hard dependencies.
 
 ## Metric Packs
 

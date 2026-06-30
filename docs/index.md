@@ -42,6 +42,9 @@ print(result.to_markdown())
 
 ## Documentation Map
 
+- `docs/what_it_is.md` states the scope boundary: metrics layer, not simulator.
+- `docs/guides/policy_output.md` starts from Isaac, MuJoCo, LeRobot, or ROS 2
+  policy-output files and runs validation, evaluation, and report generation.
 - `docs/metrics/` documents metric families with units, formulas, references, and directionality.
 - `docs/guides/comparing_policies.md` shows policy checkpoint comparison with `EvaluationResult.compare()`.
 - `docs/guides/ci_integration.md` shows how to wire `robometrics compare` into GitHub Actions.

@@ -21,6 +21,8 @@ python -m robometrics evaluate \
 `evaluate` validates that both files exist, loads CSV or JSON trajectory data
 through the existing IO helpers, runs the requested metrics using each metric's
 registry compatibility rules, and writes an `EvaluationResult` JSON file.
+The file includes top-level `"schema_version": "1"` as the stable contract for
+CI parsers and downstream tools.
 Aligned-sample metrics such as `ade` and `fde` require matching prediction and
 ground-truth shapes. Set-based metrics such as `hausdorff_distance` can compare
 different numbers of points when coordinate dimensionality matches.
