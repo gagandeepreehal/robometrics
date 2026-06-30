@@ -10,6 +10,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Nothing yet.
 
+## [0.3.1] - 2026-06-30
+
+### Changed
+
+- Updated package author and maintainer metadata to `gagandeepreehal`.
+- Removed the root-level `test_as_end_user.md` audit checklist from the release
+  tree.
+
 ## [0.3.0] - 2026-06-30
 
 ### Added

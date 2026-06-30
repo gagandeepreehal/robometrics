@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robometrics"
-version = "0.3.0"
+version = "0.3.1"
 description = "Lightweight robotics metrics for Python."
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
-authors = [{ name = "RoboMetrics contributors" }]
-maintainers = [{ name = "RoboMetrics contributors" }]
+authors = [{ name = "gagandeepreehal" }]
+maintainers = [{ name = "gagandeepreehal" }]
 keywords = [
   "robotics",
   "metrics",
