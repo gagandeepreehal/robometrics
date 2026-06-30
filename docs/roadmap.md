@@ -21,11 +21,14 @@ called out in `CHANGELOG.md` and should include migration notes.
 - Direction-aware evaluator thresholds. Metrics marked `higher_is_better=True`
   pass when `value >= threshold`; other metrics pass when `value <= threshold`.
 
-## Planned For 0.3.0
+## Completed For 0.3.0
 
-- Add small benchmark scripts that can emit repeatable JSON timing baselines.
-- Expand loader examples for directory-level and dataset-level evaluation.
-- Add migration guidance if any public result schema fields change.
+- `scripts/benchmark_timing_baselines.py` emits repeatable JSON timing baselines
+  for geometry safety, dataset evaluator, and manipulation metric workloads.
+- `examples/dataset_loader_evaluation.py` and the loader examples guide cover
+  directory-level loading and matched dataset evaluation.
+- The result schema migration guide documents the version-1 JSON contract and
+  the required migration shape for any future result schema change.
 
 ## Before 1.0.0
 

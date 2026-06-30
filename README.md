@@ -122,6 +122,7 @@ python examples/safety_metrics.py
 python examples/comfort_metrics.py
 python examples/new_metrics_example.py
 python examples/load_from_csv.py
+python examples/dataset_loader_evaluation.py
 python examples/evaluator_usage.py
 python examples/manipulation_metrics.py
 ```
@@ -475,6 +476,7 @@ python examples/safety_metrics.py
 python examples/comfort_metrics.py
 python examples/new_metrics_example.py
 python examples/load_from_csv.py
+python examples/dataset_loader_evaluation.py
 python examples/evaluator_usage.py
 python examples/manipulation_metrics.py
 ```

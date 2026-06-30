@@ -21,6 +21,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   HTML reports.
 - Policy-output getting-started tutorial, Colab demo notebook, and explicit
   "What RoboMetrics Is And Isn't" scope page.
+- JSON timing-baseline script for repeatable performance smoke checks.
+- Directory and dataset loader evaluation example plus loader guide.
+- Result schema migration guide for the versioned `EvaluationResult` JSON
+  contract.
 
 ## [0.2.0] - 2026-06-20
 

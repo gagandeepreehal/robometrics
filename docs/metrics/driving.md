@@ -1,7 +1,10 @@
 # Driving Metrics
+
 Use driving metrics for road-agent forecasting and driving-specific safety checks, including ranked prediction modes, drivable-area containment, and soft time-to-collision.
+
 ## Reference
 Chang et al., Argoverse, CVPR 2019; Caesar et al., nuScenes, CVPR 2020; Weng et al., nuScenes-Forecast, ECCV 2022.
+
 ## Quick Example
 ```python
 import numpy as np
@@ -17,8 +20,11 @@ print(displacement_at_k(predictions, gt, k=2))
 print(prediction_nll(predictions, log_weights, gt))
 print(offroad_rate(gt, [polygon]))
 ```
-Metrics
-displacement_at_k(predictions, gt, k) -> float
+
+## Metrics
+
+### `displacement_at_k(predictions, gt, k) -> float`
+
 Formula: best displacement error among the first k ranked predictions.
 Reference: Chang et al., Argoverse, CVPR 2019
 Unit: meters
@@ -26,7 +32,8 @@ Direction: lower is better
 
 Displacement-at-k evaluates ranked driving forecasts under benchmark submission limits.
 
-prediction_nll(predictions, log_weights, gt) -> float
+### `prediction_nll(predictions, log_weights, gt) -> float`
+
 Formula: negative log likelihood of the ground truth under a Gaussian mixture.
 Reference: Thiede and Brahma, NeurIPS Workshop 2019
 Unit: nats
@@ -37,7 +44,8 @@ Prediction NLL captures confidence-weighted forecast quality.
 Values are natural-log probabilities in nats; unnormalized log scores are also
 accepted because the metric uses log-sum-exp internally.
 
-offroad_rate(ego_traj, drivable_polygons) -> float
+### `offroad_rate(ego_traj, drivable_polygons) -> float`
+
 Formula: fraction of ego positions outside all drivable polygons.
 Reference: Caesar et al., nuScenes, CVPR 2020
 Unit: ratio
@@ -45,7 +53,8 @@ Direction: lower is better
 
 Offroad rate evaluates drivable-area compliance.
 
-soft_ttc(ego_traj, actor_trajs, dt) -> float
+### `soft_ttc(ego_traj, actor_trajs, dt) -> float`
+
 Formula: minimum constant-velocity time to collision across rollout timesteps.
 Reference: Weng et al., nuScenes-Forecast, ECCV 2022
 Unit: seconds
